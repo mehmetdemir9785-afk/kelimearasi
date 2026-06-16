@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>kelimearası.com - Kelime Oyunları Platformu</title>
+    <title>kelimearasi.com - Kelime Oyunları Platformu</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -159,53 +159,128 @@
         </button>
     </div>
 
-    <!-- OYUN SONU MODAL (ÖZET KARTI) -->
-    <div id="game-over-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-darkBg/70 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-500 p-4">
-        <div id="modal-content" class="bg-cardBg/95 border border-slate-700/60 rounded-3xl p-6 sm:p-8 w-full max-w-[400px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform scale-95 transition-transform duration-500 flex flex-col items-center text-center max-h-[90vh] overflow-hidden">
+    <!-- NASIL OYNANIR MODAL -->
+    <div id="help-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-darkBg/70 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-500 p-4">
+        <div id="help-modal-content" class="bg-cardBg/95 border border-slate-700/60 rounded-3xl p-6 sm:p-8 w-full max-w-[400px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform scale-95 transition-transform duration-500 flex flex-col items-center text-center">
+            <div class="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center text-accent text-2xl mb-3">❓</div>
+            <h2 class="text-2xl font-bold mb-4 tracking-wide text-white drop-shadow-md shrink-0">Nasıl Oynanır?</h2>
             
-            <h2 id="modal-title" class="text-3xl font-bold mb-4 tracking-wide drop-shadow-md shrink-0">Tebrikler!</h2>
-            
-            <!-- Hedef Kelime / Skor -->
-            <div id="modal-word-container" class="flex justify-center gap-2 mb-4 w-full flex-wrap shrink-0"></div>
-            
-            <!-- İstatistik Rozetleri (Arasında, Sözcükle, Baş Harf) -->
-            <div class="flex gap-4 mb-4 w-full justify-center shrink-0" id="modal-stats-container">
-                <div class="flex flex-col items-center bg-darkBg/50 border border-slate-700/50 px-4 py-2.5 rounded-2xl w-24 shadow-inner">
-                    <span id="modal-guess-label" class="text-[10px] text-slate-400 font-bold tracking-widest mb-1 opacity-80">TAHMİN</span>
-                    <span id="modal-guess-count" class="text-2xl font-bold text-white">4</span>
-                </div>
-                <div class="flex flex-col items-center bg-darkBg/50 border border-slate-700/50 px-4 py-2.5 rounded-2xl w-24 shadow-inner">
-                    <span class="text-[10px] text-slate-400 font-bold tracking-widest mb-1 opacity-80">SÜRE</span>
-                    <span id="modal-time" class="text-2xl font-bold text-white">45s</span>
-                </div>
-            </div>
-
-            <!-- KELİME ÇEMBERİ DETAYLI CEVAP ANAHTARI -->
-            <div id="modal-cember-details" class="hidden flex-col w-full flex-1 overflow-y-auto custom-scrollbar bg-darkBg/30 rounded-xl border border-slate-700/50 mb-4 text-left shadow-inner">
-                <!-- İçerik JS ile doldurulacak -->
-            </div>
-
-            <!-- Reklam / AdSense Alanı -->
-            <div id="modal-ad-container" class="hidden w-full h-20 bg-darkBg/80 border border-dashed border-slate-600 rounded-xl flex items-center justify-center mb-4 shrink-0">
-                <span class="text-xs text-slate-500 tracking-wider">Reklam Alanı (AdSense)</span>
+            <div id="help-text" class="text-slate-300 text-sm leading-relaxed mb-6 font-medium text-left w-full bg-darkBg/50 p-4 rounded-xl border border-slate-700/50">
+                <!-- JS ile dinamik olarak dolacak -->
             </div>
             
-            <!-- Butonlar -->
-            <div class="flex flex-col gap-3 w-full shrink-0">
-                <button id="modal-next-btn" class="relative group w-full bg-slate-800 rounded-2xl p-[1px] transition-all duration-300 active:scale-95">
-                    <div class="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-2xl opacity-60 blur group-hover:opacity-100 transition-opacity duration-500"></div>
-                    <div class="relative bg-cardBg w-full h-12 flex items-center justify-center rounded-2xl">
-                        <span class="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent font-bold text-base tracking-wide drop-shadow-sm">Sıradaki Kelime</span>
-                    </div>
-                </button>
+            <button id="help-close-btn" class="w-full bg-slate-700 hover:bg-slate-600 text-white rounded-xl py-3 font-bold transition-colors active:scale-95 shadow-md">Anladım</button>
+        </div>
+    </div>
 
-                <div id="modal-daily-text" class="hidden h-12 flex items-center justify-center w-full bg-darkBg/50 rounded-2xl border border-slate-700/50">
-                    <span class="text-sm text-slate-300 font-medium tracking-wide">Yarın yeni kelimede görüşürüz!</span>
+    <!-- YASAL SAYFALAR (LEGAL) MODAL -->
+    <div id="legal-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-darkBg/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-500 p-4">
+        <div id="legal-modal-content" class="bg-cardBg/95 border border-slate-700/60 rounded-3xl p-6 sm:p-8 w-full max-w-[500px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform scale-95 transition-transform duration-500 flex flex-col relative max-h-[90vh]">
+            
+            <!-- Kapatma Butonu -->
+            <button id="legal-close-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-10 p-1">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
+            <!-- Modal Başlık Alanı -->
+            <div class="flex flex-col items-center text-center mb-5 shrink-0 pt-2">
+                <div id="legal-modal-icon" class="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center text-accent text-2xl mb-3">👋</div>
+                <h2 id="legal-modal-title" class="text-2xl font-bold tracking-wide text-white drop-shadow-md">Başlık</h2>
+            </div>
+            
+            <!-- İçerik Alanı (Kaydırılabilir) -->
+            <div id="legal-modal-text" class="text-slate-300 text-[13.5px] sm:text-[14.5px] leading-relaxed font-medium text-left w-full bg-darkBg/50 p-5 rounded-xl border border-slate-700/50 overflow-y-auto custom-scrollbar flex-1">
+                <!-- JS ile dinamik olarak dolacak -->
+            </div>
+        </div>
+    </div>
+
+    <!-- OYUN SONU MODAL (YENİ TASARIM) -->
+    <div id="game-over-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-darkBg/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-500 p-4">
+        <div id="modal-content" class="bg-cardBg/95 border border-slate-700/60 text-white rounded-3xl w-full max-w-[400px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform scale-95 transition-transform duration-500 flex flex-col relative max-h-[95vh] overflow-y-auto custom-scrollbar">
+            
+            <!-- Close btn -->
+            <button id="modal-review-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
+            <div class="p-6 sm:p-8 flex flex-col items-center text-center">
+                <h2 id="modal-title" class="text-3xl font-bold mb-3 tracking-wide drop-shadow-md shrink-0">Kazandın</h2>
+                <p id="modal-subtitle" class="text-[16px] text-slate-300 mb-5 font-medium">Kelimeyi tahmin ettin</p>
+                
+                <!-- Word Box -->
+                <div class="border-2 border-dashed border-slate-500 bg-darkBg/50 rounded-xl px-8 py-3 mb-2 flex items-center justify-center min-w-[140px] shadow-inner">
+                    <span id="modal-target-word" class="text-2xl font-bold tracking-widest text-white uppercase drop-shadow-sm">KELİME</span>
                 </div>
                 
-                <button id="modal-review-btn" class="w-full h-10 rounded-2xl border border-slate-600/50 text-slate-300 font-semibold hover:bg-slate-700/30 transition-colors active:scale-95 tracking-wide text-sm">
-                    Kapat
+                <a id="modal-meaning-link" href="#" target="_blank" class="text-accent hover:text-indigo-400 text-[14px] mb-5 transition-colors font-medium underline underline-offset-2">Bu kelimenin anlamı nedir?</a>
+                
+                <p class="text-[20px] mb-6 text-slate-200 font-medium"><span id="modal-time" class="font-bold text-white">00:45</span> sürede bildin</p>
+                
+                <!-- Kelime Çemberi Detail (hidden by default) -->
+                <div id="modal-cember-details" class="hidden flex-col w-full overflow-y-auto custom-scrollbar bg-darkBg/30 rounded-xl border border-slate-700/50 mb-4 text-left shadow-inner max-h-[220px]"></div>
+
+                <!-- Yeni Oyun Button -->
+                <button id="modal-next-btn" class="w-full relative group bg-slate-800 rounded-xl p-[1px] mb-3 transition-all duration-300 active:scale-95 shadow-md">
+                    <div class="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-xl opacity-80 blur-sm group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div class="relative bg-emerald-500 group-hover:bg-emerald-400 w-full h-12 flex items-center justify-center rounded-xl transition-colors">
+                        <span class="text-darkBg font-bold text-lg tracking-widest uppercase">YENİ OYUN</span>
+                    </div>
                 </button>
+                <div id="modal-daily-text" class="hidden w-full bg-darkBg/50 text-slate-300 font-medium py-3 rounded-xl mb-3 items-center justify-center border border-slate-700/50">Yarın yeni kelimede görüşürüz!</div>
+
+                <!-- Challenge Button -->
+                <button id="modal-challenge-btn" class="w-full bg-indigo-600/20 border border-indigo-500/50 hover:bg-indigo-600/40 text-indigo-300 font-semibold py-3 rounded-xl mb-2 transition-colors flex items-center justify-center gap-2 text-[13px] active:scale-95 shadow-sm">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span id="modal-challenge-text">Bir arkadaşınıza bu kelimeyle meydan okuyun</span>
+                </button>
+                
+                <!-- Emoji Button -->
+                <button id="modal-emoji-btn" class="w-full bg-slate-700/50 border border-slate-600 hover:bg-slate-700 text-slate-200 font-semibold py-3 rounded-xl mb-6 transition-colors flex items-center justify-center gap-2 text-[13px] active:scale-95 shadow-sm">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    Sonucu emoji olarak kopyala
+                </button>
+                
+                <!-- Socials -->
+                <div class="flex gap-2.5 justify-center mb-6 w-full">
+                    <button class="w-[42px] h-[42px] rounded-full bg-[#1da1f2] text-white flex items-center justify-center hover:opacity-80 transition-opacity shadow-sm" onclick="shareSocial('twitter')">
+                        <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557a9.83 9.83 0 0 1-2.828.775 4.932 4.932 0 0 0 2.165-2.724 9.864 9.864 0 0 1-3.127 1.195 4.916 4.916 0 0 0-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 0 0-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 0 1-2.228-.616v.06a4.923 4.923 0 0 0 3.946 4.827 4.996 4.996 0 0 1-2.212.085 4.936 4.936 0 0 0 4.604 3.417 9.867 9.867 0 0 1-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 0 0 7.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0 0 24 4.557z"/></svg>
+                    </button>
+                    <button class="w-[42px] h-[42px] rounded-full bg-[#ff4500] text-white flex items-center justify-center hover:opacity-80 transition-opacity shadow-sm" onclick="shareSocial('reddit')">
+                        <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M24 11.5c0-1.65-1.35-3-3-3-.96 0-1.86.48-2.42 1.24-1.64-1-3.75-1.64-6.07-1.72.08-1.1.4-3.05 1.52-3.7.72-.4 1.73-.24 3 .5C17.2 6.3 18.46 7.5 20 7.5c1.65 0 3-1.35 3-3s-1.35-3-3-3c-1.38 0-2.54.94-2.88 2.22-1.43-.72-2.64-.8-3.6-.25-1.64.94-1.95 3.47-2 4.55-2.33.08-4.45.7-6.1 1.72C4.86 8.98 3.96 8.5 3 8.5c-1.65 0-3 1.35-3 3 0 1.32.84 2.44 2.05 2.84-.03.22-.05.44-.05.66 0 3.86 4.5 7 10 7s10-3.14 10-7c0-.22-.02-.44-.05-.66 1.2-.4 2.05-1.54 2.05-2.84zM2.3 11.5c0-1.1.9-2 2-2 .64 0 1.22.32 1.6.82-1.1.85-1.92 1.9-2.46 3.1-.6-.35-1.14-.95-1.14-1.92zm17.4 8.1c-2.32 1.22-5.48 1.4-7.7 1.4-2.22 0-5.38-.18-7.7-1.4-1.6-1.1-2.4-2.7-2.4-4.6 0-3.3 3.9-5.9 8.1-5.9 4.2 0 8.1 2.6 8.1 5.9 0 1.9-.8 3.5-2.4 4.6zm-12.7-3.7c.45-.6 1.15-1 1.9-1s1.45.4 1.9 1c.15.2.45.2.65.05.2-.15.2-.45.05-.65-.6-1-1.6-1.6-2.6-1.6-1 0-2 .6-2.6 1.6-.15.2-.1.5.05.65.2.15.5.1.65-.05zm8 0c.45-.6 1.15-1 1.9-1s1.45.4 1.9 1c.15.2.45.2.65.05.2-.15.2-.45.05-.65-.6-1-1.6-1.6-2.6-1.6-1 0-2 .6-2.6 1.6-.15.2-.1.5.05.65.2.15.5.1.65-.05zM12 18.5c-2.5 0-4.6-.9-4.8-1.1-.2-.1-.2-.4-.1-.6.1-.2.4-.2.6-.1.1 2 1 4.3 1 2.3 0 4.2-.9 4.3-1 .2-.1.5-.1.6.1.1.2.1.5-.1.6-.2.2-2.3 1.1-4.8 1.1z"/></svg>
+                    </button>
+                    <button class="w-[42px] h-[42px] rounded-full bg-[#4267B2] text-white flex items-center justify-center hover:opacity-80 transition-opacity shadow-sm" onclick="shareSocial('facebook')">
+                        <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    </button>
+                    <button class="w-[42px] h-[42px] rounded-full bg-[#00B2FF] text-white flex items-center justify-center hover:opacity-80 transition-opacity shadow-sm" onclick="shareSocial('messenger')">
+                        <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.14 2 11.25c0 2.906 1.488 5.485 3.821 7.151V22l3.498-1.921c.843.232 1.74.359 2.681.359 5.523 0 10-4.14 10-9.25C22 6.14 17.523 2 12 2zm1.096 12.56-2.825-3.018-5.525 3.018 6.068-6.442 2.89 3.018 5.46-3.018-6.068 6.442z"/></svg>
+                    </button>
+                    <button class="w-[42px] h-[42px] rounded-full bg-[#FFFC00] text-black flex items-center justify-center hover:opacity-80 transition-opacity shadow-sm" onclick="shareSocial('snapchat')">
+                        <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M12.181 1.25c-2.348 0-4.385 1.554-4.887 3.805-.078.347-.282.68-.535.91-.707.643-1.854.872-2.583 1.096-.28.087-.52.274-.683.53a1.45 1.45 0 0 0-.071 1.34c.162.336.561.42 1.002.43 1.326.035 2.147.245 2.308.775.05.163-.035.325-.2.534-.51.64-1.284 1.383-1.812 1.98-.382.432-.472.937-.246 1.385.195.385.586.602 1.05.65.657.067 1.83.087 2.853.303.483.102.836.315 1.01.62.152.268.04.595-.146.906-.217.362-.647.785-1.077 1.246-.66.71-1.396 1.5-1.127 2.455.155.552.54 1.037 1.094 1.38.793.493 2.016.712 3.32.553.868-.106 1.63-.585 2.66-.585 1.026 0 1.78.473 2.645.582 1.312.164 2.548-.052 3.344-.543.557-.34.945-.824 1.102-1.373.272-.958-.46-1.748-1.12-2.46-.432-.464-.863-.888-1.08-1.25-.186-.312-.296-.64-.144-.907.175-.306.53-.52 1.012-.622 1.025-.217 2.198-.237 2.854-.304.464-.047.856-.264 1.05-.65.226-.447.135-.953-.245-1.385-.53-.598-1.303-1.34-1.815-1.98-.164-.208-.248-.37-.197-.534.16-.53.98-.74 2.308-.775.44-.01.84-.094 1.002-.43.125-.258.106-.723-.07-1.34a1.29 1.29 0 0 0-.685-.53c-.727-.224-1.874-.453-2.58-.1-.252-.23-.456-.563-.534-.91-.502-2.25-2.538-3.804-4.885-3.804z"/></svg>
+                    </button>
+                    <button class="w-[42px] h-[42px] rounded-full bg-[#25D366] text-white flex items-center justify-center hover:opacity-80 transition-opacity shadow-sm" onclick="shareSocial('whatsapp')">
+                        <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.964 9.964 0 0 0 1.333 4.975L2 22l5.176-1.341a9.96 9.96 0 0 0 4.836 1.258h.004c5.505 0 9.988-4.479 9.988-9.985S17.518 2 12.012 2zm0 18.006a8.27 8.27 0 0 1-4.22-1.155l-.303-.18-3.136.812.83-3.056-.197-.314a8.281 8.281 0 0 1-1.26-4.407c.002-4.57 3.72-8.287 8.291-8.287 2.215.001 4.298.864 5.864 2.43 1.566 1.566 2.428 3.648 2.427 5.864-.002 4.571-3.721 8.288-8.296 8.288zm4.55-6.216c-.249-.125-1.474-.727-1.703-.81-.229-.083-.396-.125-.562.125-.166.25-.645.81-.79 9.75-.146.166-.292.187-.542.062-.25-.125-1.052-.388-2.004-1.24-.74-.66-1.24-1.476-1.386-1.726-.146-.25-.015-.386.11-.51.112-.112.249-.292.374-.438.125-.146.166-.25.249-.417.083-.166.042-.312-.02-.437-.063-.125-.563-1.354-.771-1.854-.203-.485-.41-.42-.562-.427-.146-.006-.313-.006-.479-.006a.91.91 0 0 0-.666.312c-.23.25-.875.854-.875 2.083s.896 2.416 1.021 2.583c.125.166 1.761 2.687 4.266 3.77 2.016.87 2.628.937 3.37.79.742-.146 2.396-.98 2.729-1.916.333-.938.333-1.75.23-1.917-.104-.166-.354-.25-.604-.375z"/></svg>
+                    </button>
+                </div>
+                
+                <!-- AdSense Space Below Everything -->
+                <div class="w-full flex justify-center border-t border-slate-700/50 pt-4">
+                    <div class="w-full bg-darkBg/50 border border-dashed border-slate-600 rounded-xl p-2 flex flex-col items-center justify-center min-h-[100px]">
+                        <span class="text-[10px] text-slate-500 mb-1 font-bold tracking-widest uppercase">REKLAM BÖLGESİ</span>
+                        <!-- GOOGLE ADSENSE CODE HERE -->
+                        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+                        <ins class="adsbygoogle"
+                             style="display:block"
+                             data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+                             data-ad-slot="XXXXXXXXXX"
+                             data-ad-format="auto"
+                             data-full-width-responsive="true"></ins>
+                        <script>
+                             (adsbygoogle = window.adsbygoogle || []).push({});
+                        </script>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -214,7 +289,7 @@
     <div id="home-view" class="w-full max-w-md px-6 py-12 flex flex-col items-center fade-in overflow-y-auto">
         <div class="text-center mb-12">
             <h1 class="text-4xl tracking-tight">
-                <span class="font-bold text-white">kelimearası</span><span class="font-light text-accent">.com</span>
+                <span class="font-bold text-white">kelimearasi</span><span class="font-light text-accent">.com</span>
             </h1>
             <p class="text-sm text-gray-400 mt-2">Kelime oyunları platformu</p>
         </div>
@@ -244,6 +319,25 @@
                 <span class="font-semibold tracking-wide text-sm text-center">Kelime<br>Çemberi</span>
             </div>
         </div>
+
+        <!-- YASAL SAYFALAR FOOTER -->
+        <div class="mt-16 mb-2 w-full flex flex-col items-center justify-center gap-4">
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 text-xs text-slate-500 font-semibold w-full px-2">
+                <div class="flex items-center justify-center gap-3">
+                    <button onclick="openLegalModal('hakkimizda')" class="hover:text-accent transition-colors">Hakkımızda</button>
+                    <span class="text-slate-700">•</span>
+                    <button onclick="openLegalModal('gizlilik')" class="hover:text-accent transition-colors">Gizlilik Politikası</button>
+                    <span class="hidden sm:block text-slate-700">•</span>
+                </div>
+                <div class="flex items-center justify-center gap-3">
+                    <button onclick="openLegalModal('sartlar')" class="hover:text-accent transition-colors">Kullanım Şartları</button>
+                    <span class="text-slate-700">•</span>
+                    <button onclick="openLegalModal('iletisim')" class="hover:text-accent transition-colors">İletişim</button>
+                </div>
+            </div>
+            <div class="text-[10px] text-slate-600 font-medium tracking-wide">&copy; 2026 kelimearasi.com. Tüm hakları saklıdır.</div>
+        </div>
+
     </div>
 
     <!-- OYUN İÇİ PANEL (GAME VIEW) -->
@@ -251,7 +345,11 @@
         
         <!-- Üst Kontrol Paneli -->
         <div class="flex items-center justify-between py-4 border-b border-slate-800 shrink-0">
-            <button id="home-btn" class="text-2xl text-gray-300 hover:text-white transition-colors p-2" title="Ana Sayfa">🏠</button>
+            <!-- BURAYA İPUCU BUTONU EKLENDİ -->
+            <div class="flex items-center gap-1">
+                <button id="home-btn" class="text-2xl text-gray-300 hover:text-white transition-colors p-2" title="Ana Sayfa">🏠</button>
+                <button id="help-btn" class="text-2xl text-gray-300 hover:text-white transition-colors p-2" title="Nasıl Oynanır?">❓</button>
+            </div>
             <h2 id="current-game-title" class="text-xl font-bold tracking-wide">Oyun Adı</h2>
             <div class="flex items-center gap-2">
                 <span id="toggle-text" class="text-sm font-medium text-accent">Günlük</span>
@@ -340,7 +438,7 @@
                     <div id="cember-timer" class="text-3xl font-bold text-rose-500 mb-6 drop-shadow-md tracking-widest transition-colors z-10 mt-4">05:00</div>
                     
                     <!-- Çember Wraparı -->
-                    <div id="cember-circle-wrap" class="relative w-[90vw] max-w-[360px] aspect-square rounded-full border-[3px] border-slate-600/60 shadow-[0_0_40px_rgba(0,0,0,0.5)] shrink-0 mx-auto">
+                    <div id="cember-circle-wrap" class="relative w-[85vw] max-w-[340px] aspect-square rounded-full border-[3px] border-slate-600/60 shadow-[0_0_40px_rgba(0,0,0,0.5)] shrink-0 mx-auto my-auto">
                         
                         <!-- Etraftaki Harfler (Çizgi Üstünde) -->
                         <div id="cember-letters-layer" class="absolute inset-0 pointer-events-none z-20"></div>
@@ -354,13 +452,12 @@
                             </div>
                             
                             <!-- Metin Giriş Alanı -->
-                            <input type="text" id="cember-input" class="w-full max-w-[150px] h-12 bg-darkBg text-white text-center font-bold text-xl rounded-xl border-2 border-slate-500 focus:border-accent shadow-inner outline-none transition-colors mb-3 uppercase" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="CEVAP">
+                            <input type="text" id="cember-input" class="w-full max-w-[150px] h-12 bg-darkBg text-white text-center font-bold text-xl rounded-xl border-2 border-slate-500 focus:border-accent shadow-inner outline-none transition-colors mb-3 uppercase" autocomplete="off" autocorrect="off" spellcheck="false" inputmode="none" placeholder="CEVAP">
                             
                             <!-- Merkez Butonları -->
                             <div class="flex gap-1.5 w-full max-w-[190px] justify-center">
-                                <button id="cember-end-btn" class="flex-[0.8] py-2 bg-rose-700 hover:bg-rose-600 rounded-lg font-bold text-white shadow-md active:scale-95 transition-all text-[11px] sm:text-xs tracking-wider" title="Oyunu erken bitir">BİTİR</button>
-                                <button id="cember-pass-btn" class="flex-[1] py-2 bg-yellow-600 hover:bg-yellow-500 rounded-lg font-bold text-white shadow-md active:scale-95 transition-all text-xs tracking-wider">PAS</button>
-                                <button id="cember-submit-btn" class="flex-[1.5] py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-bold text-white shadow-md active:scale-95 transition-all text-xs tracking-wider">CEVAP</button>
+                                <button id="cember-end-btn" class="flex-[0.6] py-2 bg-rose-700 hover:bg-rose-600 rounded-lg font-bold text-white shadow-md active:scale-95 transition-all text-[11px] sm:text-xs tracking-wider" title="Oyunu erken bitir">BİTİR</button>
+                            
                             </div>
                         </div>
                     </div>
@@ -439,9 +536,7 @@
 
         // KULLANICI TARAFINDAN VERİLEN 4 HARFLİLERİ SISTEME İNJEKTE ETME:
         
-        
-        // Klasik .txt kelime listesini parse edip 4 harfli allowed listesine ekliyoruz.
-// ==============================================================
+        // ==============================================================
         // EKLENECEK YENİ KELİME YÜKLEYİCİ KOD BURADAN BAŞLIYOR
         // ==============================================================
         
@@ -453,7 +548,7 @@
 
         // 4 HARFLİ KELİMELER
         WORD_LISTS[4] = {
-            target: parseWords(`abla, açık, acil, aciz, açkı, açma, adak, adam, aday, adet, adil, adım, afet, afiş, ağaç, ağır, ağız, ağrı, aşçı, ahır, aile, ajan, akar, akçe, akıl, akım, akın, akış, akit, akma, aksi, alan, alay, alçı, alet, alev, algı, alım, alın, alış, alma, altı, amaç, aman, amca, amel, amir, anaç, anıt, anma, anne, araç, arap, argo, arka, arpa, arsa, artı, arzu, asap, aşık, asil, asıl, asır, asit, askı, asla, asma, aşma, atak, ateş, atık, atım, atış, atkı, atlı, atma, atom, avcı, avlu, avuç, ayak, ayar, ayaz, ayet, ayık, ayıp, ayna, aynı, ayrı, ayva, azap, azar, azat, azık, azim, aziz, azma, azot, baba, baca, bacı, bade, baki, bank, bant, baro, batı, bayi, bazı, bela, beli, bere, beri, besi, beze, bile, bina, bira, biri, blok, boca, boğa, boks, bono, bora, borç, boru, boya, boza, briç, büro, burs, büyü, cadı, cami, cani, cari, ceza, cilt, cins, cips, cüce, cuma, cüzi, çaba, çakı, çalı, çapa, çare, çark, çatı, çene, çete, çift, çile, çivi, çoğu, daha, dahi, daim, dama, dana, dans, dara, darı, darp, dava, dayı, dede, defa, defo, deli, deme, denk, depo, dere, deri, ders, dert, deve, dişi, disk, diye, dizi, doğa, doğu, doku, dolu, dört, doru, dost, duba, duyu, ebat, ecel, ecza, edat, edep, eğer, eğik, eğim, eğri, ehil, ekim, ekin, ekip, ekli, ekme, eksi, ekşi, elde, elek, elem, elli, elma, emek, emel, emin, emir, emme, ense, epey, erik, erim, erme, esas, eşek, eser, eşik, esin, esir, eşit, eski, eşya, etek, eter, etki, etli, etme, evet, evli, evre, ezan, ezel, ezgi, ezik, ezme, faal, fail, faiz, faks, fani, fare, fark, farz, faul, feci, feda, felç, fena, fıçı, fide, fiil, file, film, filo, flaş, flüt, fobi, form, foto, foya, fren, fuar, füze, gaga, gaip, gani, garp, gasp, gaye, gaza, gazi, gebe, gece, gemi, genç, gene, geri, gezi, gibi, gıda, gişe, golf, göre, göze, gram, grev, grip, grup, gücü, güdü, günü, gürz, güve, güya, hacı, hadi, hain, hala, halı, halk, halt, hami, hane, hani, harç, harf, harp, hata, hava, hece, hela, hele, hibe, hile, hınç, hırs, hiza, hobi, hoca, huni, huri, iade, ibre, icap, icat, için, içki, içli, içme, icra, idam, idol, iğde, iğne, ikaz, ikiz, ikna, ikon, ilaç, ilah, ilan, ilçe, ilgi, ilik, ilim, ilke, imaj, imal, imam, iman, imar, imge, imha, imla, imza, inat, ince, inci, inek, iniş, inme, inşa, ipek, irin, işçi, isim, işli, işte, işve, itiş, itme, ivme, izah, izci, izin, ılık, ırak, ışık, ısıl, ısın, ışın, ıtır, jale, jant, jest, jile, jöle, judo, jüri, kaba, kaçı, kadı, kafa, kafe, kafi, kaka, kala, kale, kalp, kama, kamp, kamu, kana, kanı, kano, kant, kaos, kapı, kara, kare, karı, kart, kasa, kaşe, kask, kast, katı, kaya, kaza, kazı, keçe, keçi, kedi, kefe, keke, kele, kene, kent, kere, kese, kesi, kete, keza, kile, kilo, kimi, kına, kira, kırk, kısa, kişi, kist, kıta, kivi, kıyı, klip, klon, klor, koca, koku, kola, köle, koli, koma, komi, konç, koni, kont, konu, koro, kort, koru, köse, köşe, köşk, koşu, kota, kötü, kova, koyu, koza, kral, krem, kreş, kriz, krom, kron, kros, küfe, kuğu, kuka, kula, kule, kulp, kült, kuma, küme, künk, kupa, küpe, kura, küre, kürk, kurs, kurt, kuru, kuşe, kutu, kuyu, kuzu, laik, laka, lake, lale, lama, lapa, lata, lava, leke, lenf, lens, leva, lise, loça, loda, logo, lort, lüks, lüle, maaş, maça, maço, mail, maki, mala, mali, malt, mama, mana, mani, mant, mapa, marj, mark, mars, marş, mart, masa, maşa, mask, maun, mavi, maya, mayo, mazi, meal, meme, meni, menü, mera, meri, mert, meşe, mesh, meşk, mest, meta, meze, mika, mine, mini, miza, moda, mola, mont, mönü, morg, mors, muaf, muço, mudi, müft, müge, mülk, murt, muta, muti, müze, naaş, naat, naif, nail, naip, name, nane, nara, nato, Nazi, nebi, nema, nene, neon, nere, neşe, neva, niye, nice, nida, nine, nisa, niza, Noel, norm, nota, nötr, nüks, obez, obje, obua, obur, odun, ofis, oğul, oğuz, okçu, okka, okul, okur, olay, oldu, olgu, olma, olta, oluk, olur, oluş, omca, omur, omuz, onam, onar, onay, onca, onlu, onma, onur, opak, opal, orak, oral, oran, ordu, orta, oruç, otçu, otel, otlu, otsu, otuz, oval, ovma, oyma, oysa, oyuk, oyun, ozan, ozon, öbek, öbür, ödem, ödev, ödül, ödün, öfke, öğle, öğün, öğüt, ökçe, öküz, ölçü, ölme, ölü, ölüm, ömür, önce, öncü, önem, önlü, öpme, öpüş, ören, örgü, örme, örtü, ötme, ötüş, övgü, övme, öykü, öyle, özel, özen, özet, özge, özgü, özlü, özne, özür, paça, paha, pakt, pala, pano, papa, para, pare, park, pars, paşa, paso, pata, pati, paye, pazı, peçe, peki, pena, pens, peri, pert, pest, pide, pike, piko, pile, pipi, pipo, pire, pisi, pişi, pist, plaj, plak, plan, polo, popo, posa, post, poşu, pota, pres, prim, priz, puan, puma, punç, punt, pupa, püre, puro, pusu, raca, rakı, raks, rampa, rant, rast, razı, reel, reis, reji, renk, repo, rest, reva, revü, reze, rica, ring, risk, riya, rıza, Rize, roba, roka, röle, rota, rozet, ruhi, rulo, rüya, saat, saba, sabi, saçı, sade, safa, safi, sağı, saha, sahi, saik, sair, saka, saki, sala, salı, salt, sana, sanı, sapa, sara, sarf, sarı, sarp, satı, saya, sayı, seda, sefa, seki, seks, sela, sele, sema, semt, sena, sene, sent, sera, sere, seri, sert, sevk, seza, sezi, sıkı, sıla, sili, silo, sima, sine, sini, sıpa, sıra, sırf, sirk, Sırp, sırt, site, sıva, sıvı, sızı, skeç, skor, Slav, slip, smaç, snop, soba, sobe, soda, sofa, sofu, soku, solo, soma, sone, sopa, sörf, soru, sota, sote, söve, soya, spor, spot, staj, star, stat, step, stil, stok, stop, stor, sual, sucu, süet, sufi, süit, süje, sulh, sulu, suma, suna, suni, sunu, sura, sure, süre, sürü, suşi, şaft, şair, şaka, şaki, şale, şali, şans, şarj, şark, şart, şase, şasi, şaşı, şato, şavk, şema, şems, şerh, şeri, şevk, şeyh, şiar, şifa, şiir, şike, şile, şıra, şirk, şişe, şive, şoke, şort, şose, şube, şule, şura, şuur, taam, taat, taba, tabi, tabu, taht, taka, takı, takt, tali, tane, tanı, tank, tapa, tapu, tarz, tasa, tava, taya, tayf, tayt, taze, tazı, tefe, teke, tema, tepe, tepki, tere, terk, ters, test, teyp, tifo, tike, tını, tıpa, tipi, tire, toka, topu, töre, tork, tost, toto, trap, tren, trio, trip, trol, trük, trup, tuba, tunç, tura, türe, Türk, turp, tutu, tüyo, tüze, uçak, uçar, uçlu, uçma, uçuk, uçuş, ucuz, ufak, ufuk, uğra, uğur, uhde, ukde, ulaç, ulak, ulan, ulus, umar, umma, umre, umum, umur, umut, uncu, uruk, uşak, uslu, usta, usul, utku, utma, uyak, uyar, uydu, uygu, uyku, uyma, uyum, uyur, uyuz, uzak, uzam, uzay, uzun, uzuv, üçer, üçlü, ücra, üçüz, üleş, ülke, ülkü, ümit, ünlü, ürün, üste, üvey, üzüm, vaat, vaaz, vade, vadi, vaha, vahi, vaiz, vaka, vaki, vaks, vale, valf, vali, vals, vana, vasi, vazo, veba, veda, vefa, veli, vena, veri, veto, veya, vida, vinç, vira, vize, vole, voli, volt, vuku, vuru, yaba, yağı, yahu, yaka, yakı, yalı, yama, yani, yapı, yara, yarı, yasa, yaşa, yatı, yaya, yazı, yedi, yeis, yeke, yele, yeme, yeni, yeti, yıkı, yine, yoga, yöre, yüce, yuha, yuma, yuna, yurt, yuva, zaaf, zade, zail, zait, zamk, zapt, zarf, zati, zayi, zeka, zeki, zevk, zift, zina, zira, zırh, ziya, zoka, zona, zula`, 4),
+            target: parseWords(`abla, açık, acil, aciz, açkı, açma, adak, adam, aday, adet, adil, adım, afet, afiş, ağaç, ağır, ağız, ağrı, aşçı, ahır, aile, ajan, akar, akçe, akıl, akım, akın, akış, akit, akma, aksi, alan, alay, alçı, alet, alev, algı, alım, alın, alış, alma, altı, amaç, aman, amca, amel, amir, anaç, anıt, anma, anne, araç, arap, argo, arka, arpa, arsa, artı, arzu, asap, aşık, asil, asıl, asır, asit, askı, asla, asma, aşma, atak, ateş, atık, atım, atış, atkı, atlı, atma, atom, avcı, avlu, avuç, ayak, ayar, ayaz, ayet, ayık, ayıp, ayna, aynı, ayrı, ayva, azap, azar, azat, azık, azim, aziz, azma, azot, baba, baca, bacı, bade, baki, bank, bant, baro, batı, bayi, bazı, bela, beli, bere, beri, besi, beze, bile, bina, bira, biri, blok, boca, boğa, boks, bono, bora, borç, boru, boya, boza, briç, büro, burs, büyü, cadı, cami, cani, cari, ceza, cilt, cins, cips, cüce, cuma, cüzi, çaba, çakı, çalı, çapa, çare, çark, çatı, çene, çete, çift, çile, çivi, çoğu, daha, dahi, daim, dama, dana, dans, dara, darı, darp, dava, dayı, dede, defa, defo, deli, deme, denk, depo, dere, deri, ders, dert, deve, dişi, disk, diye, dizi, doğa, doğu, doku, dolu, dört, doru, dost, duba, duyu, ebat, ecel, ecza, edat, edep, eğer, eğik, eğim, eğri, ehil, ekim, ekin, ekip, ekli, ekme, eksi, ekşi, elde, elek, elem, elli, elma, emek, emel, emin, emir, emme, ense, epey, erik, erim, erme, esas, eşek, eser, eşik, esin, esir, eşit, eski, eşya, etek, eter, etki, etli, etme, evet, evli, evre, ezan, ezel, ezgi, ezik, ezme, faal, fail, faiz, faks, fani, fare, fark, farz, faul, feci, feda, felç, fena, fıçı, fide, fiil, file, film, filo, flaş, flüt, fobi, form, foto, foya, fren, fuar, füze, gaga, gaip, gani, garp, gasp, gaye, gaza, gazi, gebe, gece, gemi, genç, gene, geri, gezi, gibi, gıda, gişe, golf, göre, göze, gram, grev, grip, grup, gücü, güdü, günü, gürz, güve, güya, hacı, hadi, hain, hala, halı, halk, halt, hami, hane, hani, harç, harf, harp, hata, hava, hece, hela, hele, hibe, hile, hınç, hırs, hiza, hobi, hoca, huni, huri, iade, ibre, icap, icat, için, içki, içli, içme, icra, idam, idol, iğde, iğne, ikaz, ikiz, ikna, ikon, ilaç, ilah, ilan, ilçe, ilgi, ilik, ilim, ilke, imaj, imal, imam, iman, imar, imge, imha, imla, imza, inat, ince, inci, inek, iniş, inme, inşa, ipek, irin, işçi, isim, işli, işte, işve, itiş, itme, ivme, izah, izci, izin, ılık, ırak, ışık, ısıl, ısın, ışın, ıtır, jale, jant, jest, jile, jöle, judo, jüri, kaba, kaçı, kadı, kafa, kafe, kafi, kaka, kala, kale, kalp, kama, kamp, kamu, kana, kanı, kano, kant, kaos, kapı, kara, kare, karı, kart, kasa, kaşe, kask, kast, katı, kaya, kaza, kazı, keçe, keçi, kedi, kefe, keke, kele, kene, kent, kere, kese, kesi, kete, keza, kile, kilo, kimi, kına, kira, kırk, kısa, kişi, kist, kıta, kivi, kıyı, klip, klon, klor, koca, koku, kola, köle, koli, koma, komi, konç, koni, kont, konu, koro, kort, koru, köse, köşe, köşk, koşu, kota, kötü, kova, koyu, koza, kral, krem, kreş, kriz, krom, kron, kros, küfe, kuğu, kuka, kula, kule, kulp, kült, kuma, küme, künk, kupa, küpe, kura, küre, kürk, kurs, kurt, kuru, kuşe, kutu, kuyu, kuzu, laik, laka, lake, lale, lama, lapa, lata, lava, leke, lenf, lens, leva, lise, loça, loda, logo, lort, lüks, lüle, maaş, maça, maço, mail, maki, mala, mali, malt, mama, mana, mani, mant, mapa, marj, mark, mars, marş, mart, masa, maşa, mask, maun, mavi, maya, mayo, mazi, meal, meme, meni, menü, mera, meri, mert, meşe, mesh, meşk, mest, meta, meze, mika, mine, mini, miza, moda, mola, mont, mönü, morg, mors, muaf, muço, mudi, müft, müge, mülk, murt, muta, muti, müze, naaş, naat, naif, nail, naip, name, nane, nara, nato, Nazi, nebi, nema, nene, neon, nere, neşe, neva, niye, nice, nida, nine, nisa, niza, Noel, norm, nota, nötr, nüks, obez, obje, obua, obur, odun, ofis, oğul, oğuz, okçu, okka, okul, okur, olay, oldu, olgu, olma, olta, oluk, olur, oluş, omca, omur, omuz, onam, onar, onay, onca, onlu, onma, onur, opak, opal, orak, oral, oran, ordu, orta, oruç, otçu, otel, otlu, otsu, otuz, oval, ovma, oyma, oysa, oyuk, oyun, ozan, ozon, öbek, öbür, ödem, ödev, ödül, ödün, öfke, öğle, öğün, öğüt, ökçe, öküz, ölçü, ölme, ölü, ölüm, ömür, önce, öncü, önem, önlü, öpme, öpüş, ören, örgü, örme, örtü, ötme, ötüş, övgü, övme, öykü, öyle, özel, özen, özet, özge, özgü, özlü, özne, özür, paça, paha, pakt, pala, pano, papa, para, pare, park, pars, paşa, paso, pata, pati, paye, pazı, peçe, peki, pena, pens, peri, pert, pest, pide, pike, piko, pile, pipi, pipo, pire, pisi, pişi, pist, plaj, plak, plan, polo, popo, posa, post, poşu, pota, pres, prim, priz, puan, puma, punç, punt, pupa, püre, puro, pusu, raca, rakı, raks, rampa, rant, rast, razı, reel, reis, reji, renk, repo, rest, reva, revü, reze, rica, ring, risk, riya, rıza, Rize, roba, roka, röle, rota, rozet, ruhi, rulo, rüya, saat, saba, sabi, saçı, sade, safa, safi, sağı, saha, sahi, saik, sair, saka, saki, sala, salı, salt, sana, sanı, sapa, sara, sarf, sarı, sarp, satı, saya, sayı, seda, sefa, seki, seks, sela, sele, sema, semt, sena, sene, sent, sera, sere, seri, sert, sevk, seza, sezi, sıkı, sıla, sili, silo, sima, sine, sini, sıpa, sıra, sırf, sirk, Sırp, sırt, site, sıva, sıvı, sızı, skeç, skor, Slav, slip, smaç, snop, soba, sobe, soda, sofa, sofu, soku, solo, soma, sone, sopa, sörf, soru, sota, sote, söve, soya, spor, spot, staj, star, stat, step, stil, stok, stop, stor, sual, sucu, süet, sufi, süit, süje, sulh, sulu, suma, suna, suni, sunu, sura, sure, süre, sürü, suşi, şaft, şair, şaka, şaki, şale, şali, şans, şarj, şark, şart, şase, şasi, şaşı, şato, şavk, şema, şems, şerh, şeri, şevk, şeyh, şiar, şifa, şiir, şike, şile, şıra, şirk, şişe, şive, şoke, şort, şose, şube, şule, şura, şuur, taam, taat, taba, tabi, tabu, taht, taka, takı, takt, tali, tane, tanı, tank, tapa, tapu, tarz, tasa, tava, taya, tayf, tayt, taze, tazı, tefe, teke, tema, tepe, tepki, tere, terk, ters, test, teyp, tifo, tike, tını, tıpa, tipi, tire, toka, topu, töre, tork, tost, toto, trap, tren, trio, trip, trol, trük, trup, tuba, tunç, tura, türe, Türk, turp, tutu, tüyo, tüze, uçak, uçar, uçlu, uçma, uçuk, uçuş, ucuz, ufak, ufuk, uğra, uğur, uhde, ukde, ulaç, ulak, ulan, ulus, umar, umma, umre, umum, umur, umut, uncu, uruk, uşak, uslu, usta, usul, utku, utma, uyak, uyar, uydu, uygu, uyku, uyma, uyum, uyur, uyuz, uzak, uzam, uzay, uzun, uzuv, üçer, üçlü, ücra, üçüz, üleş, ülke, ülkü, ümit, ünlü, ürün, üste, üvey, üzüm, vaat, vaaz, vade, vadi, vaha, vahi, vaiz, vaka, vaki, vaks, vale, valf, vali, vals, vana, vasi, vazo, veba, veda, vefa, veli, vena, veri, veto, veya, vida, vinç, vira, vize, vole, voli, volt, vuku, vuru, yaba, yağı, yahu, yaka, yakı, yalı, yama, yani, yapı, yara, yarı, yasa, yaşa, yatı, yaya, yazı, yedi, yeis, yeke, yele, yeme, yeni, yeti, yıkı, yine, yoga, yöre, yüce, yuha, yuma, yuna, yurt, yuva, zaaf, zade, zail, zait, zamk, zapt, zarf, zati, zayi, zeka, zeki, zevk, zift, zina, zira, zırh, ziya, zoka, zona, zula `, 4),
             allowed: parseWords(`abak 		
 abat 		
 abes 		
@@ -2868,7 +2963,7 @@ haki
             "ZEBRA", "ZEBUN", "ZEHİR", "ZEKaT", "ZELİL", "ZEMİN", "ZENCİ", "ZERDE", "ZERRE", "ZEVAL", 
             "ZEVAT", "ZEVCE", "ZIBIN", "ZİFİR", "ZİHİN", "ZİHNÎ", "ZİKİR", "ZİLLİ", "ZIMBA", "ZİNDE", 
             "ZIPIR", "ZİRAİ", "ZIRVA", "ZİRVE", "ZİYAN", "ZOMBİ", "ZORBA", "ZORLA", "ZORLU", "ZORUN", 
-            "ZUHUR", "ZÜLÜF", "ZULÜM", "ZÜMRE", "ZÜPPE"
+            "ZUHUR", "ZÜLÜF", "ZULÜM", "ZÜMRE", "ZÜPPE",
         ]`, 5),
             allowed: parseWords(`abacı 		
 abadi 		
@@ -8592,7 +8687,8 @@ Hanoi
 Atina 		
 cıvıl 		
 ılıca 		
-unvan`, 5)
+unvan
+`, 5)
         };
 
         // 6 HARFLİ KELİMELER
@@ -15420,7 +15516,6 @@ Hartum
 Maskat 		
 Lusaka 		
 Harare 		
-
 `, 6)
         };
 
@@ -15496,6 +15591,12 @@ Harare
         const gameOverModal = document.getElementById('game-over-modal');
         const restoreModalContainer = document.getElementById('restore-modal-container');
         const adContainer = document.getElementById('modal-ad-container');
+
+        // YENİ: İpucu Modal Elementleri
+        const helpBtn = document.getElementById('help-btn');
+        const helpModal = document.getElementById('help-modal');
+        const helpCloseBtn = document.getElementById('help-close-btn');
+        const helpText = document.getElementById('help-text');
 
         // --- 3. YARDIMCI FONKSİYONLAR ---
         const trCompare = (a, b) => a.localeCompare(b, 'tr');
@@ -15593,40 +15694,40 @@ Harare
             
             if (currentMode === "unlimited") {
                 unlimitedGamesPlayed++;
-                if (unlimitedGamesPlayed % 5 === 0) {
-                    adContainer.classList.remove('hidden');
-                } else {
-                    adContainer.classList.add('hidden');
-                }
-            } else {
-                adContainer.classList.add('hidden');
             }
 
+            // Metin ve İçerik Doldurma
             const title = document.getElementById('modal-title');
-            title.textContent = isWin ? "Tebrikler!" : "Oyun Bitti";
-            title.className = `text-3xl font-bold mb-4 tracking-wide drop-shadow-md shrink-0 ${isWin ? 'text-emerald-400' : 'text-rose-400'}`;
+            title.textContent = isWin ? "Kazandın" : "Oyun Bitti";
+            title.className = `text-3xl font-bold mb-3 tracking-wide drop-shadow-md shrink-0 ${isWin ? 'text-emerald-400' : 'text-rose-400'}`;
             
-            const wordContainer = document.getElementById('modal-word-container');
-            const statsContainer = document.getElementById('modal-stats-container');
+            const subtitle = document.getElementById('modal-subtitle');
+            subtitle.textContent = isWin ? "Kelimeyi tahmin ettin" : "Kelimeyi bulamadın";
+            
+            const wordBox = document.getElementById('modal-target-word');
+            const meaningLink = document.getElementById('modal-meaning-link');
             const cemberDetails = document.getElementById('modal-cember-details');
             
-            wordContainer.innerHTML = '';
+            const dailyTextElement = document.getElementById('modal-daily-text');
+            const challengeTextElement = document.getElementById('modal-challenge-text');
             
             if (currentGame === "Kelime Çemberi") {
                 const correctCount = state.answers.filter(a => a === 'correct').length;
-                const total = WORD_LISTS.cember.length;
+                const total = state.sorular.length; 
                 
-                wordContainer.className = "flex flex-col items-center justify-center gap-1 mb-2 w-full shrink-0";
-                wordContainer.innerHTML = `<div class="text-xl font-bold text-white">Skorunuz: <span class="text-accent">${correctCount} / ${total}</span></div>`;
+                wordBox.textContent = `SKOR: ${correctCount} / ${total}`;
+                meaningLink.classList.add('hidden');
                 
-                statsContainer.classList.add('hidden');
                 cemberDetails.classList.remove('hidden');
                 cemberDetails.classList.add('flex');
                 
-                // Detaylı Accordion Listesi
+                dailyTextElement.textContent = "Yarın yeni çemberde görüşürüz!";
+                challengeTextElement.textContent = "Bir arkadaşınıza bu çemberle meydan okuyun";
+
+                // Detaylı Accordion Listesi (Koyu Tema İçin Güncellendi)
                 let detailsHtml = '';
                 for (let i = 0; i < total; i++) {
-                    const lObj = WORD_LISTS.cember[i];
+                    const lObj = state.sorular[i]; 
                     const targetsStr = Array.isArray(lObj.target) ? lObj.target.join(', ') : lObj.target;
                     const ans = state.answers[i];
                     const userInp = state.userInputs[i] || "";
@@ -15634,8 +15735,8 @@ Harare
                     let icon = '', textColor = '';
                     if (ans === 'correct') { icon = '✅'; textColor = 'text-emerald-400'; }
                     else if (ans === 'wrong') { icon = '❌'; textColor = 'text-rose-400'; }
-                    else if (ans === 'passed') { icon = '⏭️'; textColor = 'text-yellow-400'; }
-                    else { icon = '⏳'; textColor = 'text-slate-400'; } // pending
+                    else if (ans === 'passed') { icon = '⏭️'; textColor = 'text-amber-400'; }
+                    else { icon = '⏳'; textColor = 'text-slate-400'; } 
 
                     detailsHtml += `
                         <div class="border-b border-slate-700/50 last:border-0 w-full">
@@ -15664,35 +15765,34 @@ Harare
             } else {
                 cemberDetails.classList.add('hidden');
                 cemberDetails.classList.remove('flex');
+                meaningLink.classList.remove('hidden');
                 
-                wordContainer.className = "flex justify-center gap-2 mb-4 w-full flex-wrap shrink-0";
-                statsContainer.classList.remove('hidden');
-                for (let char of state.targetWord) {
-                    const box = document.createElement('div');
-                    box.className = `w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xl sm:text-2xl font-bold rounded uppercase text-white shadow-md ${isWin ? 'bg-wCorrect border-wCorrect' : 'bg-slate-700 border-slate-600 border-2'}`;
-                    box.textContent = char;
-                    wordContainer.appendChild(box);
-                }
-                document.getElementById('modal-guess-label').textContent = "TAHMİN";
-                document.getElementById('modal-guess-count').textContent = state.guesses.length;
+                dailyTextElement.textContent = "Yarın yeni kelimede görüşürüz!";
+                challengeTextElement.textContent = "Bir arkadaşınıza bu kelimeyle meydan okuyun";
+                
+                wordBox.textContent = state.targetWord;
+                meaningLink.href = `https://www.google.com/search?q=${state.targetWord}+ne+demek`;
             }
             
+            // Süre Hesaplama Formatı MM:SS
             const time = state.elapsedTime || 0;
-            document.getElementById('modal-time').textContent = time >= 60 ? `${Math.floor(time/60)}m ${time%60}s` : `${time}s`;
+            const m = Math.floor(time/60).toString().padStart(2, '0');
+            const s = (time%60).toString().padStart(2, '0');
+            document.getElementById('modal-time').textContent = `${m}:${s}`;
             
             const nextBtn = document.getElementById('modal-next-btn');
-            const dailyText = document.getElementById('modal-daily-text');
             
             if (currentMode === "daily") {
                 nextBtn.classList.add('hidden');
-                dailyText.classList.remove('hidden', 'flex');
-                dailyText.classList.add('flex');
+                dailyTextElement.classList.remove('hidden', 'flex');
+                dailyTextElement.classList.add('flex');
             } else {
                 nextBtn.classList.remove('hidden');
-                dailyText.classList.add('hidden');
-                dailyText.classList.remove('flex');
+                dailyTextElement.classList.add('hidden');
+                dailyTextElement.classList.remove('flex');
             }
             
+            const gameOverModal = document.getElementById('game-over-modal');
             gameOverModal.classList.remove('hidden');
             void gameOverModal.offsetWidth; 
             gameOverModal.classList.remove('opacity-0', 'pointer-events-none');
@@ -15726,6 +15826,7 @@ Harare
         };
 
         function closeGameOverModal() {
+            const gameOverModal = document.getElementById('game-over-modal');
             gameOverModal.classList.add('opacity-0', 'pointer-events-none');
             document.getElementById('modal-content').classList.add('scale-95');
             setTimeout(() => {
@@ -15741,13 +15842,111 @@ Harare
             showGameOverModal(state);
         });
 
+        // Meydan Okuma modunu sıfırlayan yardımcı fonksiyon
+        function exitChallengeMode() {
+            if (currentMode === "challenge") {
+                currentMode = "unlimited";
+                const toggle = document.getElementById('mode-toggle');
+                toggle.disabled = false;
+                toggle.checked = true;
+                toggle.parentElement.classList.remove('opacity-50', 'pointer-events-none');
+                document.getElementById('toggle-text').textContent = "Sınırsız";
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
         document.getElementById('modal-next-btn').addEventListener('click', () => {
             closeGameOverModal();
+            exitChallengeMode();
             if(currentGame === "Arasında") { startNewArasindaGame(false); initArasinda(); }
             if(currentGame === "Sözcükle") { startNewSozcukleGame(false); initSozcukle(); }
             if(currentGame === "Baş Harf") { startNewBasharfGame(false); initBasharf(); }
             if(currentGame === "Kelime Çemberi") { startNewCemberGame(); initCember(); }
         });
+
+        // EMOJI VE PAYLAŞIM MANTIĞI YENİ
+        function generateChallengeLink(state) {
+            if (currentGame === "Kelime Çemberi") return "https://kelimearasi.com";
+            const encodedWord = btoa(encodeURIComponent(state.targetWord));
+            const encodedGame = encodeURIComponent(currentGame);
+            const baseUrl = window.location.origin + window.location.pathname;
+            return `${baseUrl}?challenge=${encodedWord}&game=${encodedGame}`;
+        }
+
+        function generateChallengeText(state) {
+            const time = state.elapsedTime || 0;
+            const m = Math.floor(time/60).toString().padStart(2, '0');
+            const s = (time%60).toString().padStart(2, '0');
+            const solved = state.status === "won" ? 'çözdüm' : 'çözemedim';
+            const link = generateChallengeLink(state);
+            
+            let targetWordStr = "bu kelimeyle";
+            if (currentGame === "Kelime Çemberi") targetWordStr = "bu çemberle";
+            
+            return `Kelime Arası - ${currentGame} oyununu ${m}:${s} sürede ${solved}!\n\nSen de ${targetWordStr} bana meydan okumaya var mısın?\n${link}`;
+        }
+
+        function generateEmojiGrid(state) {
+            const time = state.elapsedTime || 0;
+            const m = Math.floor(time/60).toString().padStart(2, '0');
+            const s = (time%60).toString().padStart(2, '0');
+            let grid = `Kelime Arası - ${currentGame}\n⏳ Süre: ${m}:${s}\n\n`;
+
+            if (currentGame === "Sözcükle" || currentGame === "Baş Harf") {
+                state.guesses.forEach(g => {
+                    const evals = evaluateWordleGuess(g, state.targetWord);
+                    grid += evals.map(e => e === 'correct' ? '🟩' : e === 'present' ? '🟨' : '⬛').join('') + '\n';
+                });
+            } else if (currentGame === "Arasında") {
+                state.guesses.forEach(g => {
+                    const comp = trCompare(g, state.targetWord);
+                    if (comp === 0) grid += '🟩\n';
+                    else if (comp < 0) grid += '⬇️\n';
+                    else grid += '⬆️\n';
+                });
+            } else if (currentGame === "Kelime Çemberi") {
+                let line = "";
+                state.answers.forEach((a, idx) => {
+                    if (a === 'correct') line += '🟩';
+                    else if (a === 'wrong') line += '🟥';
+                    else if (a === 'passed') line += '🟨';
+                    else line += '⬛';
+                    if ((idx+1)%7===0) line += '\n';
+                });
+                grid += line + '\n';
+            }
+            grid += "\nhttps://kelimearasi.com";
+            return grid;
+        }
+
+        document.getElementById('modal-challenge-btn').addEventListener('click', () => {
+            const state = currentGame === "Arasında" ? arasindaState : currentGame === "Sözcükle" ? sozcukleState : currentGame === "Kelime Çemberi" ? cemberState : basharfState;
+            const text = generateChallengeText(state);
+            navigator.clipboard.writeText(text).then(() => showToast("Meydan okuma metni kopyalandı!", "bg-blue-500"));
+        });
+
+        document.getElementById('modal-emoji-btn').addEventListener('click', () => {
+            const state = currentGame === "Arasında" ? arasindaState : currentGame === "Sözcükle" ? sozcukleState : currentGame === "Kelime Çemberi" ? cemberState : basharfState;
+            const text = generateEmojiGrid(state);
+            navigator.clipboard.writeText(text).then(() => showToast("Sonuç emojileri kopyalandı!", "bg-blue-500"));
+        });
+
+        window.shareSocial = function(network) {
+            const state = currentGame === "Arasında" ? arasindaState : currentGame === "Sözcükle" ? sozcukleState : currentGame === "Kelime Çemberi" ? cemberState : basharfState;
+            const text = encodeURIComponent(generateChallengeText(state));
+            const url = encodeURIComponent("https://kelimearasi.com");
+            let shareUrl = "";
+            
+            switch(network) {
+                case 'twitter': shareUrl = `https://twitter.com/intent/tweet?text=${text}`; break;
+                case 'whatsapp': shareUrl = `https://api.whatsapp.com/send?text=${text}`; break;
+                case 'facebook': shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`; break;
+                case 'reddit': shareUrl = `https://reddit.com/submit?url=${url}&title=${text}`; break;
+                case 'messenger': shareUrl = `fb-messenger://share/?link=${url}`; break;
+                case 'snapchat': shareUrl = `https://snapchat.com/scan?attachmentUrl=${url}`; break;
+            }
+            if(shareUrl) window.open(shareUrl, '_blank');
+        }
 
         function calculateElapsedTime(state) {
             if (!state.elapsedTime && state.startTime) {
@@ -15908,7 +16107,7 @@ Harare
             } else {
                 startNewBasharfGame(false);
             }
-            if (basharfState.guesses.length === 0 && basharfState.status === "playing") currentInputValue = basharfState.targetWord[0];
+            if (basharfState.status === "playing") currentInputValue = basharfState.targetWord[0];
             renderBasharfUI();
         }
 
@@ -16041,16 +16240,11 @@ Harare
                         const char = currentInputValue[c] || "";
                         box.textContent = char;
                         
-                        if (c === 0 && r === 0) box.classList.add('bg-wCorrect', 'border-wCorrect', 'text-white');
+                        if (c === 0) box.classList.add('bg-wCorrect', 'border-wCorrect', 'text-white');
                         else if (char) box.classList.add('border-slate-400', 'bg-darkBg', 'text-white');
                         else box.classList.add('border-slate-700', 'bg-darkBg', 'text-white');
                     } else {
-                        if (r === 0 && c === 0 && !animatingGuess && basharfState.guesses.length === 0) {
-                            box.textContent = basharfState.targetWord[0];
-                            box.classList.add('bg-wCorrect', 'border-wCorrect', 'text-white');
-                        } else {
-                            box.classList.add('border-slate-700', 'bg-darkBg', 'text-white');
-                        }
+                        box.classList.add('border-slate-700', 'bg-darkBg', 'text-white');
                     }
                     bGrid.appendChild(box);
                 }
@@ -16298,14 +16492,17 @@ Harare
                 
                 box.textContent = letterObj.harf;
                 
+                // Matematiksel Kusursuz Dağılım
                 const angle = (i * 360 / N) - 90; 
                 const rad = angle * Math.PI / 180;
-                const r = 50; 
+                const r = 50; // Tekrar çizginin üstüne aldık
                 const x = 50 + r * Math.cos(rad);
                 const y = 50 + r * Math.sin(rad);
                 
                 box.style.left = `${x}%`;
                 box.style.top = `${y}%`;
+                box.style.transform = "translate(-50%, -50%)"; // İŞTE KAYMAYI %100 ÇÖZEN ORTALAMA KODU
+                
                 cLettersLayer.appendChild(box);
             }
 
@@ -16328,12 +16525,10 @@ Harare
             if (e.key === 'Enter') processCemberGuess(false);
         });
         cInput.addEventListener('input', (e) => {
-            e.target.value = e.target.value.toLocaleUpperCase('tr-TR').replace(/[^A-ZÇĞIİÖŞÜ]/g, '');
+            e.target.value = e.target.value.toLocaleUpperCase('tr-TR').replace(/[^A-ZÇĞIİÖŞÜ ]/g, '');
         });
         
         // Buton Event Listener'ları
-        cPassBtn.addEventListener('click', () => processCemberGuess(true));
-        cSubmitBtn.addEventListener('click', () => processCemberGuess(false));
         cEndBtn.addEventListener('click', () => endCemberGameEarly());
         // --- 8. ORTAK İŞLEMLER VE SANAL KLAVYELER ---
 
@@ -16364,7 +16559,8 @@ Harare
                 rowDiv.className = "flex justify-center gap-1 w-full";
                 row.forEach(key => {
                     const btn = document.createElement('button');
-                    btn.className = `vk-key flex-1 h-11 sm:h-12 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center shadow-sm uppercase`;
+                    // Telefonlarda ezilmemesi için h-11 yerine h-10 kullanıyoruz
+                    btn.className = `vk-key flex-1 h-10 sm:h-12 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center shadow-sm uppercase`;
                     btn.dataset.key = key;
                     btn.textContent = key === "DEL" ? "⌫" : key;
                     if (key === "DEL") btn.classList.add('special', 'max-w-[50px]');
@@ -16373,6 +16569,33 @@ Harare
                 });
                 cKeyboardKeys.appendChild(rowDiv);
             });
+
+            /// --- YENİ: PAS, BOŞLUK VE ENTER TUŞLARI YAN YANA ---
+            const actionRow = document.createElement('div');
+            actionRow.className = "flex justify-center gap-1 sm:gap-2 mt-1 w-full px-1";
+
+            // PAS Tuşu (Sola)
+            const passBtn = document.createElement('button');
+            passBtn.className = "vk-key bg-amber-500 hover:bg-amber-400 text-white flex-[0.35] max-w-[85px] flex items-center justify-center font-bold rounded-lg shadow-md uppercase text-[11px] sm:text-sm tracking-widest h-10 sm:h-12 active:scale-95 transition-transform";
+            passBtn.textContent = "PAS";
+            passBtn.addEventListener('click', () => processCemberGuess(true)); // true = pas geç
+
+            // BOŞLUK Tuşu (Ortaya)
+            const spaceBtn = document.createElement('button');
+            spaceBtn.className = "vk-key special flex-1 flex items-center justify-center font-bold rounded-lg shadow-md uppercase text-[11px] sm:text-sm tracking-widest h-10 sm:h-12 active:scale-95 transition-transform";
+            spaceBtn.textContent = "BOŞLUK";
+            spaceBtn.addEventListener('click', () => handleCemberKeyClick(' '));
+
+            // ENTER Tuşu (Sağa)
+            const enterBtn = document.createElement('button');
+            enterBtn.className = "vk-key bg-emerald-600 hover:bg-emerald-500 text-white flex-[0.35] max-w-[85px] flex items-center justify-center font-bold rounded-lg shadow-md uppercase text-[11px] sm:text-sm tracking-widest h-10 sm:h-12 active:scale-95 transition-transform";
+            enterBtn.textContent = "CEVAP";
+            enterBtn.addEventListener('click', () => processCemberGuess(false));
+
+            actionRow.appendChild(passBtn);
+            actionRow.appendChild(spaceBtn);
+            actionRow.appendChild(enterBtn);
+            cKeyboardKeys.appendChild(actionRow);
         }
 
         // Initialize Klavyeler
@@ -16452,7 +16675,7 @@ Harare
             if (state.status !== "playing") return;
 
             if (key === "DEL") {
-                if (currentGame === "Baş Harf" && basharfState.guesses.length === 0) {
+                if (currentGame === "Baş Harf") {
                     if (currentInputValue.length > 1) currentInputValue = currentInputValue.slice(0, -1);
                 } else {
                     if (currentInputValue.length > 0) currentInputValue = currentInputValue.slice(0, -1);
@@ -16563,7 +16786,11 @@ Harare
                     calculateElapsedTime(state);
                 }
                 
-                currentInputValue = ""; 
+                if (currentGame === "Baş Harf" && state.status === "playing") {
+                    currentInputValue = state.targetWord[0];
+                } else {
+                    currentInputValue = ""; 
+                }
                 saveGameState(currentGame === "Sözcükle" ? 'sozcukle' : 'basharf');
                 
                 if (currentGame === "Sözcükle") renderSozcukleUI(true);
@@ -16573,7 +16800,74 @@ Harare
 
         if(aSubmitBtn) aSubmitBtn.addEventListener('click', () => { if(currentInputValue.length === currentLength) processGuess(); });
 
-        // --- 9. NAVİGASYON ---
+        // --- 9. NAVİGASYON VE KURALLAR ---
+
+        // OYUN KURALLARI SABİTİ (Modal İçin)
+        const GAME_RULES = {
+            "Arasında": "<ul class='list-disc pl-5 space-y-2 text-slate-300'><li>Hedef kelimeyi alfabetik sıraya göre bulmaya çalışın.</li><li>Tahminleriniz kelimenin alfabetik olarak neresinde kaldığına göre <b class='text-indigo-400'>'DAHA İLERİ'</b> veya <b class='text-emerald-400'>'DAHA GERİ'</b> olarak yönlendirilir.</li><li>Doğru kelimeyi bulmak için 14 hakkınız var!</li></ul>",
+            "Sözcükle": "<ul class='list-disc pl-5 space-y-2 text-slate-300'><li>Klasik kelime tahmin oyunu. 6 hakkınız var.</li><li><span class='text-green-400 font-bold'>Yeşil:</span> Harf kelimede var ve doğru yerde.</li><li><span class='text-yellow-400 font-bold'>Sarı:</span> Harf kelimede var ama yeri yanlış.</li><li><span class='text-slate-400 font-bold'>Gri:</span> Harf kelimede yok.</li></ul>",
+            "Baş Harf": "<ul class='list-disc pl-5 space-y-2 text-slate-300'><li>İlk harfi verilen hedef kelimeyi 6 denemede bulmaya çalışın.</li><li>Renklendirme kuralları 'Sözcükle' oyunu ile aynıdır (Yeşil, Sarı, Gri).</li></ul>",
+            "Kelime Çemberi": "<ul class='list-disc pl-5 space-y-2 text-slate-300'><li>Çemberin etrafındaki her harf için bir ipucu verilir.</li><li>İpucuna bakarak o harfle başlayan doğru kelimeyi bulmaya çalışın.</li><li>Bilemezseniz <b class='text-amber-400'>'PAS'</b> diyerek bir sonraki harfe geçebilirsiniz.</li><li>Süre dolmadan en çok doğruyu yapmayı hedefleyin!</li></ul>"
+        };
+
+        // YENİ EKLENEN İPUCU BUTONU OLAYLARI
+        helpBtn.addEventListener('click', () => {
+            helpText.innerHTML = GAME_RULES[currentGame] || "Bu oyunun kuralları henüz eklenmedi.";
+            helpModal.classList.remove('hidden');
+            void helpModal.offsetWidth;
+            helpModal.classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('help-modal-content').classList.remove('scale-95');
+        });
+
+        helpCloseBtn.addEventListener('click', () => {
+            helpModal.classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('help-modal-content').classList.add('scale-95');
+            setTimeout(() => helpModal.classList.add('hidden'), 500);
+        });
+
+        // --- YASAL SAYFALAR MODAL VE İÇERİK YAPISI ---
+        const legalModal = document.getElementById('legal-modal');
+        const legalContentData = {
+            'hakkimizda': {
+                title: 'Hakkımızda',
+                icon: '🚀',
+                content: `<p class="mb-3"><b>kelimearasi.com</b>, kelime oyunu severler ve dil meraklıları için geliştirilmiş modern, minimalist ve tamamen ücretsiz bir Türkçe platformdur.</p><p>İçerisinde <b>'Sözcükle'</b>, <b>'Arasında'</b>, <b>'Baş Harf'</b> ve <b>'Kelime Çemberi'</b> gibi hem dil bilginizi hem de analitik düşünme yeteneğinizi test eden zeka oyunlarını barındırır. Amacımız her yaştan kullanıcıya karmaşadan uzak, eğlenceli ve öğretici bir deneyim sunmaktır.</p>`
+            },
+            'gizlilik': {
+                title: 'Gizlilik Politikası',
+                icon: '🔒',
+                content: `<p class="mb-3">Sitemizde herhangi bir üyelik sistemi bulunmamaktadır. Ad, soyad, e-posta gibi kişisel verileriniz tarafımızca <b>kesinlikle toplanmaz ve işlenmez</b>.</p><p class="mb-4">Oyun istatistikleriniz, başarılarınız ve skorlarınız tamamen kendi cihazınızın/tarayıcınızın yerel hafızasında (localStorage) saklanır.</p><div class="p-3 bg-[#0d1b2a]/80 rounded-lg border border-slate-600 text-[12px] leading-relaxed italic">Üçüncü taraf satıcı olarak Google, sitemizde reklam yayınlamak için çerezlerden yararlanır. Google'ın reklam çerezlerini kullanması, kullanıcılarımıza sitemize yaptıkları ziyaretlere dayalı ilgi alanlarına göre reklamlar sunmasına olanak tanır. Kullanıcılar dilerlerse Google reklam ve içerik ağı gizlilik politikasını ziyaret ederek bu çerezlerin kullanımını engelleyebilir.</div>`
+            },
+            'sartlar': {
+                title: 'Kullanım Şartları',
+                icon: '⚖️',
+                content: `<ul class="list-disc pl-5 space-y-2"><li><b>kelimearasi.com</b> eğitim ve eğlence amaçlı sunulan tamamen ücretsiz bir hizmettir.</li><li>Sitede yer alan oyunların temel mantıkları, görsel tasarımları, arayüz kodları ve Türkçe kelime havuzunun telif hakları kelimearasi.com'a aittir.</li><li>Site işleyişine zarar verecek, haksız skor elde edilmesini sağlayacak üçüncü parti hileli yazılımların veya botların kullanılması yasaktır.</li><li>Platformumuzu kullanarak bu temel kullanım şartlarını kabul etmiş sayılırsınız.</li></ul>`
+            },
+            'iletisim': {
+                title: 'İletişim',
+                icon: '✉️',
+                content: `<p class="mb-5 text-center">Her türlü hata bildirimi (bug), kelime önerisi, şikayet veya reklam & iş birliği talepleriniz için bize e-posta yoluyla ulaşabilirsiniz:</p><div class="bg-cardBg p-4 rounded-xl border border-slate-600 text-center shadow-inner"><a href="mailto:iletisim@kelimearasi.com" class="text-accent font-bold text-lg hover:text-indigo-400 transition-colors underline underline-offset-4">iletisim@kelimearasi.com</a></div>`
+            }
+        };
+
+        window.openLegalModal = function(pageKey) {
+            const data = legalContentData[pageKey];
+            document.getElementById('legal-modal-icon').textContent = data.icon;
+            document.getElementById('legal-modal-title').textContent = data.title;
+            document.getElementById('legal-modal-text').innerHTML = data.content;
+            
+            legalModal.classList.remove('hidden');
+            void legalModal.offsetWidth;
+            legalModal.classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('legal-modal-content').classList.remove('scale-95');
+        };
+
+        document.getElementById('legal-close-btn').addEventListener('click', () => {
+            legalModal.classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('legal-modal-content').classList.add('scale-95');
+            setTimeout(() => legalModal.classList.add('hidden'), 500);
+        });
+        // ---------------------------------------------
 
         function switchGame(name) {
             currentGame = name;
@@ -16628,6 +16922,7 @@ Harare
 
         document.getElementById('home-btn').addEventListener('click', () => {
             clearInterval(cemberTimerInterval);
+            exitChallengeMode();
             gameView.classList.add('hidden');
             setTimeout(() => homeView.classList.remove('hidden'), 50);
         });
@@ -16661,6 +16956,7 @@ Harare
             }
             switchGame(currentGame);
         });
+
 // --- KELİME ÇEMBERİ YENİ VERİ HAVUZU ---
 const CEMBER_POOL = {
     "A": [
@@ -18894,6 +19190,56 @@ const CEMBER_POOL = {
 };
 
 // Mevcut çember verisini bu havuzla beslemek veya entegre etmek için kullanabilirsin.
+
+
+        // --- SAYFA YÜKLENİNCE URL KONTROLÜ (MEYDAN OKUMA MODU) ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const challengeParam = params.get('challenge');
+            const gameParam = params.get('game');
+            
+            if (challengeParam && gameParam) {
+                try {
+                    const targetWord = decodeURIComponent(atob(challengeParam));
+                    currentMode = "challenge";
+                    currentGame = gameParam;
+                    currentLength = targetWord.length;
+                    
+                    // Modalı/Home'u gizle, oyunu aç
+                    homeView.classList.add('hidden');
+                    gameView.classList.remove('hidden');
+                    document.getElementById('current-game-title').textContent = currentGame;
+                    
+                    // Butonları gizle (Günlük/Sınırsız toggle'ı meydan okumada kapalı)
+                    document.getElementById('word-length-selector').style.display = "none";
+                    document.getElementById('toggle-text').textContent = "Meydan Okuma";
+                    const toggle = document.getElementById('mode-toggle');
+                    toggle.disabled = true;
+                    toggle.parentElement.classList.add('opacity-50', 'pointer-events-none');
+                    
+                    // Oyunu Başlat
+                    if (currentGame === "Arasında") {
+                        arasindaContainer.classList.remove('hidden');
+                        arasindaState = { targetWord: targetWord, guesses: [], lowerBound: null, upperBound: null, status: "playing", startTime: Date.now(), elapsedTime: null };
+                        aKeyboardContainer.style.display = "flex";
+                        renderArasindaUI();
+                    } else if (currentGame === "Sözcükle") {
+                        sozcukleContainer.classList.remove('hidden');
+                        sozcukleState = { targetWord: targetWord, guesses: [], status: "playing", startTime: Date.now(), elapsedTime: null };
+                        aKeyboardContainer.style.display = "flex";
+                        renderSozcukleUI();
+                    } else if (currentGame === "Baş Harf") {
+                        bContainer.classList.remove('hidden');
+                        basharfState = { targetWord: targetWord, guesses: [], status: "playing", startTime: Date.now(), elapsedTime: null };
+                        currentInputValue = targetWord[0];
+                        aKeyboardContainer.style.display = "flex";
+                        renderBasharfUI();
+                    }
+                } catch (e) {
+                    console.error("Geçersiz meydan okuma linki", e);
+                }
+            }
+        });
 
     </script>
 </body>
