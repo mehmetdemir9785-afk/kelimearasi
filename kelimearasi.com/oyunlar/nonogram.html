@@ -168,13 +168,15 @@
     <!-- Help Modal -->
     <div id="helpModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 modal p-4">
         <div class="bg-panel p-6 rounded-2xl max-w-md w-full border border-gray-700 shadow-2xl modal-content">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-white">Nasıl Oynanır?</h2>
-            <div class="seo-content-block mt-3 mb-4 p-4 bg-violet-50/50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-800/20 rounded-xl text-sm text-gray-700 dark:text-gray-300 shadow-sm">
-                <h3 class="font-bold text-violet-800 dark:text-violet-300 mb-1.5">Kare Karalama (Nonogram) Nedir?</h3>
-                <p class="leading-relaxed">Nonogram, satır ve sütunların başındaki sayı ipuçlarına bakarak ızgaradaki belirli kareleri boyadığınız ve sonunda gizli bir resim oluşturduğunuz Japon mantık bulmacasıdır.</p>
+            <div class="relative mb-5 text-center">
+                <h2 class="text-lg font-bold text-white tracking-wide uppercase">NASIL OYNANIR?</h2>
+                <button onclick="hideModal('helpModal')" class="absolute -top-2 -right-2 p-1 text-gray-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
-                <button onclick="hideModal('helpModal')" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            <div class="mb-6 p-4 rounded-xl bg-indigo-900/30 border border-indigo-700/50 text-sm shadow-sm">
+                <h3 class="font-bold text-indigo-300 mb-2">Kare Karalama (Nonogram) Nedir?</h3>
+                <p class="text-gray-300 leading-relaxed">Nonogram, satır ve sütunların başındaki sayı ipuçlarına bakarak ızgaradaki belirli kareleri boyadığınız ve sonunda gizli bir resim oluşturduğunuz Japon mantık bulmacasıdır.</p>
             </div>
             <div class="text-sm text-gray-300 space-y-3">
                 <p><strong>Amaç:</strong> Satır ve sütunlardaki ipuçlarına (sayılara) bakarak gizli resmi ortaya çıkarmaktır.</p>
@@ -188,7 +190,6 @@
                     <li><strong class="text-gray-300">Cansız Mod:</strong> Hata kontrolü anında yapılmaz, sadece bulmaca tamamen doğru çözüldüğünde oyun biter. Can veya ipucu hakkı bulunmaz.</li>
                 </ul>
             </div>
-            <button onclick="hideModal('helpModal')" class="w-full mt-6 py-3 bg-gray-800 text-white font-bold rounded-xl hover:bg-gray-700 transition">Anladım</button>
         </div>
     </div>
 

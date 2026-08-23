@@ -279,62 +279,62 @@
         </button>
     </footer>
 
-    <!-- ====== HOW TO PLAY MODAL ====== -->
-    <div id="modal-help" class="fixed inset-0 flex items-center justify-center bg-gray-900/40 dark:bg-black/80 backdrop-blur-sm z-[100] hidden">
-        <div class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 rounded-2xl shadow-2xl w-[90%] max-w-md p-6 animate-slide-up transition-colors duration-300">
-            <!-- Header -->
-            <div class="flex items-center justify-between mb-5">
-                <h2 class="text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 dark:from-purple-400 dark:to-pink-500 text-transparent bg-clip-text">Nasıl Oynanır?</h2>
-            <div class="seo-content-block mt-3 mb-4 p-4 bg-violet-50/50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-800/20 rounded-xl text-sm text-gray-700 dark:text-gray-300 shadow-sm">
-                <h3 class="font-bold text-violet-800 dark:text-violet-300 mb-1.5">Vezirler Nedir?</h3>
-                <p class="leading-relaxed">Vezirler, satrançtaki vezir taşının hareket kurallarına dayanan bir mantık oyunudur. Amacınız, hiçbir vezirin birbiriyle aynı satır, sütun veya köşegende olmayacağı şekilde onları ızgaraya yerleştirmektir.</p>
-            </div>
-                <button id="btn-close-help" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white">
-                    ✕
-                </button>
-            </div>
-            <!-- Rules -->
-            <div class="space-y-4 text-sm text-gray-600 dark:text-slate-300 leading-relaxed">
-                <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center shrink-0 mt-0.5">🎯</div>
-                    <div>
-                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Amaç</div>
-                        <div>8×8 tahtaya <strong class="text-yellow-600 dark:text-yellow-400">8 adet Vezir (👑)</strong> yerleştir. Her renk bölgesine tam olarak 1 vezir konulmalıdır.</div>
-                    </div>
-                </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">👆</div>
-                    <div>
-                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Tıklama Döngüsü</div>
-                        <div>Bir hücreye tıkladığında sırasıyla: <span class="text-gray-400 dark:text-slate-400">Boş</span> → <span class="text-yellow-600 dark:text-yellow-400">👑 (Vezir)</span> → <span class="text-gray-500 dark:text-slate-400 font-bold">✕ (İşaret)</span> → <span class="text-gray-400 dark:text-slate-400">Boş</span>. <br><span class="text-xs text-gray-400 dark:text-slate-400 italic">(Sağ tık ile direkt ✕ koyabilirsin)</span></div>
-                    </div>
-                </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0 mt-0.5">⚠️</div>
-                    <div>
-                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Kurallar</div>
-                        <div>Aynı <strong>satır</strong>, <strong>sütun</strong>, <strong>renk bölgesi</strong> veya <strong>çapraz komşu</strong> (1 kare yakınında) hücrelerde birden fazla vezir bulunamaz.</div>
-                    </div>
-                </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-500/20 flex items-center justify-center shrink-0 mt-0.5">✕</div>
-                    <div>
-                        <div class="font-semibold text-gray-900 dark:text-white mb-1">İşaretleme</div>
-                        <div><strong class="text-gray-500 dark:text-slate-400">✕</strong> işareti, "buraya vezir koyma" hatırlatmasıdır. Oyunu etkilemez.</div>
-                    </div>
-                </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-yellow-100 dark:bg-yellow-500/20 flex items-center justify-center shrink-0 mt-0.5">🏆</div>
-                    <div>
-                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Kazanma</div>
-                        <div>8 veziri kurallara uygun yerleştirdiğinde bulmacayı çözmüş olursun!</div>
-                    </div>
-                </div>
-            </div>
+    <div id="modal-help" class="fixed inset-0 flex items-center justify-center bg-gray-900/40 dark:bg-[#0c0c1d]/90 backdrop-blur-sm z-[100] hidden">
+        <div class="bg-white dark:bg-[#16162a] border border-gray-200/60 dark:border-white/5 rounded-2xl shadow-2xl w-[95%] max-w-lg p-6 sm:p-8 animate-slide-up transition-colors duration-300 relative">
+            
             <!-- Close Button -->
-            <button id="btn-close-help-bottom" class="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all duration-200 font-semibold text-sm active:scale-95 text-white shadow-md">
-                Anladım!
+            <button id="btn-close-help" class="absolute right-4 top-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-900 dark:text-slate-500 dark:hover:text-white transition-colors">
+                <span class="text-xl font-light">✕</span>
             </button>
+
+            <!-- Header -->
+            <h2 class="text-lg sm:text-xl font-bold text-center text-gray-900 dark:text-white mb-6 tracking-wide uppercase">Nasıl Oynanır?</h2>
+            
+            <!-- Info Box -->
+            <div class="p-4 sm:p-5 bg-purple-50 dark:bg-[#231e3d] border border-purple-100 dark:border-[#3b3160] rounded-xl mb-5 shadow-sm">
+                <h3 class="font-bold text-purple-700 dark:text-[#b49cf8] mb-2 text-sm">Vezirler Nedir?</h3>
+                <p class="text-gray-700 dark:text-slate-300 text-sm leading-relaxed">Vezirler, satrançtaki vezir taşının hareket kurallarına dayanan bir mantık oyunudur. Amacınız, hiçbir vezirin birbiriyle aynı satır, sütun veya köşegende olmayacağı şekilde onları ızgaraya yerleştirmektir.</p>
+            </div>
+
+            <p class="text-gray-600 dark:text-slate-300 text-sm mb-4">Vezirler'de <strong class="text-gray-900 dark:text-white">8 adet veziri</strong> kurallara uygun yerleştirmeye çalışırsın!</p>
+
+            <!-- Rules Box -->
+            <div class="bg-gray-50 dark:bg-[#1b1c31] border border-gray-200/60 dark:border-transparent rounded-xl p-4 sm:p-5 mb-6">
+                <div class="flex flex-col gap-4 text-sm text-gray-600 dark:text-slate-300 leading-relaxed">
+                    <div class="flex items-start gap-3">
+                        <span class="shrink-0 mt-0.5">🎯</span>
+                        <p>8×8 tahtaya <strong class="text-gray-900 dark:text-white">8 adet Vezir</strong> yerleştir. Her renk bölgesine tam olarak 1 vezir konulmalıdır.</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="shrink-0 mt-0.5">⚠️</span>
+                        <p>Aynı <strong class="text-gray-900 dark:text-white">satır</strong>, <strong class="text-gray-900 dark:text-white">sütun</strong>, <strong class="text-gray-900 dark:text-white">renk bölgesi</strong> veya <strong class="text-gray-900 dark:text-white">çapraz komşu</strong> (1 kare yakınında) hücrelerde birden fazla vezir bulunamaz.</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="shrink-0 mt-0.5">🏆</span>
+                        <p>8 veziri kurallara uygun yerleştirdiğinde bulmacayı <strong class="text-gray-900 dark:text-white">çözmüş olursun!</strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semboller -->
+            <h3 class="font-bold text-gray-900 dark:text-white text-sm mb-4">Hücre Sembolleri</h3>
+            <div class="flex flex-col gap-3 text-sm text-gray-600 dark:text-slate-300 mb-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 flex items-center justify-center shrink-0 text-xl border border-yellow-200 dark:border-yellow-500/30">👑</div>
+                    <p>Hücreye vezir yerleştirdiğini belirtir.</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-[#16162a] text-gray-500 dark:text-slate-400 flex items-center justify-center shrink-0 font-bold text-lg">✕</div>
+                    <p>"Buraya vezir koyma" hatırlatmasıdır.</p>
+                </div>
+            </div>
+
+            <!-- Tıklama Döngüsü -->
+            <h3 class="font-bold text-gray-900 dark:text-white text-sm mb-2">Tıklama ve Kısayollar</h3>
+            <p class="text-sm text-gray-600 dark:text-slate-300 leading-relaxed mb-4">
+                Bir hücreye sol tıkladığında sırasıyla: <strong class="text-gray-900 dark:text-white">Boş → Vezir (👑) → İşaret (✕) → Boş</strong> şeklinde değişir. Sağ tık ile hızlıca ✕ (İşaret) koyabilirsin.
+            </p>
+
         </div>
     </div>
 
@@ -509,7 +509,6 @@
         const modalWin = document.getElementById('modal-win');
         const btnHelp = document.getElementById('btn-help');
         const btnCloseHelp = document.getElementById('btn-close-help');
-        const btnCloseHelpBottom = document.getElementById('btn-close-help-bottom');
         const btnUndo = document.getElementById('btn-undo');
         const btnClear = document.getElementById('btn-clear');
         const btnNewGame = document.getElementById('btn-new-game');
@@ -1037,9 +1036,7 @@
             modalHelp.classList.add('hidden');
         });
 
-        btnCloseHelpBottom.addEventListener('click', () => {
-            modalHelp.classList.add('hidden');
-        });
+        // btnCloseHelpBottom removed in UI
 
         modalHelp.addEventListener('click', (e) => {
             if (e.target === modalHelp) {

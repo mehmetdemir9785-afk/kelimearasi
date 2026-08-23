@@ -457,16 +457,16 @@
     <!-- ====== YARDIM MODALI ====== -->
     <div id="helpModal" class="modal-overlay hidden">
         <div class="modal-content !max-w-[380px] max-h-[85vh] overflow-y-auto">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-bold bg-gradient-to-r from-red-500 to-rose-500 dark:from-red-400 dark:to-rose-400 text-transparent bg-clip-text">Nasıl Oynanır?</h2>
-            <div class="seo-content-block mt-3 mb-4 p-4 bg-violet-50/50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-800/20 rounded-xl text-sm text-gray-700 dark:text-gray-300 shadow-sm">
+            <button id="closeHelpBtn" class="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors z-50 cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-gray-400 pointer-events-none"></i>
+            </button>
+            <h2 class="text-center text-lg font-bold text-gray-800 dark:text-gray-200 tracking-wider uppercase mb-4">Nasıl Oynanır?</h2>
+            
+            <div class="seo-content-block mt-3 mb-4 p-4 bg-violet-50/50 dark:bg-violet-900/30 border border-violet-100 dark:border-violet-800/50 rounded-xl text-sm text-gray-700 dark:text-gray-300 shadow-sm text-left">
                 <h3 class="font-bold text-violet-800 dark:text-violet-300 mb-1.5">Meyve Izgarası Nedir?</h3>
                 <p class="leading-relaxed">Meyve Izgarası, belirli mantık kurallarına ve ipuçlarına göre meyveleri ızgaraya doğru şekilde yerleştirdiğiniz bir zeka bulmacasıdır. Satır ve sütunlardaki kısıtlamaları hesaplayarak çözüme ulaşın.</p>
             </div>
-                <button id="closeHelpBtn" class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors relative z-50 cursor-pointer">
-                    <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-slate-400 pointer-events-none"></i>
-                </button>
-            </div>
+            
             <div class="text-left text-sm text-gray-600 dark:text-slate-300 space-y-3">
                 <p>Izgarayı 🫐 (Yaban Mersini) ve 🍋 (Limon) ile doldurun. Hücreye tıklayarak meyve döngüsü yapın:</p>
                 <div class="flex items-center justify-center gap-2 py-2 text-base">
@@ -515,7 +515,6 @@
                     <p class="text-xs">Canlı modda hatalı hamle yaptığınızda hemen uyarı alırsınız ve can kaybedersiniz. Cansız modda kontrol yapılmaz.</p>
                 </div>
             </div>
-            <button id="helpOkBtn" class="mt-5 w-full py-2.5 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white font-semibold rounded-xl relative z-50 cursor-pointer shadow-md transition-colors">Anladım</button>
         </div>
     </div>
 
@@ -1410,9 +1409,6 @@
             document.getElementById('closeHelpBtn').addEventListener('click', () => {
                 document.getElementById('helpModal').classList.add('hidden');
             });
-            document.getElementById('helpOkBtn').addEventListener('click', () => {
-                document.getElementById('helpModal').classList.add('hidden');
-            });
             document.getElementById('helpModal').addEventListener('click', (e) => {
                 if (e.target === e.currentTarget) document.getElementById('helpModal').classList.add('hidden');
             });
@@ -1483,11 +1479,7 @@
             lucide.createIcons();
             initGame();
 
-            // Show help on first visit
-            if (!localStorage.getItem('fruitgrid_helpSeen')) {
-                document.getElementById('helpModal').classList.remove('hidden');
-                localStorage.setItem('fruitgrid_helpSeen', 'true');
-            }
+            // Yardım sayfası artık otomatik açılmıyor, sadece butona tıklandığında açılacak.
         }
 
         // Wait for DOM

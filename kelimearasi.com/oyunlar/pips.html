@@ -259,62 +259,72 @@
     </div>
 
     <!-- ===== HELP MODAL ===== -->
-    <div id="helpModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay">
-        <div class="bg-white dark:bg-[#12122b] border border-gray-200 dark:border-gray-700/60 rounded-2xl max-w-sm w-full mx-4 p-5 modal-anim shadow-2xl max-h-[85vh] overflow-y-auto">
-            <h2 class="text-lg font-extrabold mb-3 text-center tracking-wide text-gray-900 dark:text-white">DOMINO Nasıl Oynanır?</h2>
+    <div id="helpModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
+        <div class="bg-white dark:bg-[#12122b] border border-gray-200 dark:border-gray-700/50 rounded-2xl max-w-[420px] w-full p-6 modal-anim shadow-2xl max-h-[90vh] overflow-y-auto relative text-gray-700 dark:text-gray-300">
+            <!-- Close Button -->
+            <button onclick="hideHelpModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
 
-            <div class="space-y-3 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                <div>
-                    <div class="font-bold text-gray-900 dark:text-white mb-1">🎯 Amaç</div>
-                    <p>Tüm domino taşlarını doğru yuvalara yerleştirerek her bölgenin şartını sağla!</p>
+            <!-- Title -->
+            <h2 class="text-xl font-black mb-6 text-center tracking-wide text-gray-900 dark:text-white uppercase">NASIL OYNANIR?</h2>
+
+            <div class="space-y-5 text-[13px] leading-relaxed">
+                
+                <!-- Highlight Box -->
+                <div class="bg-indigo-50 dark:bg-[#1e1a3d]/60 border border-indigo-100 dark:border-indigo-500/20 rounded-xl p-4">
+                    <h3 class="font-bold text-indigo-700 dark:text-indigo-300 mb-2">DOMINO (PIPS) Nedir?</h3>
+                    <p class="opacity-90">
+                        Mantık yürüterek tüm domino taşlarını doğru yuvalara yerleştirmeye çalıştığınız zeka oyunudur. Renk ipuçlarını ve bölge şartlarını takip ederek günlük veya sınırsız modda beyin jimnastiği yapabilirsiniz.
+                    </p>
                 </div>
 
-                <div>
-                    <div class="font-bold text-white mb-1">📌 Nasıl Oynanır</div>
-                    <ul class="space-y-1 list-disc list-inside text-xs">
-                        <li>Tepside bir taşa dokun → Taş seçilir (parlak olur)</li>
-                        <li>Tahtada boş bir yuvaya dokun → Seçili taş oraya yerleşir</li>
-                        <li>Dolu bir yuvaya dokun (taş seçili değilken) → Taş döner (sayılar yer değiştirir)</li>
-                        <li>Tepside taş seçiliyken dolu yuvaya dokun → Taşlar yer değiştirir</li>
-                        <li>Seçili taşa tekrar dokun → Seçim iptal olur</li>
+                <div class="px-1">
+                    <p class="mb-3 font-medium">Tüm domino taşlarını yerleştir ve bölge şartlarını sağla!</p>
+                    <ul class="space-y-1.5 list-disc list-outside ml-4">
+                        <li>Tepside bir taşa dokunarak <strong>seç</strong>.</li>
+                        <li>Tahtada boş bir yuvaya dokunarak <strong>yerleştir</strong>.</li>
+                        <li>Dolu yuvaya dokunarak taşı <strong>döndür</strong>.</li>
+                        <li>Tepside taş seçiliyken dolu yuvaya dokunarak <strong>değiştir</strong>.</li>
                     </ul>
                 </div>
 
-                <div>
-                    <div class="font-bold text-white mb-1">📋 Bölge Şartları</div>
-                    <div class="grid grid-cols-2 gap-1.5 text-xs">
-                        <div class="bg-gray-800/50 rounded-lg p-2 flex items-center gap-2">
-                            <span class="inline-flex items-center justify-center w-6 h-6 bg-pink-600 text-white font-extrabold text-[10px] rounded" style="transform:rotate(45deg)"><span style="transform:rotate(-45deg)">5</span></span>
+                <hr class="border-gray-200 dark:border-gray-700/50">
+
+                <div class="px-1">
+                    <h3 class="font-bold text-gray-900 dark:text-white mb-3 text-sm">Örnek Bölge Şartları:</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <div class="bg-gray-100 dark:bg-gray-800/40 border border-gray-200 dark:border-transparent rounded-lg p-2.5 flex items-center gap-3">
+                            <span class="inline-flex items-center justify-center min-w-[24px] h-6 bg-pink-600 text-white font-extrabold text-[10px] rounded transform rotate-45"><span class="-rotate-45">5</span></span>
                             <span>Toplam tam 5 olmalı</span>
                         </div>
-                        <div class="bg-gray-800/50 rounded-lg p-2 flex items-center gap-2">
-                            <span class="inline-flex items-center justify-center w-6 h-6 bg-purple-600 text-white font-extrabold text-[10px] rounded" style="transform:rotate(45deg)"><span style="transform:rotate(-45deg)">=</span></span>
+                        <div class="bg-gray-100 dark:bg-gray-800/40 border border-gray-200 dark:border-transparent rounded-lg p-2.5 flex items-center gap-3">
+                            <span class="inline-flex items-center justify-center min-w-[24px] h-6 bg-purple-600 text-white font-extrabold text-[10px] rounded transform rotate-45"><span class="-rotate-45">=</span></span>
                             <span>Hepsi aynı olmalı</span>
                         </div>
-                        <div class="bg-gray-800/50 rounded-lg p-2 flex items-center gap-2">
-                            <span class="inline-flex items-center justify-center w-6 h-6 bg-teal-600 text-white font-extrabold text-[10px] rounded" style="transform:rotate(45deg)"><span style="transform:rotate(-45deg)">&lt;7</span></span>
+                        <div class="bg-gray-100 dark:bg-gray-800/40 border border-gray-200 dark:border-transparent rounded-lg p-2.5 flex items-center gap-3">
+                            <span class="inline-flex items-center justify-center min-w-[24px] h-6 bg-teal-600 text-white font-extrabold text-[10px] rounded transform rotate-45"><span class="-rotate-45">&lt;7</span></span>
                             <span>Toplam 7'den küçük</span>
                         </div>
-                        <div class="bg-gray-800/50 rounded-lg p-2 flex items-center gap-2">
-                            <span class="inline-flex items-center justify-center w-6 h-6 bg-orange-600 text-white font-extrabold text-[10px] rounded" style="transform:rotate(45deg)"><span style="transform:rotate(-45deg)">&gt;3</span></span>
+                        <div class="bg-gray-100 dark:bg-gray-800/40 border border-gray-200 dark:border-transparent rounded-lg p-2.5 flex items-center gap-3">
+                            <span class="inline-flex items-center justify-center min-w-[24px] h-6 bg-orange-600 text-white font-extrabold text-[10px] rounded transform rotate-45"><span class="-rotate-45">&gt;3</span></span>
                             <span>Toplam 3'ten büyük</span>
                         </div>
                     </div>
                 </div>
 
-                <div>
-                    <div class="font-bold text-white mb-1">💡 İpuçları</div>
-                    <ul class="space-y-1 list-disc list-inside text-xs">
-                        <li><strong>Temizle</strong> butonu tüm taşları tepsiye geri alır.</li>
-                        <li>Tüm yuvalar dolduğunda otomatik kontrol yapılır.</li>
-                        <li>Hatalı bölgeler kırmızı yanıp söner.</li>
-                    </ul>
+                <hr class="border-gray-200 dark:border-gray-700/50">
+
+                <div class="px-1">
+                    <h3 class="font-bold text-gray-900 dark:text-white mb-2 text-sm">Modlar:</h3>
+                    <div class="space-y-2">
+                        <p><span class="inline-block w-5 text-center">📅</span> <strong class="text-gray-900 dark:text-white">Günlük:</strong> Her gün yeni bir bulmaca. Herkes aynı haritayı çözer.</p>
+                        <p><span class="inline-block w-5 text-center">♾️</span> <strong class="text-gray-900 dark:text-white">Sınırsız:</strong> Dilediğin kadar oyna. Her seferinde farklı harita.</p>
+                    </div>
                 </div>
             </div>
-
-            <button onclick="hideHelpModal()" class="mt-4 w-full py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-xl font-bold text-sm transition-all duration-200 active:scale-[0.98]">
-                Anladım!
-            </button>
         </div>
     </div>
 

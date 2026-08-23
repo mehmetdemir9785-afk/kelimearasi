@@ -136,46 +136,66 @@
     <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-[60] bg-red-500/90 text-white px-6 py-3 rounded-full font-semibold shadow-lg text-sm backdrop-blur-sm whitespace-nowrap text-center"></div>
 
     <!-- NASIL OYNANIR MODAL -->
-    <div id="help-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/40 dark:bg-[#0c0c1d]/70 backdrop-blur-md modal-overlay p-4" style="display:none;">
-        <div id="help-modal-content" class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 rounded-3xl p-5 sm:p-7 w-full max-w-[420px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] modal-box flex flex-col items-center text-center max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div class="w-12 h-12 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-full flex items-center justify-center text-2xl mb-3 shrink-0">❓</div>
-            <h2 class="text-xl font-bold mb-4 tracking-wide text-gray-900 dark:text-white drop-shadow-sm shrink-0">Nasıl Oynanır?</h2>
-            <div class="seo-content-block mt-3 mb-4 p-4 bg-violet-50/50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-800/20 rounded-xl text-sm text-gray-700 dark:text-gray-300 shadow-sm">
-                <h3 class="font-bold text-violet-800 dark:text-violet-300 mb-1.5">Kelime 500 Nedir?</h3>
-                <p class="leading-relaxed">Kelime 500, sadece kaç harfin doğru olduğunu ve kaç tanesinin doğru yerde olduğunu gösteren, renk ipucu vermeyen zorlayıcı bir kelime tahmin oyunudur. Mastermind benzeri bu bulmacada mantık yürüterek asıl kelimeyi bulmaya çalışırsınız.</p>
+    <div id="help-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/40 dark:bg-[#0c0c1d]/80 backdrop-blur-md modal-overlay p-4" style="display:none;">
+        <div id="help-modal-content" class="bg-white dark:bg-[#15142b] border border-gray-200/60 dark:border-white/5 rounded-[24px] p-6 sm:p-8 w-full max-w-[420px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] modal-box flex flex-col relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+            
+            <!-- Kapatma Butonu -->
+            <button id="help-close-btn" class="absolute top-5 right-5 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors text-lg cursor-pointer select-none">
+                ✖️
+            </button>
+
+            <!-- Başlık -->
+            <h2 class="text-lg font-bold mb-6 tracking-wide text-gray-900 dark:text-white uppercase text-center mt-1">Nasıl Oynanır?</h2>
+
+            <!-- Nedir Kutusu -->
+            <div class="mb-5 p-4 bg-indigo-50/50 dark:bg-[#1d1b38] border border-indigo-100 dark:border-indigo-500/20 rounded-xl text-[14px] text-gray-700 dark:text-gray-300 shadow-sm text-left">
+                <h3 class="font-bold text-indigo-800 dark:text-indigo-300 mb-2">Kelime500 Nedir?</h3>
+                <p class="leading-relaxed">Kelime500, mantık yürüterek 8 denemede günün 5 harfli Türkçe kelimesini bulmaya çalıştığınız popüler Word500 oyununun yerli versiyonudur. Renk ipuçlarını (sayıları) takip ederek mantık yürütebilir, günlük veya sınırsız modda beyin jimnastiği yapabilirsiniz.</p>
             </div>
-            <div class="text-gray-600 dark:text-slate-300 text-sm leading-relaxed mb-5 font-medium text-left w-full space-y-4">
-                <div class="bg-gray-100/50 dark:bg-[#12122b]/50 p-4 rounded-xl border border-gray-200/60 dark:border-white/5">
-                    <p class="mb-2"><b class="text-gray-900 dark:text-white">🎯 Amaç:</b> Gizli 5 harfli kelimeyi 8 tahmin hakkında bulmak.</p>
-                    <p class="mb-2"><b class="text-gray-900 dark:text-white">🧩 Mantık:</b> Her tahminden sonra <b>hangi harfin doğru olduğu gösterilmez</b>. Bunun yerine, tahmininin sağındaki 3 kutu sana şu bilgiyi verir:</p>
-                    <div class="flex items-center gap-2 my-2 ml-2">
-                        <span class="w-7 h-7 rounded-md bg-green-600 flex items-center justify-center text-white font-bold text-xs">2</span>
-                        <span class="text-gray-600 dark:text-slate-300">→ 2 harf <b class="text-green-600 dark:text-green-400">doğru yerde</b></span>
+
+            <!-- Kurallar -->
+            <div class="text-[14px] text-gray-700 dark:text-gray-300 leading-relaxed text-left space-y-4">
+                <p>Gizli kelimeyi <b class="text-gray-900 dark:text-white">8 tahmin</b> hakkında bul!</p>
+                <p>Her tahmin, 5 harfli geçerli bir Türkçe kelime olmalıdır. Tahmini göndermek için <b class="text-gray-900 dark:text-white">Enter</b> tuşuna bas.</p>
+
+                <hr class="border-gray-200 dark:border-white/10 my-5">
+
+                <p><b class="text-gray-900 dark:text-white text-[15px]">Örnekler:</b></p>
+                <p class="text-[13px] text-gray-500 dark:text-gray-400">Kelimedeki harfler tek tek renklenmez. Bunun yerine sağ tarafta beliren sayılar size kelimenin bütünü hakkında ipucu verir:</p>
+
+                <!-- Örnek Gösterimi -->
+                <div class="mt-2">
+                    <div class="flex items-center gap-3 mb-2.5">
+                        <div class="flex gap-1">
+                            <div class="w-8 h-8 flex items-center justify-center rounded bg-gray-100 dark:bg-transparent border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white font-bold text-sm">K</div>
+                            <div class="w-8 h-8 flex items-center justify-center rounded bg-gray-100 dark:bg-transparent border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white font-bold text-sm">A</div>
+                            <div class="w-8 h-8 flex items-center justify-center rounded bg-gray-100 dark:bg-transparent border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white font-bold text-sm">L</div>
+                            <div class="w-8 h-8 flex items-center justify-center rounded bg-gray-100 dark:bg-transparent border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white font-bold text-sm">E</div>
+                            <div class="w-8 h-8 flex items-center justify-center rounded bg-gray-100 dark:bg-transparent border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white font-bold text-sm">M</div>
+                        </div>
+                        <div class="flex gap-1">
+                            <span class="w-6 h-6 rounded bg-green-600 flex items-center justify-center text-white font-bold text-[11px] shadow-sm">2</span>
+                            <span class="w-6 h-6 rounded bg-yellow-600 flex items-center justify-center text-white font-bold text-[11px] shadow-sm">1</span>
+                            <span class="w-6 h-6 rounded bg-slate-500 dark:bg-slate-600 flex items-center justify-center text-white font-bold text-[11px] shadow-sm">2</span>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2 my-2 ml-2">
-                        <span class="w-7 h-7 rounded-md bg-yellow-600 flex items-center justify-center text-white font-bold text-xs">1</span>
-                        <span class="text-gray-600 dark:text-slate-300">→ 1 harf <b class="text-yellow-600 dark:text-yellow-400">yanlış yerde</b></span>
-                    </div>
-                    <div class="flex items-center gap-2 my-2 ml-2">
-                        <span class="w-7 h-7 rounded-md bg-slate-600 flex items-center justify-center text-white font-bold text-xs">2</span>
-                        <span class="text-gray-600 dark:text-slate-300">→ 2 harf kelimede <b class="text-slate-600 dark:text-slate-400">hiç yok</b></span>
-                    </div>
-                    <p class="mt-3 text-[13px] text-gray-500 dark:text-slate-400">Toplam her zaman <b class="text-gray-900 dark:text-white">5</b> eder.</p>
+                    <p class="text-[13px] leading-relaxed">
+                        <b class="text-green-600 dark:text-green-400">2 harf</b> kelimede var ve doğru yerde.<br>
+                        <b class="text-yellow-600 dark:text-yellow-400">1 harf</b> kelimede var ama yanlış yerde.<br>
+                        <b class="text-slate-500 dark:text-slate-400">2 harf</b> kelimede hiç yok.
+                    </p>
                 </div>
-                <div class="bg-gray-100/50 dark:bg-[#12122b]/50 p-4 rounded-xl border border-gray-200/60 dark:border-white/5">
-                    <p class="mb-2"><b class="text-gray-900 dark:text-white">🎨 Not Alma:</b></p>
-                    <p class="text-[13px]">Hangi harfin hangi durumda olduğunu kendin çıkarmak zorundasın! Yardımcı olması için:</p>
-                    <ul class="list-disc pl-5 mt-2 space-y-1 text-[13px]">
-                        <li><b class="text-gray-900 dark:text-white">Klavyedeki</b> harflere tıklayarak renk döngüsü yap:<br>
-                        <span class="text-gray-500 dark:text-slate-400">Normal</span> → <span class="text-red-500 dark:text-red-400">Yok</span> → <span class="text-yellow-600 dark:text-yellow-400">Yanlış yer</span> → <span class="text-green-600 dark:text-green-400">Doğru yer</span> → <span class="text-gray-500 dark:text-slate-400">Normal</span></li>
-                        <li><b class="text-gray-900 dark:text-white">Tahmindeki</b> harflere de tıklayarak aynı renk döngüsünü uygula.</li>
-                    </ul>
-                </div>
-                <div class="bg-emerald-50/50 dark:bg-[#12122b]/50 p-4 rounded-xl border border-emerald-200 dark:border-emerald-700/30">
-                    <p class="text-[13px]"><b class="text-emerald-600 dark:text-emerald-400">💡 Örnek:</b> "KALEM" tahmininde <span class="inline-flex items-center gap-0.5"><span class="w-5 h-5 rounded bg-green-600 inline-flex items-center justify-center text-white text-[10px] font-bold">1</span><span class="w-5 h-5 rounded bg-yellow-600 inline-flex items-center justify-center text-white text-[10px] font-bold">2</span><span class="w-5 h-5 rounded bg-slate-600 inline-flex items-center justify-center text-white text-[10px] font-bold">2</span></span> → 1 harf doğru yerde, 2 harf var ama yanlış yerde, 2 harf hiç yok.</p>
+
+                <p class="text-[13px] bg-gray-50 dark:bg-[#1d1b38]/50 p-3 rounded-lg border border-gray-200 dark:border-white/5 mt-3"><b class="text-gray-900 dark:text-white">İpucu (Not Alma):</b> Harflerin yerini tespit edebilmek için klavyedeki harflere (sağ tık/uzun basma) veya tahmin kutucuklarına tıklayarak kendi renk notlarını alabilirsin.</p>
+
+                <hr class="border-gray-200 dark:border-white/10 my-5">
+
+                <p><b class="text-gray-900 dark:text-white text-[15px]">Modlar:</b></p>
+                <div class="space-y-1.5 mt-2">
+                    <p>📅 <b class="text-gray-900 dark:text-white">Günlük:</b> Her gün yeni bir bulmaca. Herkes aynı kelimeyi tahmin eder.</p>
+                    <p>♾️ <b class="text-gray-900 dark:text-white">Sınırsız:</b> Dilediğin kadar oyna. Her seferinde farklı kelime.</p>
                 </div>
             </div>
-            <button id="help-close-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-white rounded-xl py-3 font-bold transition-colors active:scale-95 shadow-md shrink-0">Anladım</button>
         </div>
     </div>
 

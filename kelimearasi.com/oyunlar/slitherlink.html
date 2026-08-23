@@ -319,56 +319,52 @@
     </main>
 
     <!-- ====== HELP MODAL ====== -->
-    <div id="helpModal" class="fixed inset-0 bg-gray-900/40 dark:bg-black/70 backdrop-blur-sm hidden items-center justify-center z-[100] modal p-4" style="display:none;">
-        <div class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 p-6 rounded-2xl max-w-md w-full shadow-2xl modal-content transition-colors">
-            <div class="flex justify-between items-center mb-5">
-                <h2 class="text-xl font-bold bg-gradient-to-r from-cyan-500 to-teal-500 text-transparent bg-clip-text">Nasıl Oynanır?</h2>
-            <div class="seo-content-block mt-3 mb-4 p-4 bg-violet-50/50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-800/20 rounded-xl text-sm text-gray-700 dark:text-gray-300 shadow-sm">
-                <h3 class="font-bold text-violet-800 dark:text-violet-300 mb-1.5">Çit (Slitherlink) Nedir?</h3>
-                <p class="leading-relaxed">Slitherlink (Çit), noktalı bir ızgara üzerinde sayılara bakarak tek ve kesintisiz bir çizgi oluşturmaya çalıştığınız dünyaca ünlü bir mantık bulmacasıdır. Rakamlar, o karenin etrafından kaç çizgi geçmesi gerektiğini söyler.</p>
+    <div id="helpModal" class="fixed inset-0 bg-gray-900/40 dark:bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] modal p-4" style="display:none;">
+        <div class="bg-white dark:bg-[#12122b] border border-gray-200/60 dark:border-white/5 p-6 rounded-2xl max-w-md w-full shadow-2xl modal-content transition-colors relative">
+            
+            <button onclick="hideModal('helpModal')" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-slate-400">✕</button>
+            
+            <h2 class="text-lg md:text-xl font-bold text-center text-gray-900 dark:text-white tracking-wide uppercase mb-6 mt-2">Nasıl Oynanır?</h2>
+            
+            <div class="p-4 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-500/20 rounded-xl text-sm text-gray-700 dark:text-gray-300 shadow-sm mb-5">
+                <h3 class="font-bold text-indigo-800 dark:text-indigo-300 mb-2">Çit (Slitherlink) Nedir?</h3>
+                <p class="leading-relaxed">Çit, mantık yürüterek noktalar arasında çizgiler çizdiğiniz ve <strong>tek bir kapalı döngü</strong> oluşturmaya çalıştığınız popüler bir zeka oyunudur. Rakam ipuçlarını takip ederek mantık yürütebilir, günlük veya sınırsız modda beyin jimnastiği yapabilirsiniz.</p>
             </div>
-                <button onclick="hideModal('helpModal')" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-slate-400">✕</button>
-            </div>
-            <div class="space-y-4 text-sm text-gray-600 dark:text-slate-300 leading-relaxed">
-                <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-500/20 flex items-center justify-center shrink-0 mt-0.5">🎯</div>
-                    <div>
-                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Amaç</div>
-                        <div>Noktalar arasında çizgiler çizerek <strong class="text-cyan-600 dark:text-cyan-400">tek bir kapalı döngü</strong> (halka) oluştur.</div>
-                    </div>
+
+            <p class="text-sm text-gray-800 dark:text-gray-200 mb-4">Noktaları birleştirerek <strong>tek bir kopuksuz halka</strong> oluştur!</p>
+            
+            <hr class="border-gray-200 dark:border-gray-700/60 my-4">
+
+            <div class="space-y-3 text-sm text-gray-800 dark:text-gray-300">
+                <div class="font-bold text-gray-900 dark:text-white mb-2">Kurallar:</div>
+                <div class="flex items-start gap-2">
+                    <span class="mt-0.5 font-bold text-cyan-600 dark:text-cyan-400">1.</span>
+                    <p>Hücrelerdeki sayılar (0, 1, 2, 3), o hücrenin 4 kenarından kaçının döngüye ait olduğunu gösterir.</p>
                 </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-500/20 flex items-center justify-center shrink-0 mt-0.5">🔢</div>
-                    <div>
-                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Sayı İpuçları</div>
-                        <div>Hücrelerdeki sayılar, o hücrenin kenarlarından kaçının döngünün parçası olduğunu gösterir. Boş hücrelerin ipucu yoktur.</div>
-                    </div>
+                <div class="flex items-start gap-2">
+                    <span class="mt-0.5 font-bold text-cyan-600 dark:text-cyan-400">2.</span>
+                    <p>Kenarları tıkla veya sürükle. Çizgi çekmek için <strong>Çizgi modu</strong>, boş bırakmak için <strong>Çarpı (X) modu</strong> kullan.</p>
                 </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">👆</div>
-                    <div>
-                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Tıklama & Sürükleme</div>
-                        <div>Kenarları tıkla veya sürükle. <strong>Çizgi modu</strong>nda çizgi çekersin, <strong>Çarpı (X) modu</strong>nda kenarları "çizgi yok" diye işaretlersin.</div>
-                    </div>
-                </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0 mt-0.5">⚠️</div>
-                    <div>
-                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Canlı Mod</div>
-                        <div><strong class="text-cyan-600 dark:text-cyan-400">Canlı modda</strong> hatalı çizgiler anında tespit edilir ve 1 can kaybedersin. 3 can biterse oyun biter!</div>
-                    </div>
-                </div>
-                <div class="flex items-start gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-500/20 flex items-center justify-center shrink-0 mt-0.5">🏆</div>
-                    <div>
-                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Kazanma</div>
-                        <div>Tüm çizgiler tek bir kopuksuz halka oluşturduğunda ve tüm sayı ipuçları sağlandığında bulmacayı çözmüş olursun!</div>
-                    </div>
+                <div class="flex items-start gap-2">
+                    <span class="mt-0.5 font-bold text-cyan-600 dark:text-cyan-400">3.</span>
+                    <p>Halka asla kendini kesemez veya dallanamaz (bir noktada en fazla 2 çizgi buluşabilir).</p>
                 </div>
             </div>
-            <button onclick="hideModal('helpModal')" class="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 transition-all font-semibold text-sm active:scale-95 text-white shadow-md">
-                Anladım!
-            </button>
+
+            <hr class="border-gray-200 dark:border-gray-700/60 my-4">
+            
+            <div class="space-y-2 text-sm text-gray-800 dark:text-gray-300">
+                <div class="font-bold text-gray-900 dark:text-white mb-2">Modlar:</div>
+                <div class="flex items-start gap-2">
+                    <span class="mt-0.5">📅</span>
+                    <p><strong>Günlük:</strong> Her gün yeni bir bulmaca. Herkes aynı bulmacayı çözer.</p>
+                </div>
+                <div class="flex items-start gap-2">
+                    <span class="mt-0.5">♾️</span>
+                    <p><strong>Sınırsız:</strong> Dilediğin kadar oyna. Her seferinde farklı bir bölüm.</p>
+                </div>
+            </div>
+            
         </div>
     </div>
 

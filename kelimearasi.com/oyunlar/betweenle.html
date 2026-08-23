@@ -115,7 +115,10 @@
 
     <!-- NASIL OYNANIR MODAL -->
     <div id="help-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-gray-900/50 dark:bg-[#0c0c1d]/70 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300 p-4">
-        <div id="help-modal-content" class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 rounded-3xl p-6 sm:p-8 w-full max-w-[400px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform scale-95 transition-transform duration-300 flex flex-col items-center text-center">
+        <div id="help-modal-content" class="relative bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 rounded-3xl p-6 sm:p-8 w-full max-w-[400px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform scale-95 transition-transform duration-300 flex flex-col items-center text-center">
+            <button id="help-close-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-white transition-colors">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
             <div class="w-12 h-12 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500 dark:text-emerald-400 text-2xl mb-3">&#10067;</div>
             <h2 class="text-2xl font-bold mb-4 tracking-wide text-gray-900 dark:text-white drop-shadow-sm">Nas&#305;l Oynan&#305;r?</h2>
             <div class="seo-content-block mt-3 mb-4 p-4 bg-violet-50/50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-800/20 rounded-xl text-sm text-gray-700 dark:text-gray-300 shadow-sm">
@@ -124,7 +127,6 @@
             </div>
             <div id="help-text" class="text-gray-600 dark:text-slate-300 text-sm leading-relaxed mb-6 font-medium text-left w-full bg-gray-50 dark:bg-[#0c0c1d]/50 p-4 rounded-xl border border-gray-200/60 dark:border-white/5">
             </div>
-            <button id="help-close-btn" class="w-full bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-800 dark:text-white rounded-xl py-3 font-bold transition-colors active:scale-95 shadow-sm">Anlad&#305;m</button>
         </div>
     </div>
 

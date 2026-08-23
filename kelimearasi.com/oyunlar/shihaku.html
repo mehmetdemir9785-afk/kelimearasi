@@ -325,24 +325,48 @@
 
     <!-- ====== HELP MODAL ====== -->
     <div id="helpModal" class="modal-bg hidden" onclick="if(event.target===this)closeHelp()">
-        <div class="bg-white dark:bg-[#181836] rounded-2xl p-5 max-w-sm w-[90%] shadow-2xl animate-slide">
-            <h2 class="text-lg font-extrabold mb-3 text-center bg-gradient-to-r from-lime-500 to-green-500 text-transparent bg-clip-text">Nasıl Oynanır?</h2>
-            <div class="seo-content-block mt-3 mb-4 p-4 bg-violet-50/50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-800/20 rounded-xl text-sm text-gray-700 dark:text-gray-300 shadow-sm">
-                <h3 class="font-bold text-violet-800 dark:text-violet-300 mb-1.5">Dikdörtgenler (Shihaku) Nedir?</h3>
-                <p class="leading-relaxed">Shihaku, ızgaradaki sayıları içeren dikdörtgenler veya kareler çizerek tüm alanı doldurmaya çalıştığınız bir zeka oyunudur. Her bir sayının bulunduğu alanın toplam büyüklüğü, o sayıya eşit olmalıdır.</p>
-            </div>
-            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                <li>📐 <strong>Amaç:</strong> Izgarayı tamamen dikdörtgenlerle kaplayın.</li>
-                <li>👆 <strong>Çizim:</strong> Bir hücreye basılı tutup sürükleyerek dikdörtgen çizin.</li>
-                <li>🔢 <strong>Sayı Kuralı:</strong> Her dikdörtgen tam olarak <strong>bir sayı</strong> içermelidir.</li>
-                <li>✅ <strong>Alan Kuralı:</strong> Sayının değeri, dikdörtgenin hücre sayısına eşit olmalıdır.</li>
-                <li>🚫 <strong>Kesişim:</strong> Dikdörtgenler üst üste gelemez.</li>
-                <li>❤️ <strong>Canlı Mod:</strong> Hatalı çizimlerde can kaybedersiniz.</li>
-                <li>💡 <strong>İpucu:</strong> Bir çözüm dikdörtgenini otomatik yerleştirir.</li>
-            </ul>
-            <button onclick="closeHelp()" class="mt-4 w-full py-2.5 bg-lime-500 hover:bg-lime-600 text-white font-bold rounded-xl transition-colors text-sm">
-                Anladım!
+        <div class="bg-white dark:bg-[#151528] rounded-2xl p-6 max-w-[400px] w-[90%] shadow-2xl animate-slide relative max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-white/5">
+            <!-- Kapat Butonu -->
+            <button onclick="closeHelp()" class="absolute top-4 right-4 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
+    
+            <h2 class="text-lg font-bold mb-4 text-center text-gray-900 dark:text-white tracking-wide uppercase">Nasıl Oynanır?</h2>
+    
+            <div class="mb-5 p-4 bg-violet-50 dark:bg-[#1a1736] border border-violet-100 dark:border-[#2a264f] rounded-xl text-sm text-gray-700 dark:text-gray-300 shadow-sm">
+                <h3 class="font-bold text-violet-700 dark:text-[#b49bff] mb-1.5">Dikdörtgenler (Shikaku) Nedir?</h3>
+                <p class="leading-relaxed text-[13px]">Shihaku, mantık yürüterek ızgaradaki sayıları içeren dikdörtgenler veya kareler çizip tüm alanı doldurmaya çalıştığınız bir zeka oyunudur. Günlük veya sınırsız modda beyin jimnastiği yapabilirsiniz.</p>
+            </div>
+    
+            <p class="text-[13px] text-gray-700 dark:text-gray-300 mb-3">
+                Oyun alanını <strong>hiç boşluk kalmayacak</strong> şekilde dikdörtgenlerle kapla!
+            </p>
+    
+            <p class="text-[13px] text-gray-700 dark:text-gray-300 mb-4">
+                Çizdiğin her dikdörtgenin içindeki sayı, o dikdörtgenin <strong>alanına (hücre sayısına)</strong> eşit olmalıdır.
+            </p>
+    
+            <hr class="border-gray-200 dark:border-white/10 my-4">
+    
+            <div class="text-[13px] text-gray-700 dark:text-gray-300 mb-4">
+                <div class="font-bold text-gray-900 dark:text-white mb-2 text-sm">Kurallar:</div>
+                <ul class="space-y-2">
+                    <li class="flex items-start"><span class="mr-2">👆</span> <span><strong>Çizim:</strong> Bir hücreye basılı tutup sürükleyerek dikdörtgen çizin.</span></li>
+                    <li class="flex items-start"><span class="mr-2">🔢</span> <span><strong>Sayı Kuralı:</strong> Her alan tam olarak <strong>bir sayı</strong> içermelidir.</span></li>
+                    <li class="flex items-start"><span class="mr-2">🚫</span> <span><strong>Kesişim:</strong> Dikdörtgenler üst üste gelemez.</span></li>
+                </ul>
+            </div>
+    
+            <hr class="border-gray-200 dark:border-white/10 my-4">
+    
+            <div class="text-[13px] text-gray-700 dark:text-gray-300">
+                <div class="font-bold text-gray-900 dark:text-white mb-2 text-sm">Modlar:</div>
+                <ul class="space-y-2">
+                    <li class="flex items-start"><span class="mr-2">🗓️</span> <span><strong>Günlük:</strong> Her gün yeni bir bulmaca. Herkes aynı bulmacayı çözer.</span></li>
+                    <li class="flex items-start"><span class="mr-2">♾️</span> <span><strong>Sınırsız:</strong> Dilediğin kadar oyna. Her seferinde farklı bir bulmaca.</span></li>
+                    <li class="flex items-start"><span class="mr-2">❤️</span> <span><strong>Canlı:</strong> Hatalı bir çizim yaparsan can kaybedersin!</span></li>
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -429,6 +453,12 @@ function getDailySeed() {
     const dateNum = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
     const diffMul = difficulty === 'easy' ? 1 : difficulty === 'medium' ? 2 : 3;
     return dateNum * 10 + diffMul;
+}
+
+function getDailyKey() {
+    const d = new Date();
+    const dateNum = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    return `shihaku_played_${dateNum}_${difficulty}`;
 }
 
 // =====================================================================
@@ -728,6 +758,16 @@ function loseLife() {
     if (lives <= 0) {
         gameOver = true;
         stopTimer();
+
+        // XP & Başarım sistemi
+        if (window.KaUser) {
+            window.KaUser.addGameResult('shihaku', 'logic', false, timerSec);
+        }
+
+        if (isDaily) {
+            localStorage.setItem(getDailyKey(), 'true');
+        }
+
         setTimeout(() => {
             document.getElementById('gameOverModal').classList.remove('hidden');
         }, 400);
@@ -762,6 +802,10 @@ function checkWin() {
     // XP & Başarım sistemi
     if (window.KaUser) {
         window.KaUser.addGameResult('shihaku', 'logic', true, timerSec);
+    }
+    
+    if (isDaily) {
+        localStorage.setItem(getDailyKey(), 'true');
     }
 
     // Show confetti then modal
@@ -1052,6 +1096,12 @@ function newGame() {
     if (difficulty === 'easy') { rows = 5; cols = 5; }
     else if (difficulty === 'medium') { rows = 7; cols = 7; }
     else { rows = 10; cols = 10; }
+
+    if (isDaily && localStorage.getItem(getDailyKey())) {
+        alert('Bu zorluk seviyesindeki bugünkü bulmacayı zaten oynadın! Sınırsız modda devam edebilirsin.');
+        setMode('unlimited');
+        return;
+    }
 
     // RNG
     let rng;

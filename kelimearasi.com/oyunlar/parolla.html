@@ -186,14 +186,16 @@
     <!-- Help Modal -->
     <div id="helpModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
         <div class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors duration-300">
-            <div class="flex items-center justify-between mb-6">
+            <div class="flex items-start justify-between mb-2">
                 <h2 class="text-2xl font-bold neon-title">Nasıl Oynanır?</h2>
-            <div class="seo-content-block mt-3 mb-4 p-4 bg-violet-50/50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-800/20 rounded-xl text-sm text-gray-700 dark:text-gray-300 shadow-sm">
+                <button id="closeHelpBtn" class="text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-white transition-colors shrink-0 ml-4"><i data-lucide="x" class="w-7 h-7"></i></button>
+            </div>
+            
+            <div class="seo-content-block mb-6 p-4 bg-violet-50/50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-800/20 rounded-xl text-sm text-gray-700 dark:text-gray-300 shadow-sm">
                 <h3 class="font-bold text-violet-800 dark:text-violet-300 mb-1.5">Kelime Çemberi (Parolla) Nedir?</h3>
                 <p class="leading-relaxed">Kelime Çemberi (Parolla), daire etrafında dizilmiş harflerin hepsini kullanarak anlamlı kelimeler türettiğiniz eğlenceli bir zeka oyunudur. Hem hızlı düşünmeli hem de geniş kelime haznenizi kullanmalısınız.</p>
             </div>
-                <button id="closeHelpBtn" class="text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-white transition-colors"><i data-lucide="x" class="w-7 h-7"></i></button>
-            </div>
+            
             <div class="space-y-4 text-base text-gray-700 dark:text-slate-300 leading-relaxed">
                 <p><strong>Hedef:</strong> Kelime Çemberindeki her harf için sorulan soruyu, o harf ile başlayan kelimeyle cevaplayarak turu tamamlamak.</p>
                 <p><strong>Kurallar:</strong></p>
