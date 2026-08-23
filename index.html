@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Kelimearası - Türkiye'nin en eğlenceli ve modern bulmaca platformu. Wordle, Sudoku, Crossword ve daha fazlası!">
+    <title>Kelimearası | Bulmaca Platformu</title>
+
+    <!-- SEO & Canonical -->
+    <link rel="canonical" href="https://kelimearasi.com/" />
+
+    <!-- Open Graph / Sosyal Medya -->
+    <meta property="og:title" content="Kelimearası | Bulmaca Platformu">
+    <meta property="og:description" content="Wordle, Sudoku, Crossword ve çok daha fazlası. Tamamen ücretsiz zeka, kelime ve mantık oyunları.">
+    <meta property="og:url" content="https://kelimearasi.com/">
+    <meta property="og:type" content="website">
+    <!-- Not: İleride images/og-image.jpg adında bir görsel yüklemeniz iyi olur -->
+    <meta property="og:image" content="https://kelimearasi.com/images/og-image.jpg">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/user-system.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+                    },
+                    keyframes: {
+                        'fade-in': {
+                            '0%': { opacity: '0', transform: 'translateY(12px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        'slide-up': {
+                            '0%': { opacity: '0', transform: 'translateY(40px) scale(0.97)' },
+                            '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                        },
+                        'glow-pulse': {
+                            '0%, 100%': { boxShadow: '0 0 8px 2px rgba(139,92,246,0.3)' },
+                            '50%': { boxShadow: '0 0 20px 6px rgba(139,92,246,0.5)' },
+                        },
+                        'shimmer': {
+                            '0%': { backgroundPosition: '-200% 0' },
+                            '100%': { backgroundPosition: '200% 0' },
+                        },
+                        'badge-pop': {
+                            '0%': { transform: 'scale(0.5)', opacity: '0' },
+                            '60%': { transform: 'scale(1.15)' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                    },
+                    animation: {
+                        'fade-in': 'fade-in 0.5s ease-out forwards',
+                        'slide-up': 'slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'glow-pulse': 'glow-pulse 2.5s ease-in-out infinite',
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'badge-pop': 'badge-pop 0.4s ease-out forwards',
+                    },
+                },
+            },
+        }
+    </script>
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(139,92,246,0.5); }
+
+        /* Smooth transition for theme changes */
+        * { transition: background-color 0.3s ease, border-color 0.3s ease, color 0.15s ease; }
+
+        /* XP bar shimmer */
+        .xp-bar-fill {
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa, #8b5cf6, #6366f1);
+            background-size: 200% 100%;
+            animation: shimmer 2s linear infinite;
+        }
+
+        /* Logo icon glow */
+        .logo-icon-glow {
+            filter: drop-shadow(0 0 6px rgba(139,92,246,0.5));
+        }
+
+        /* Card dock hover – siblings shrink slightly */
+        .game-card {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Modal backdrop */
+        .modal-backdrop {
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+
+        /* Badge gradient backgrounds */
+        .badge-word { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+        .badge-logic { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+        .badge-number { background: linear-gradient(135deg, #f97316, #ef4444); }
+
+        /* Game icon glow helpers */
+        .icon-glow-word { box-shadow: 0 0 18px 4px rgba(139,92,246,0.35); }
+        .icon-glow-logic { box-shadow: 0 0 18px 4px rgba(6,182,212,0.35); }
+        .icon-glow-number { box-shadow: 0 0 18px 4px rgba(249,115,22,0.35); }
+        .icon-glow-sudoku { box-shadow: 0 0 18px 4px rgba(99,102,241,0.35); }
+
+        /* Tabs active underline */
+        .tab-btn.active {
+            color: #8b5cf6;
+            border-bottom: 2px solid #8b5cf6;
+        }
+        .dark .tab-btn.active { color: #a78bfa; border-color: #a78bfa; }
+
+        /* Hide scrollbar for tabs */
+        .tabs-scroll::-webkit-scrollbar { display: none; }
+        .tabs-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2249745580110793"
+     crossorigin="anonymous"></script>
+</head>
+
+<body class="font-sans min-h-screen bg-gray-50 text-gray-900 dark:bg-[#0c0c1d] dark:text-gray-100 transition-colors">
+
+    <!-- ==================== HEADER ==================== -->
+    <header id="main-header" class="sticky top-0 z-50 border-b border-gray-200/60 dark:border-white/5 bg-white/80 dark:bg-[#12122b]/80 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto flex items-center justify-between px-4 py-3 md:py-3.5">
+
+            <!-- LEFT: Logo -->
+            <div class="flex items-center gap-2.5 select-none">
+                <div class="relative logo-icon-glow">
+                    <i data-lucide="puzzle" class="w-7 h-7 md:w-8 md:h-8 text-violet-500 dark:text-violet-400"></i>
+                </div>
+                <span class="text-xl md:text-2xl font-extrabold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 text-transparent bg-clip-text tracking-tight">
+                    Kelimearası
+                </span>
+            </div>
+
+            <!-- CENTER: Level + XP (hidden on very small screens) -->
+            <div class="hidden sm:flex items-center gap-3">
+                <span id="header-level-desktop" class="text-xs font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-500/15 px-2.5 py-1 rounded-full">
+                    Lvl 1
+                </span>
+                <div class="flex items-center gap-2">
+                    <div class="w-28 md:w-40 h-2.5 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
+                        <div id="header-xp-bar-desktop" class="xp-bar-fill h-full rounded-full" style="width:0%"></div>
+                    </div>
+                    <span id="header-xp-text-desktop" class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">0 / 1000 XP</span>
+                </div>
+            </div>
+
+            <!-- RIGHT: Actions -->
+            <div class="flex items-center gap-1.5 md:gap-2">
+                <!-- Achievements -->
+                <button id="btn-achievements" aria-label="Başarımlar" class="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                    <i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i>
+                </button>
+                <!-- Profile -->
+                <button id="btn-profile" aria-label="Profil" class="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                    <i data-lucide="user-circle" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i>
+                </button>
+
+            </div>
+        </div>
+
+        <!-- Mobile XP bar (only on small screens) -->
+        <div class="sm:hidden px-4 pb-2.5 flex items-center gap-2">
+            <span id="header-level-mobile" class="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-500/15 px-2 py-0.5 rounded-full">
+                Lvl 1
+            </span>
+            <div class="flex-1 h-2 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
+                <div id="header-xp-bar-mobile" class="xp-bar-fill h-full rounded-full" style="width:0%"></div>
+            </div>
+            <span id="header-xp-text-mobile" class="text-[10px] font-semibold text-gray-400">0 / 1000</span>
+        </div>
+    </header>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <main class="max-w-7xl mx-auto px-4 pt-6 pb-20">
+
+        <!-- Hero Section -->
+        <section class="mb-8 animate-fade-in">
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-2 text-gray-900 dark:text-white tracking-tight">
+                Türkiye'nin Bulmaca ve Kelime Oyunları Platformu
+            </h1>
+            <h2 class="text-xl md:text-2xl font-bold mb-2 text-violet-600 dark:text-violet-400">
+                Bugün ne oynamak istersin? 🎯
+            </h2>
+            <p class="text-gray-500 dark:text-gray-400 text-sm md:text-base">
+                16 farklı bulmaca. Her gün yeni meydan okumalar. Tamamen ücretsiz.
+            </p>
+        </section>
+
+        <!-- Category Tabs -->
+        <nav class="mb-6 border-b border-gray-200 dark:border-white/10 tabs-scroll overflow-x-auto flex gap-1" role="tablist">
+            <button class="tab-btn active whitespace-nowrap px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent transition-colors hover:text-violet-500 dark:hover:text-violet-400" data-category="all">
+                Tüm Oyunlar
+            </button>
+            <button class="tab-btn whitespace-nowrap px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-gray-500 dark:text-gray-400 transition-colors hover:text-violet-500 dark:hover:text-violet-400" data-category="word">
+                Kelime Oyunları
+            </button>
+            <button class="tab-btn whitespace-nowrap px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-gray-500 dark:text-gray-400 transition-colors hover:text-violet-500 dark:hover:text-violet-400" data-category="logic">
+                Mantık & Izgara
+            </button>
+            <button class="tab-btn whitespace-nowrap px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-gray-500 dark:text-gray-400 transition-colors hover:text-violet-500 dark:hover:text-violet-400" data-category="number">
+                Sayı & Karalama
+            </button>
+        </nav>
+
+        <!-- Game Cards Grid -->
+        <div id="game-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <!-- Cards are rendered by JavaScript -->
+        </div>
+    </main>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="border-t border-gray-200/60 dark:border-white/5 bg-gray-100/80 dark:bg-[#0a0a1a]/80">
+        <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p class="text-xs text-gray-400 dark:text-gray-500 text-center sm:text-left">
+                © 2026 Kelimearası. Tüm hakları saklıdır.
+            </p>
+            <nav class="flex flex-wrap justify-center sm:justify-end items-center gap-3 sm:gap-4">
+                <a href="#" id="link-privacy" class="text-xs text-gray-400 dark:text-gray-500 hover:text-violet-500 dark:hover:text-violet-400 transition-colors">Gizlilik Politikası</a>
+                <span class="text-gray-300 dark:text-gray-600 text-xs">·</span>
+                <a href="#" id="link-terms" class="text-xs text-gray-400 dark:text-gray-500 hover:text-violet-500 dark:hover:text-violet-400 transition-colors">Kullanım Şartları</a>
+                <span class="text-gray-300 dark:text-gray-600 text-xs">·</span>
+                <a href="#" id="link-contact" class="text-xs text-gray-400 dark:text-gray-500 hover:text-violet-500 dark:hover:text-violet-400 transition-colors">İletişim</a>
+                <span class="text-gray-300 dark:text-gray-600 text-xs">·</span>
+                <a href="#" id="link-about" class="text-xs text-gray-400 dark:text-gray-500 hover:text-violet-500 dark:hover:text-violet-400 transition-colors">Hakkımızda</a>
+            </nav>
+        </div>
+    </footer>
+
+    <!-- ==================== GAME MODAL ==================== -->
+    <div id="modal-game" class="fixed inset-0 z-[100] hidden">
+        <div class="modal-backdrop absolute inset-0" id="modal-game-backdrop"></div>
+        <div class="relative z-10 flex items-center justify-center min-h-full p-4">
+            <div class="w-full max-w-sm bg-white dark:bg-[#12122b] rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/5 overflow-hidden flex flex-col animate-slide-up">
+                
+                <!-- Header -->
+                <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/5 bg-gradient-to-r from-violet-900/30 to-purple-900/30">
+                    <h3 class="text-lg font-bold flex items-center gap-2 text-violet-600 dark:text-violet-400">
+                        <i data-lucide="lock" class="w-5 h-5"></i>
+                        Çok Yakında!
+                    </h3>
+                    <button id="modal-game-close-top" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                </div>
+
+                <!-- Content -->
+                <div class="p-6 text-center">
+                    <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30 flex items-center justify-center shadow-inner">
+                        <i data-lucide="construction" class="w-10 h-10 text-violet-500"></i>
+                    </div>
+                    <h2 id="modal-game-title" class="text-xl font-extrabold mb-2 text-gray-800 dark:text-gray-100">Oyun Adı</h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-6">
+                        Bu bulmaca şu an geliştirme aşamasındadır. Çok yakında platforma eklenecektir!
+                    </p>
+                    <button id="modal-game-close-bottom" class="w-full py-3 rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-800 dark:text-gray-200 font-bold transition-colors border border-gray-200/60 dark:border-white/5">
+                        Anladım
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PROFILE MODAL ==================== -->
+    <div id="modal-profile" class="fixed inset-0 z-[100] hidden">
+        <div class="modal-backdrop absolute inset-0" id="modal-profile-backdrop"></div>
+        <div class="relative z-10 flex items-center justify-center min-h-full p-4">
+            <div class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/5 overflow-hidden flex flex-col animate-slide-up">
+                <!-- Header -->
+                <div class="relative flex flex-col items-center justify-center py-8 bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+                    <button id="modal-profile-close" class="absolute top-3 right-3 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+                        <i data-lucide="x" class="w-4 h-4 text-white"></i>
+                    </button>
+                    <div class="w-20 h-20 rounded-full bg-white/20 border-[3px] border-white/40 flex items-center justify-center mb-3 shadow-lg">
+                        <i data-lucide="user" class="w-10 h-10 text-white"></i>
+                    </div>
+                    <div class="flex items-center gap-2 group cursor-pointer" id="profile-name-container" title="İsmi Değiştir">
+                        <h3 id="profile-username" class="text-lg font-bold">Bulmaca Sever</h3>
+                        <i data-lucide="pencil" class="w-3.5 h-3.5 text-white/60 group-hover:text-white transition-colors"></i>
+                    </div>
+                    <p id="profile-join-date" class="text-xs text-white/80 mt-1">Üye: -</p>
+                </div>
+
+                <!-- Content (Stats & Extra Info) -->
+                <div class="p-6 flex flex-col gap-6 bg-white dark:bg-gray-900">
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-gray-50 dark:bg-white/5 rounded-xl py-3 px-2 text-center border border-gray-100 dark:border-white/5">
+                            <div id="profile-games-solved" class="text-2xl font-extrabold text-violet-600 dark:text-violet-400">0</div>
+                            <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-0.5">Çözülen</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-white/5 rounded-xl py-3 px-2 text-center border border-gray-100 dark:border-white/5">
+                            <div id="profile-win-rate" class="text-2xl font-extrabold text-emerald-500">%0</div>
+                            <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-0.5">Başarı</div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-white/5 rounded-xl py-3 px-2 text-center border border-gray-100 dark:border-white/5">
+                            <div id="profile-current-streak" class="text-2xl font-extrabold text-amber-500">0 🔥</div>
+                            <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-0.5">Seri</div>
+                        </div>
+                    </div>
+
+                    <!-- Extra stats -->
+                    <div class="flex flex-col gap-3">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">En Uzun Seri</span>
+                            <span id="profile-max-streak" class="font-bold text-gray-800 dark:text-gray-100">0 gün</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">Favori Oyun</span>
+                            <span id="profile-favorite-game" class="font-bold text-gray-800 dark:text-gray-100">-</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">Toplam Süre</span>
+                            <span id="profile-total-time" class="font-bold text-gray-800 dark:text-gray-100">0dk</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">Seviye</span>
+                            <span id="profile-level-xp" class="font-bold text-violet-600 dark:text-violet-400">Lvl 1 — 0 XP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ACHIEVEMENTS MODAL ==================== -->
+    <div id="modal-achievements" class="fixed inset-0 z-[100] hidden">
+        <div class="modal-backdrop absolute inset-0" id="modal-achievements-backdrop"></div>
+        <div class="relative z-10 flex items-center justify-center min-h-full p-4">
+            <div class="w-full max-w-md bg-white dark:bg-[#181836] rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/5 overflow-hidden animate-slide-up">
+                <!-- Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/5">
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i>
+                        Başarımlar
+                    </h3>
+                    <button id="modal-achievements-close" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Badges Grid -->
+                
+                <!-- Badges Grid -->
+                <div class="p-6 grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto custom-scrollbar" id="badges-grid">
+
+                    <!-- JavaScript will populate badges here -->
+                </div>
+                <!-- Footer -->
+                <div class="px-6 pb-5 text-center">
+                    <p id="achievements-footer-text" class="text-xs text-gray-400 dark:text-gray-500">0 / 50 başarım açıldı</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== İLETİŞİM MODAL ==================== -->
+    <div id="modal-contact" class="fixed inset-0 z-[100] hidden">
+        <div class="modal-backdrop absolute inset-0" id="modal-contact-backdrop"></div>
+        <div class="relative z-10 flex items-center justify-center min-h-full p-4">
+            <div class="w-full max-w-lg bg-white dark:bg-[#12122b] rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/5 overflow-hidden animate-slide-up flex flex-col items-center pt-8 pb-10 px-6 sm:px-10">
+                <button id="modal-contact-close" class="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i>
+                </button>
+                <div class="w-12 h-12 rounded-full bg-violet-100 dark:bg-white/5 flex items-center justify-center mb-4 text-2xl drop-shadow-md">
+                    ✉️
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">İletişim</h2>
+                <div class="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-6 text-center">
+                    <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
+                        Her türlü hata bildirimi (bug), kelime önerisi, şikayet veya reklam & iş birliği talepleriniz için bize e-posta yoluyla ulaşabilirsiniz:
+                    </p>
+                    <div class="py-3 px-4 bg-white dark:bg-[#181836] border border-gray-200 dark:border-white/10 rounded-lg inline-block">
+                        <a href="mailto:iletisim@kelimearasi.com" class="text-violet-600 dark:text-purple-300 font-semibold hover:underline">iletisim@kelimearasi.com</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== KULLANIM ŞARTLARI MODAL ==================== -->
+    <div id="modal-terms" class="fixed inset-0 z-[100] hidden">
+        <div class="modal-backdrop absolute inset-0" id="modal-terms-backdrop"></div>
+        <div class="relative z-10 flex items-center justify-center min-h-full p-4">
+            <div class="w-full max-w-lg bg-white dark:bg-[#12122b] rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/5 overflow-hidden animate-slide-up flex flex-col items-center pt-8 pb-10 px-6 sm:px-10">
+                <button id="modal-terms-close" class="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i>
+                </button>
+                <div class="w-12 h-12 rounded-full bg-amber-100 dark:bg-white/5 flex items-center justify-center mb-4 text-2xl drop-shadow-md">
+                    ⚖️
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Kullanım Şartları</h2>
+                <div class="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-6 text-sm text-gray-600 dark:text-gray-300">
+                    <ul class="space-y-4 list-disc pl-4 marker:text-gray-400">
+                        <li><strong>kelimearasi.com</strong> eğitim ve eğlence amaçlı sunulan tamamen ücretsiz bir hizmettir.</li>
+                        <li>Sitede yer alan oyunların temel mantıkları, görsel tasarımları, arayüz kodları ve Türkçe kelime havuzunun telif hakları kelimearasi.com'a aittir.</li>
+                        <li>Site işleyişine zarar verecek, haksız skor elde edilmesini sağlayacak üçüncü parti hileli yazılımların veya botların kullanılması yasaktır.</li>
+                        <li>Platformumuzu kullanarak bu temel kullanım şartlarını kabul etmiş sayılırsınız.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== GİZLİLİK POLİTİKASI MODAL ==================== -->
+    <div id="modal-privacy" class="fixed inset-0 z-[100] hidden">
+        <div class="modal-backdrop absolute inset-0" id="modal-privacy-backdrop"></div>
+        <div class="relative z-10 flex items-center justify-center min-h-full p-4">
+            <div class="w-full max-w-lg bg-white dark:bg-[#12122b] rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/5 overflow-hidden animate-slide-up flex flex-col items-center pt-8 pb-10 px-6 sm:px-10">
+                <button id="modal-privacy-close" class="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i>
+                </button>
+                <div class="w-12 h-12 rounded-full bg-orange-100 dark:bg-white/5 flex items-center justify-center mb-4 text-2xl drop-shadow-md">
+                    🔒
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">Gizlilik Politikası</h2>
+                <div class="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-6 text-sm text-gray-600 dark:text-gray-300 space-y-4">
+                    <p>Ad, soyad, e-posta gibi kişisel verileriniz tarafımızca <strong>kesinlikle toplanmaz ve işlenmez.</strong></p>
+                    <p>Oyun istatistikleriniz, başarılarınız ve skorlarınız tamamen kendi cihazınızın/tarayıcınızın yerel hafızasında (localStorage) saklanır.</p>
+                    <div class="p-4 bg-white dark:bg-[#181836] border border-gray-200 dark:border-white/10 rounded-lg text-xs italic text-gray-500 dark:text-gray-400 leading-relaxed">
+                        Sitemizde reklam yayınlamak için üçüncü taraf reklam ortakları ve hizmet sağlayıcılar çerezlerden yararlanabilir. Bu çerezlerin kullanımı, kullanıcılarımıza sitemize veya internetteki diğer sitelere yaptıkları ziyaretlere dayalı ilgi alanlarına göre kişiselleştirilmiş reklamlar sunulmasına olanak tanır. Kullanıcılar dilerlerse tarayıcı ayarlarından çerez kullanımını kısıtlayabilir veya engelleyebilirler.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== HAKKIMIZDA MODAL ==================== -->
+    <div id="modal-about" class="fixed inset-0 z-[100] hidden">
+        <div class="modal-backdrop absolute inset-0" id="modal-about-backdrop"></div>
+        <div class="relative z-10 flex items-center justify-center min-h-full p-4">
+            <div class="w-full max-w-lg bg-white dark:bg-[#12122b] rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/5 overflow-hidden animate-slide-up flex flex-col items-center pt-8 pb-10 px-6 sm:px-10">
+                <button id="modal-about-close" class="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i>
+                </button>
+                <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-white/5 flex items-center justify-center mb-4 text-2xl drop-shadow-md">
+                    🚀
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Hakkımızda</h2>
+                <div class="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-6 text-sm text-gray-600 dark:text-gray-300 space-y-4 leading-relaxed">
+                    <p><strong>kelimearasi.com</strong>, kelime oyunu severler ve dil meraklıları için geliştirilmiş modern, minimalist ve tamamen ücretsiz bir Türkçe platformdur.</p>
+                    <p>İçerisinde <strong>'Sözcükle'</strong>, <strong>'Arasında'</strong>, <strong>'İkile'</strong> ve <strong>'Kelime Çemberi'</strong> gibi hem dil bilginizi hem de analitik düşünme yeteneğinizi test eden zeka oyunlarını barındırır.</p>
+                    <p>Amacımız her yaştan kullanıcıya karmaşadan uzak, eğlenceli ve öğretici bir deneyim sunmaktır.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- ==================== İSİM DEĞİŞTİR MODAL ==================== -->
+    <div id="modal-edit-name" class="fixed inset-0 z-[110] hidden">
+        <div class="modal-backdrop absolute inset-0" id="modal-edit-name-backdrop"></div>
+        <div class="relative z-10 flex items-center justify-center min-h-full p-4">
+            <div class="w-full max-w-sm bg-white dark:bg-[#12122b] rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/5 overflow-hidden flex flex-col animate-slide-up p-6">
+                <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white">İsmini Değiştir</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">Kendine yeni bir takma ad belirle (Maksimum 20 karakter).</p>
+                
+                <input type="text" id="input-new-name" maxlength="20" class="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white outline-none focus:border-violet-500 dark:focus:border-violet-500 transition-colors mb-6 placeholder-gray-400 dark:placeholder-gray-500" placeholder="Yeni isminiz...">
+                
+                <div class="flex gap-3">
+                    <button id="btn-cancel-name" class="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 font-bold transition-colors">Vazgeç</button>
+                    <button id="btn-save-name" class="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold shadow-lg shadow-violet-500/25 transition-colors">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script src="js/user-system.js"></script>
+    <script>
+    (function () {
+        'use strict';
+
+        // ——————————————————————————————————————————
+        // GAME DATA
+        // ——————————————————————————————————————————
+        const games = [
+            {
+                id: 'wordle', name: 'Sözcükle', category: 'word',
+                desc: 'Gizli kelimeleyi 6 denemede bul.',
+                icon: 'text-cursor-input',
+                bgClass: 'bg-green-500',
+                glowClass: 'icon-glow-word',
+                badgeClass: 'badge-word',
+                badgeLabel: 'Kelime',
+            },
+            {
+                id: 'ikile', name: 'İkile', category: 'word',
+                desc: 'Aynı anda 2 gizli kelimeyi birden bulmaya çalış.',
+                icon: 'columns',
+                bgClass: 'bg-orange-500',
+                glowClass: 'icon-glow-word',
+                badgeClass: 'badge-word',
+                badgeLabel: 'Kelime',
+            },
+            {
+                id: 'dortle', name: 'Dörtle', category: 'word',
+                desc: 'Aynı anda 4 gizli kelimeyi birden bulmaya çalış.',
+                icon: 'layout-grid',
+                bgClass: 'bg-rose-500',
+                glowClass: 'icon-glow-word',
+                badgeClass: 'badge-word',
+                badgeLabel: 'Kelime',
+            },
+            {
+                id: 'sekizle', name: 'Sekizle', category: 'word',
+                desc: 'Aynı anda 8 gizli kelimeyi birden tahmin et.',
+                icon: 'layout-dashboard',
+                bgClass: 'bg-indigo-500',
+                glowClass: 'icon-glow-word',
+                badgeClass: 'badge-word',
+                badgeLabel: 'Kelime',
+            },
+            {
+                id: 'kelime500', name: 'Kelime 500', category: 'word',
+                desc: 'Tahminlerinin kaç harfinin doğru olduğunu görerek kelimeyi bul.',
+                icon: 'bar-chart-2',
+                bgClass: 'bg-emerald-500',
+                glowClass: 'icon-glow-word',
+                badgeClass: 'badge-word',
+                badgeLabel: 'Kelime',
+            },
+            {
+                id: 'tic_tac_word', name: 'Tic-Tak Kelime', category: 'word',
+                desc: 'Kelimelerle oynanan strateji oyunu.',
+                icon: 'hash',
+                bgClass: 'bg-teal-500',
+                glowClass: 'icon-glow-word',
+                badgeClass: 'badge-word',
+                badgeLabel: 'Kelime',
+            },
+            {
+                id: 'parolla', name: 'Kelime Çemberi', category: 'word',
+                desc: 'Harfleri sırayla takip et, çemberdeki tüm kelimeleri bil!',
+                icon: 'whole-word',
+                bgClass: 'bg-purple-500',
+                glowClass: 'icon-glow-word',
+                badgeClass: 'badge-word',
+                badgeLabel: 'Kelime',
+            },
+            {
+                id: 'betweenle', name: 'Arasında', category: 'word',
+                desc: 'İki kelime arasındaki doğru kelimeyi bul.',
+                icon: 'between-horizontal-start',
+                bgClass: 'bg-blue-500',
+                glowClass: 'icon-glow-word',
+                badgeClass: 'badge-word',
+                badgeLabel: 'Kelime',
+            },
+            {
+                id: 'spelling_bee', name: 'Petek', category: 'word',
+                desc: 'Merkezdeki harfi kullanarak kelime üret.',
+                icon: 'hexagon',
+                bgClass: 'bg-yellow-500',
+                glowClass: 'icon-glow-word',
+                badgeClass: 'badge-word',
+                badgeLabel: 'Kelime',
+            },
+            {
+                id: 'fruit_grids', name: 'Meyve Izgarası', category: 'logic',
+                desc: 'Meyveleri ızgarada mantıkla sırala.',
+                icon: 'apple',
+                bgClass: 'bg-red-500',
+                glowClass: 'icon-glow-logic',
+                badgeClass: 'badge-logic',
+                badgeLabel: 'Mantık',
+            },
+            {
+                id: 'slitherlink', name: 'Çit', category: 'logic',
+                desc: 'Sayılara göre kapalı bir döngü oluştur.',
+                icon: 'spline',
+                bgClass: 'bg-cyan-500',
+                glowClass: 'icon-glow-logic',
+                badgeClass: 'badge-logic',
+                badgeLabel: 'Mantık',
+            },
+            {
+                id: 'shihaku', name: 'Dikdörtgenler', category: 'logic',
+                desc: 'Sayıları içine alan dikdörtgenler çiz.',
+                icon: 'box-select',
+                bgClass: 'bg-lime-500',
+                glowClass: 'icon-glow-logic',
+                badgeClass: 'badge-logic',
+                badgeLabel: 'Mantık',
+            },
+            {
+                id: 'queens', name: 'Vezirler', category: 'logic',
+                desc: 'Vezirleri doğru yerlere yerleştir.',
+                icon: 'crown',
+                bgClass: 'bg-pink-500',
+                glowClass: 'icon-glow-logic',
+                badgeClass: 'badge-logic',
+                badgeLabel: 'Mantık',
+            },
+            {
+                id: 'sudoku', name: 'Sudoku', category: 'number',
+                desc: 'Klasik rakam yerleştirme bulmacası. Günlük veya sınırsız oyna!',
+                icon: 'grid-3x3',
+                bgClass: 'bg-gradient-to-br from-blue-500 to-indigo-600',
+                glowClass: 'icon-glow-sudoku',
+                badgeClass: 'badge-number',
+                badgeLabel: 'Sayı',
+            },
+            {
+                id: 'nonogram', name: 'Kare Karalama', category: 'number',
+                desc: 'Sayı ipuçlarından gizli deseni ortaya çıkar.',
+                icon: 'table-2',
+                bgClass: 'bg-rose-500',
+                glowClass: 'icon-glow-number',
+                badgeClass: 'badge-number',
+                badgeLabel: 'Sayı',
+            },
+            {
+                id: 'pips', name: 'Domino', category: 'number',
+                desc: 'Domino taşlarını kullanarak ızgaradaki sayıları eşleştir.',
+                icon: 'dice-5',
+                bgClass: 'bg-blue-600',
+                glowClass: 'icon-glow-number',
+                badgeClass: 'badge-number',
+                badgeLabel: 'Sayı',
+            },
+        ];
+
+
+        // ——————————————————————————————————————————
+        // RENDER GAME CARDS
+        // ——————————————————————————————————————————
+        const grid = document.getElementById('game-grid');
+
+        function createCard(game, index) {
+            const card = document.createElement('div');
+            card.className = `game-card group relative flex flex-col bg-white dark:bg-[#181836] rounded-2xl border border-gray-200/60 dark:border-white/5 overflow-hidden hover:scale-[1.04] hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-violet-500/10 dark:hover:shadow-violet-500/5 hover:z-10 cursor-pointer opacity-0 animate-fade-in`;
+            card.style.animationDelay = `${index * 60}ms`;
+            card.dataset.category = game.category;
+
+            card.innerHTML = `
+                <!-- Icon + Text -->
+                <div class="flex-1 px-5 pt-5 pb-3 flex items-start gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 rounded-xl ${game.bgClass} shadow-lg ${game.glowClass} flex items-center justify-center">
+                        <i data-lucide="${game.icon}" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h3 class="text-base font-bold text-gray-900 dark:text-gray-50 truncate">${game.name}</h3>
+                            <span class="${game.badgeClass} text-[10px] font-bold text-white px-2 py-0.5 rounded-full whitespace-nowrap">${game.badgeLabel}</span>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">${game.desc}</p>
+                    </div>
+                </div>
+
+                <!-- Buttons (always pinned to bottom) -->
+                <div class="mt-auto px-5 pb-5 flex gap-2">
+                    <a href="oyunlar/${game.id}.html?mode=daily" class="flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white shadow-md shadow-violet-500/20 transition-all duration-200 active:scale-95">
+                        <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                        Günlük
+                    </a>
+                    <a href="oyunlar/${game.id}.html?mode=unlimited" class="flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-all duration-200 active:scale-95 border border-gray-200/60 dark:border-white/5">
+                        <i data-lucide="infinity" class="w-3.5 h-3.5"></i>
+                        Sınırsız
+                    </a>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function renderCards(category) {
+            grid.innerHTML = '';
+            const filtered = category === 'all' ? games : games.filter(g => g.category === category);
+            filtered.forEach((game, i) => {
+                grid.appendChild(createCard(game, i));
+            });
+            lucide.createIcons();
+        }
+
+        renderCards('all');
+
+        // ——————————————————————————————————————————
+        // CATEGORY TABS
+        // ——————————————————————————————————————————
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => {
+                    t.classList.remove('active');
+                    t.classList.add('text-gray-500', 'dark:text-gray-400');
+                });
+                tab.classList.add('active');
+                tab.classList.remove('text-gray-500', 'dark:text-gray-400');
+                renderCards(tab.dataset.category);
+            });
+        });
+
+        // ——————————————————————————————————————————
+        // MODAL HELPERS
+        // ——————————————————————————————————————————
+        function openModal(id) {
+            const el = document.getElementById(id);
+            el.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            el.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // ——————————————————————————————————————————
+        // GAME MODAL
+        // ——————————————————————————————————————————
+        grid.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-play');
+            if (!btn) return;
+            const gameName = btn.dataset.game;
+            const mode = btn.dataset.mode === 'daily' ? 'Günlük' : 'Sınırsız';
+            document.getElementById('modal-game-title').textContent = `${gameName} (${mode})`;
+            openModal('modal-game');
+        });
+
+        document.getElementById('modal-game-close-top').addEventListener('click', () => closeModal('modal-game'));
+        document.getElementById('modal-game-close-bottom').addEventListener('click', () => closeModal('modal-game'));
+        document.getElementById('modal-game-backdrop').addEventListener('click', () => closeModal('modal-game'));
+
+        // ——————————————————————————————————————————
+        // PROFILE MODAL
+        // ——————————————————————————————————————————
+        
+        // ——————————————————————————————————————————
+        // PROFILE EDIT NAME
+        // ——————————————————————————————————————————
+        const inputNewName = document.getElementById('input-new-name');
+        
+        document.getElementById('profile-name-container').addEventListener('click', () => {
+            inputNewName.value = document.getElementById('profile-username').textContent;
+            openModal('modal-edit-name');
+            setTimeout(() => inputNewName.focus(), 100);
+        });
+
+        document.getElementById('modal-edit-name-backdrop').addEventListener('click', () => closeModal('modal-edit-name'));
+        document.getElementById('btn-cancel-name').addEventListener('click', () => closeModal('modal-edit-name'));
+        
+        document.getElementById('btn-save-name').addEventListener('click', () => {
+            const newName = inputNewName.value.trim();
+            if (newName.length > 0) {
+                window.KaUser.updateUsername(newName);
+                document.getElementById('profile-username').textContent = newName.substring(0, 20);
+                closeModal('modal-edit-name');
+            }
+        });
+        
+        // Enter tuşu ile kaydetme desteği
+        inputNewName.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('btn-save-name').click();
+            }
+        });
+
+        document.getElementById('btn-profile').addEventListener('click', () => openModal('modal-profile'));
+        document.getElementById('modal-profile-close').addEventListener('click', () => closeModal('modal-profile'));
+        document.getElementById('modal-profile-backdrop').addEventListener('click', () => closeModal('modal-profile'));
+
+        // ——————————————————————————————————————————
+        // ACHIEVEMENTS MODAL
+        // ——————————————————————————————————————————
+        document.getElementById('btn-achievements').addEventListener('click', () => openModal('modal-achievements'));
+        document.getElementById('modal-achievements-close').addEventListener('click', () => closeModal('modal-achievements'));
+        document.getElementById('modal-achievements-backdrop').addEventListener('click', () => closeModal('modal-achievements'));
+
+        // ——————————————————————————————————————————
+        // INFO MODALS (Footer Links)
+        // ——————————————————————————————————————————
+        const infoModals = [
+            { linkId: 'link-contact', modalId: 'modal-contact' },
+            { linkId: 'link-terms', modalId: 'modal-terms' },
+            { linkId: 'link-privacy', modalId: 'modal-privacy' },
+            { linkId: 'link-about', modalId: 'modal-about' }
+        ];
+
+        infoModals.forEach(({ linkId, modalId }) => {
+            document.getElementById(linkId).addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal(modalId);
+            });
+            document.getElementById(`${modalId}-close`).addEventListener('click', () => closeModal(modalId));
+            document.getElementById(`${modalId}-backdrop`).addEventListener('click', () => closeModal(modalId));
+        });
+
+        // ——————————————————————————————————————————
+        // CLOSE MODALS WITH ESC KEY
+        // ——————————————————————————————————————————
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                [
+                    'modal-game', 'modal-profile', 'modal-achievements',
+                    'modal-contact', 'modal-terms', 'modal-privacy', 'modal-about'
+                ].forEach(id => closeModal(id));
+            }
+        });
+
+        // ——————————————————————————————————————————
+        
+        // ——————————————————————————————————————————
+        // RENDER USER DATA
+        // ——————————————————————————————————————————
+        function renderUserData() {
+            if (!window.KaUser) return;
+            const stats = window.KaUser.getFormattedStats();
+
+            // 1. Header (XP Bar)
+            const levelText = `Lvl ${stats.level}`;
+            const xpText = `${stats.xpInCurrentLevel} / ${stats.xpRequiredForNext} XP`;
+            const xpPercent = `${Math.min(100, Math.max(0, (stats.xpInCurrentLevel / stats.xpRequiredForNext) * 100))}%`;
+
+            const elLvlD = document.getElementById('header-level-desktop');
+            const elLvlM = document.getElementById('header-level-mobile');
+            if(elLvlD) elLvlD.textContent = levelText;
+            if(elLvlM) elLvlM.textContent = levelText;
+
+            const elXpTextD = document.getElementById('header-xp-text-desktop');
+            const elXpTextM = document.getElementById('header-xp-text-mobile');
+            if(elXpTextD) elXpTextD.textContent = xpText;
+            if(elXpTextM) elXpTextM.textContent = xpText;
+
+            const elXpBarD = document.getElementById('header-xp-bar-desktop');
+            const elXpBarM = document.getElementById('header-xp-bar-mobile');
+            if(elXpBarD) elXpBarD.style.width = xpPercent;
+            if(elXpBarM) elXpBarM.style.width = xpPercent;
+
+            // 2. Profile
+            const pJoin = document.getElementById('profile-join-date');
+            if(pJoin) pJoin.textContent = `Üye: ${stats.formattedJoinDate}`;
+            
+            const pGames = document.getElementById('profile-games-solved');
+            if(pGames) pGames.textContent = stats.gamesWon;
+
+            const pWinRate = document.getElementById('profile-win-rate');
+            if(pWinRate) pWinRate.textContent = `%${stats.winRate}`;
+
+            const pStreak = document.getElementById('profile-current-streak');
+            if(pStreak) pStreak.textContent = `${stats.currentStreak} 🔥`;
+
+            const pMaxStreak = document.getElementById('profile-max-streak');
+            if(pMaxStreak) pMaxStreak.textContent = `${stats.maxStreak} gün`;
+
+            const pFav = document.getElementById('profile-favorite-game');
+            if(pFav) {
+                // Find game name from games array
+                const g = games.find(x => x.id === stats.favoriteGameId);
+                pFav.textContent = g ? g.name : "-";
+            }
+
+            const pTime = document.getElementById('profile-total-time');
+            if(pTime) pTime.textContent = stats.formattedTime;
+
+            const pLevel = document.getElementById('profile-level-xp');
+            if(pLevel) pLevel.textContent = `Lvl ${stats.level} — ${stats.xp} XP`;
+
+            // 3. Achievements
+            const badgesGrid = document.getElementById('badges-grid');
+            if(badgesGrid) {
+                const badgesData = [
+                    // --- SEVİYE 1: ÇOK KOLAY (Very Easy) ---
+                    { id: 'first_blood', name: 'İlk Kan', desc: 'İlk bulmacayı çöz', icon: 'swords', colors: 'from-amber-400 to-orange-500', bgBorder: 'from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/10 border-amber-200/60 dark:border-amber-500/20' },
+                    { id: 'level_5', name: 'İlk Adım', desc: 'Seviye 5 ol', icon: 'footprints', colors: 'from-emerald-400 to-teal-500', bgBorder: 'from-emerald-50 to-teal-50 dark:from-emerald-500/10 dark:to-teal-500/10 border-emerald-200/60 dark:border-emerald-500/20' },
+                    { id: 'played_10', name: 'Çaylak', desc: '10 bulmaca çöz', icon: 'sprout', colors: 'from-lime-400 to-green-500', bgBorder: 'from-lime-50 to-green-50 dark:from-lime-500/10 dark:to-green-500/10 border-lime-200/60 dark:border-lime-500/20' },
+                    { id: 'streak_3', name: 'Isınma Serisi', desc: '3 gün üst üste oyna', icon: 'flame', colors: 'from-orange-400 to-red-500', bgBorder: 'from-orange-50 to-red-50 dark:from-orange-500/10 dark:to-red-500/10 border-orange-200/60 dark:border-orange-500/20' },
+                    { id: 'time_1', name: '1 Saatlik Mola', desc: '1 saat oyna', icon: 'coffee', colors: 'from-stone-400 to-zinc-500', bgBorder: 'from-stone-50 to-zinc-50 dark:from-stone-500/10 dark:to-zinc-500/10 border-stone-200/60 dark:border-stone-500/20' },
+                    { id: 'brainstorm', name: 'Beyin Fırtınası', desc: '3 farklı kategori', icon: 'brain', colors: 'from-blue-400 to-indigo-500', bgBorder: 'from-blue-50 to-indigo-50 dark:from-blue-500/10 dark:to-indigo-500/10 border-blue-200/60 dark:border-blue-500/20' },
+                    { id: 'explorer_5', name: 'Gezgin', desc: '5 farklı oyun dene', icon: 'map', colors: 'from-teal-400 to-emerald-500', bgBorder: 'from-teal-50 to-emerald-50 dark:from-teal-500/10 dark:to-emerald-500/10 border-teal-200/60 dark:border-teal-500/20' },
+                    { id: 'join_7', name: 'İlk Hafta', desc: 'Sitede 1 hafta geçir', icon: 'calendar', colors: 'from-purple-400 to-fuchsia-500', bgBorder: 'from-purple-50 to-fuchsia-50 dark:from-purple-500/10 dark:to-fuchsia-500/10 border-purple-200/60 dark:border-purple-500/20' },
+                    
+                    // --- SEVİYE 2: KOLAY (Easy) ---
+                    { id: 'fast_learner', name: 'Isınma Turu', desc: '10 oyun kazan', icon: 'target', colors: 'from-orange-400 to-red-500', bgBorder: 'from-orange-50 to-red-50 dark:from-orange-500/10 dark:to-red-500/10 border-orange-200/60 dark:border-orange-500/20' },
+                    { id: 'apprentice', name: 'Çırak', desc: 'Seviye 10', icon: 'graduation-cap', colors: 'from-green-400 to-emerald-500', bgBorder: 'from-green-50 to-emerald-50 dark:from-green-500/10 dark:to-emerald-500/10 border-green-200/60 dark:border-green-500/20' },
+                    { id: 'played_50', name: 'Hevesli', desc: '50 bulmaca çöz', icon: 'glasses', colors: 'from-cyan-400 to-blue-500', bgBorder: 'from-cyan-50 to-blue-50 dark:from-cyan-500/10 dark:to-blue-500/10 border-cyan-200/60 dark:border-cyan-500/20' },
+                    { id: 'serial_killer', name: 'Seri Katil', desc: '5 gün üst üste oyna', icon: 'flame', colors: 'from-red-400 to-rose-500', bgBorder: 'from-red-50 to-rose-50 dark:from-red-500/10 dark:to-rose-500/10 border-red-200/60 dark:border-red-500/20' },
+                    { id: 'time_5', name: '5 Saatlik Mesai', desc: '5 saat oyna', icon: 'watch', colors: 'from-slate-400 to-gray-500', bgBorder: 'from-slate-50 to-gray-50 dark:from-slate-500/10 dark:to-gray-500/10 border-slate-200/60 dark:border-slate-500/20' },
+                    { id: 'explorer', name: 'Kaşif', desc: '10 farklı oyun dene', icon: 'compass', colors: 'from-teal-500 to-emerald-600', bgBorder: 'from-teal-50 to-emerald-50 dark:from-teal-500/10 dark:to-emerald-500/10 border-teal-200/60 dark:border-teal-500/20' },
+                    { id: 'veteran', name: 'Kıdemli', desc: '1. ayını doldur', icon: 'medal', colors: 'from-slate-400 to-gray-500', bgBorder: 'from-slate-50 to-gray-50 dark:from-slate-500/10 dark:to-gray-500/10 border-slate-200/60 dark:border-slate-500/20' },
+                    
+                    // --- SEVİYE 3: ORTA (Medium) ---
+                    { id: 'unbeatable', name: 'Yenilmez', desc: '50 oyun kazan', icon: 'shield', colors: 'from-red-400 to-rose-500', bgBorder: 'from-red-50 to-rose-50 dark:from-red-500/10 dark:to-rose-500/10 border-red-200/60 dark:border-red-500/20' },
+                    { id: 'expert', name: 'Uzman', desc: 'Seviye 25', icon: 'briefcase', colors: 'from-teal-400 to-cyan-500', bgBorder: 'from-teal-50 to-cyan-50 dark:from-teal-500/10 dark:to-cyan-500/10 border-teal-200/60 dark:border-teal-500/20' },
+                    { id: 'legend', name: 'Efsane', desc: '100 bulmaca çöz', icon: 'crown', colors: 'from-purple-400 to-fuchsia-500', bgBorder: 'from-purple-50 to-fuchsia-50 dark:from-purple-500/10 dark:to-fuchsia-500/10 border-purple-200/60 dark:border-purple-500/20' },
+                    { id: 'streak_14', name: 'İki Hafta', desc: '14 gün üst üste', icon: 'calendar-range', colors: 'from-indigo-400 to-violet-500', bgBorder: 'from-indigo-50 to-violet-50 dark:from-indigo-500/10 dark:to-violet-500/10 border-indigo-200/60 dark:border-indigo-500/20' },
+                    { id: 'time_bender', name: 'Zaman Bükücü', desc: '10 saat oyna', icon: 'hourglass', colors: 'from-blue-400 to-indigo-500', bgBorder: 'from-blue-50 to-indigo-50 dark:from-blue-500/10 dark:to-indigo-500/10 border-blue-200/60 dark:border-blue-500/20' },
+                    { id: 'addict', name: 'Bağımlı', desc: '30 gün üst üste oyna', icon: 'zap', colors: 'from-yellow-400 to-amber-500', bgBorder: 'from-yellow-50 to-amber-50 dark:from-yellow-500/10 dark:to-amber-500/10 border-yellow-200/60 dark:border-yellow-500/20' },
+                    { id: 'completionist', name: 'Koleksiyoncu', desc: '16 oyunun hepsini dene', icon: 'library', colors: 'from-pink-400 to-rose-500', bgBorder: 'from-pink-50 to-rose-50 dark:from-pink-500/10 dark:to-rose-500/10 border-pink-200/60 dark:border-pink-500/20' },
+                    { id: 'century_club', name: 'Yüzler Kulübü', desc: '100. gününü doldur', icon: 'users', colors: 'from-gray-400 to-zinc-500', bgBorder: 'from-gray-50 to-zinc-50 dark:from-gray-500/10 dark:to-zinc-500/10 border-gray-200/60 dark:border-gray-500/20' },
+
+                    // --- SEVİYE 4: ZOR (Hard) ---
+                    { id: 'champion', name: 'Şampiyon', desc: '250 oyun kazan', icon: 'award', colors: 'from-rose-500 to-pink-600', bgBorder: 'from-rose-50 to-pink-50 dark:from-rose-500/10 dark:to-pink-500/10 border-rose-200/60 dark:border-rose-500/20' },
+                    { id: 'grandmaster', name: 'Büyük Usta', desc: 'Seviye 50', icon: 'sparkles', colors: 'from-cyan-400 to-blue-500', bgBorder: 'from-cyan-50 to-blue-50 dark:from-cyan-500/10 dark:to-blue-500/10 border-cyan-200/60 dark:border-cyan-500/20' },
+                    { id: 'true_fan', name: 'Gerçek Hayran', desc: '500 bulmaca çöz', icon: 'star', colors: 'from-indigo-400 to-blue-500', bgBorder: 'from-indigo-50 to-blue-50 dark:from-indigo-500/10 dark:to-blue-500/10 border-indigo-200/60 dark:border-indigo-500/20' },
+                    { id: 'streak_60', name: 'İstikrar', desc: '60 gün üst üste oyna', icon: 'trending-up', colors: 'from-emerald-400 to-green-500', bgBorder: 'from-emerald-50 to-green-50 dark:from-emerald-500/10 dark:to-green-500/10 border-emerald-200/60 dark:border-emerald-500/20' },
+                    { id: 'half_day', name: 'Zaman Yolcusu', desc: '24 saat oyna', icon: 'clock', colors: 'from-indigo-400 to-violet-500', bgBorder: 'from-indigo-50 to-violet-50 dark:from-indigo-500/10 dark:to-violet-500/10 border-indigo-200/60 dark:border-indigo-500/20' },
+                    { id: 'dedication', name: 'Adanmışlık', desc: '100 gün üst üste oyna', icon: 'heart', colors: 'from-red-500 to-rose-600', bgBorder: 'from-red-50 to-rose-50 dark:from-red-500/10 dark:to-rose-500/10 border-red-200/60 dark:border-red-500/20' },
+                    { id: 'half_year', name: 'Sadık Dost', desc: '6. ayını doldur', icon: 'handshake', colors: 'from-zinc-400 to-neutral-500', bgBorder: 'from-zinc-50 to-neutral-50 dark:from-zinc-500/10 dark:to-neutral-500/10 border-zinc-200/60 dark:border-zinc-500/20' },
+                    
+                    // --- SEVİYE 5: ÇOK ZOR (Very Hard) ---
+                    { id: 'wins_500', name: 'Savaşçı', desc: '500 oyun kazan', icon: 'swords', colors: 'from-red-500 to-red-700', bgBorder: 'from-red-50 to-red-100 dark:from-red-500/10 dark:to-red-700/10 border-red-200/60 dark:border-red-500/20' },
+                    { id: 'level_75', name: 'Bilge', desc: 'Seviye 75', icon: 'book-open', colors: 'from-purple-500 to-purple-700', bgBorder: 'from-purple-50 to-purple-100 dark:from-purple-500/10 dark:to-purple-700/10 border-purple-200/60 dark:border-purple-500/20' },
+                    { id: 'played_1000', name: 'Binler Kulübü', desc: '1000 bulmaca çöz', icon: 'layers', colors: 'from-blue-500 to-blue-700', bgBorder: 'from-blue-50 to-blue-100 dark:from-blue-500/10 dark:to-blue-700/10 border-blue-200/60 dark:border-blue-500/20' },
+                    { id: 'streak_180', name: 'Yarım Yıl Serisi', desc: '180 gün üst üste', icon: 'calendar-clock', colors: 'from-indigo-500 to-indigo-700', bgBorder: 'from-indigo-50 to-indigo-100 dark:from-indigo-500/10 dark:to-indigo-700/10 border-indigo-200/60 dark:border-indigo-500/20' },
+                    { id: 'time_50', name: '50 Saat', desc: '50 saat oyna', icon: 'timer', colors: 'from-teal-500 to-teal-700', bgBorder: 'from-teal-50 to-teal-100 dark:from-teal-500/10 dark:to-teal-700/10 border-teal-200/60 dark:border-teal-500/20' },
+                    { id: 'conqueror', name: 'Fatih', desc: '1000 oyun kazan', icon: 'sword', colors: 'from-pink-500 to-fuchsia-600', bgBorder: 'from-pink-50 to-fuchsia-50 dark:from-pink-500/10 dark:to-fuchsia-500/10 border-pink-200/60 dark:border-pink-500/20' },
+                    { id: 'anniversary', name: 'Yıl Dönümü', desc: '1. yılını doldur', icon: 'party-popper', colors: 'from-neutral-400 to-stone-500', bgBorder: 'from-neutral-50 to-stone-50 dark:from-neutral-500/10 dark:to-stone-500/10 border-neutral-200/60 dark:border-neutral-500/20' },
+                    
+                    // --- SEVİYE 6: İNANILMAZ (Insane) ---
+                    { id: 'wins_2500', name: 'Kahraman', desc: '2500 oyun kazan', icon: 'shield-alert', colors: 'from-rose-500 to-rose-700', bgBorder: 'from-rose-50 to-rose-100 dark:from-rose-500/10 dark:to-rose-700/10 border-rose-200/60 dark:border-rose-500/20' },
+                    { id: 'god_tier', name: 'İlah', desc: 'Seviye 100', icon: 'sun', colors: 'from-yellow-400 to-amber-500', bgBorder: 'from-yellow-50 to-amber-50 dark:from-yellow-500/10 dark:to-amber-500/10 border-yellow-200/60 dark:border-yellow-500/20' },
+                    { id: 'obsessed', name: 'Takıntılı', desc: '2500 bulmaca çöz', icon: 'gem', colors: 'from-emerald-400 to-teal-500', bgBorder: 'from-emerald-50 to-teal-50 dark:from-emerald-500/10 dark:to-teal-500/10 border-emerald-200/60 dark:border-emerald-500/20' },
+                    { id: 'full_day', name: 'Uykusuz', desc: '100 saat oyna', icon: 'moon', colors: 'from-violet-400 to-purple-500', bgBorder: 'from-violet-50 to-purple-50 dark:from-violet-500/10 dark:to-purple-500/10 border-violet-200/60 dark:border-violet-500/20' },
+                    { id: 'year_streak', name: 'Demir İrade', desc: '365 gün üst üste oyna', icon: 'calendar-days', colors: 'from-purple-500 to-violet-600', bgBorder: 'from-purple-50 to-violet-50 dark:from-purple-500/10 dark:to-violet-500/10 border-purple-200/60 dark:border-purple-500/20' },
+                    { id: 'join_730', name: 'İkinci Yıl', desc: '2 yılını doldur', icon: 'cake', colors: 'from-orange-500 to-orange-700', bgBorder: 'from-orange-50 to-orange-100 dark:from-orange-500/10 dark:to-orange-700/10 border-orange-200/60 dark:border-orange-500/20' },
+                    
+                    // --- SEVİYE 7: EFSANEVİ (Legendary) ---
+                    { id: 'wins_5000', name: 'Yenilmez Ordu', desc: '5000 oyun kazan', icon: 'shield-check', colors: 'from-red-600 to-red-900', bgBorder: 'from-red-100 to-red-200 dark:from-red-600/10 dark:to-red-900/10 border-red-300/60 dark:border-red-600/20' },
+                    { id: 'level_150', name: 'Üstat', desc: 'Seviye 150', icon: 'crown', colors: 'from-fuchsia-500 to-fuchsia-700', bgBorder: 'from-fuchsia-50 to-fuchsia-100 dark:from-fuchsia-500/10 dark:to-fuchsia-700/10 border-fuchsia-200/60 dark:border-fuchsia-500/20' },
+                    { id: 'played_5000', name: 'Makinist', desc: '5000 bulmaca çöz', icon: 'cpu', colors: 'from-blue-600 to-blue-900', bgBorder: 'from-blue-100 to-blue-200 dark:from-blue-600/10 dark:to-blue-900/10 border-blue-300/60 dark:border-blue-600/20' },
+                    { id: 'streak_500', name: 'Durmak Yok', desc: '500 gün üst üste', icon: 'flame-kindling', colors: 'from-orange-600 to-orange-900', bgBorder: 'from-orange-100 to-orange-200 dark:from-orange-600/10 dark:to-orange-900/10 border-orange-300/60 dark:border-orange-600/20' },
+                    { id: 'time_250', name: '250 Saat', desc: '250 saat oyna', icon: 'watch', colors: 'from-slate-600 to-slate-900', bgBorder: 'from-slate-100 to-slate-200 dark:from-slate-600/10 dark:to-slate-900/10 border-slate-300/60 dark:border-slate-600/20' },
+                    
+                    // --- SEVİYE 8: MİTİK (Mythical) ---
+                    { id: 'wins_10000', name: 'Bulmaca Tanrısı', desc: '10000 oyun kazan', icon: 'sparkles', colors: 'from-yellow-500 to-amber-700', bgBorder: 'from-yellow-100 to-yellow-200 dark:from-yellow-500/10 dark:to-amber-700/10 border-yellow-300/60 dark:border-yellow-500/20' },
+                    { id: 'level_250', name: 'Mistik', desc: 'Seviye 250', icon: 'orbit', colors: 'from-violet-600 to-purple-900', bgBorder: 'from-violet-100 to-purple-200 dark:from-violet-600/10 dark:to-purple-900/10 border-violet-300/60 dark:border-violet-600/20' }
+                ];
+
+                let badgesHtml = '';
+                badgesData.forEach((b, idx) => {
+                    const isUnlocked = stats.achievements[b.id];
+                    if (isUnlocked) {
+                        badgesHtml += `
+                            <div class="relative flex flex-col items-center p-4 rounded-2xl bg-gradient-to-br ${b.bgBorder} animate-badge-pop" style="animation-delay:${idx*0.1}s">
+                                <div class="w-14 h-14 rounded-xl bg-gradient-to-br ${b.colors} flex items-center justify-center shadow-lg mb-2.5">
+                                    <i data-lucide="${b.icon}" class="w-7 h-7 text-white"></i>
+                                </div>
+                                <span class="text-sm font-bold text-gray-800 dark:text-gray-100">${b.name}</span>
+                                <span class="text-[10px] text-gray-500 dark:text-gray-400 text-center mt-0.5">${b.desc}</span>
+                                <span class="absolute top-2 right-2 text-xs">✅</span>
+                            </div>
+                        `;
+                    } else {
+                        badgesHtml += `
+                            <div class="relative flex flex-col items-center p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 opacity-60 animate-badge-pop" style="animation-delay:${idx*0.1}s">
+                                <div class="w-14 h-14 rounded-xl bg-gray-200 dark:bg-white/10 flex items-center justify-center mb-2.5">
+                                    <i data-lucide="lock" class="w-7 h-7 text-gray-400 dark:text-gray-500"></i>
+                                </div>
+                                <span class="text-sm font-bold text-gray-800 dark:text-gray-100">${b.name}</span>
+                                <span class="text-[10px] text-gray-500 dark:text-gray-400 text-center mt-0.5">${b.desc}</span>
+                                <span class="absolute top-2 right-2 text-xs">🔒</span>
+                            </div>
+                        `;
+                    }
+                });
+                badgesGrid.innerHTML = badgesHtml;
+            }
+
+            const achFoot = document.getElementById('achievements-footer-text');
+            if(achFoot) achFoot.textContent = `${stats.unlockedAchievementsCount} / ${stats.totalAchievements} başarım açıldı`;
+            
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        // Call on load
+        renderUserData();
+
+        // INIT LUCIDE ICONS
+        // ——————————————————————————————————————————
+        lucide.createIcons();
+
+    })();
+    </script>
+
+</body>
+</html>
