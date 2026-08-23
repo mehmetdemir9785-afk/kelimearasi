@@ -404,6 +404,25 @@
         </div>
     </div>
 
+    <!-- ====== DAILY LIMIT MODAL ====== -->
+    <div id="dailyLimitModal" class="modal-bg hidden" onclick="if(event.target===this)closeDailyLimit()">
+        <div class="bg-white dark:bg-[#151528] rounded-2xl p-6 max-w-[400px] w-[90%] shadow-2xl animate-slide relative border border-gray-200 dark:border-white/5">
+            <button onclick="closeDailyLimit()" class="absolute top-4 right-4 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <h2 class="text-lg font-bold mb-4 text-center text-gray-900 dark:text-white tracking-wide uppercase">İSTATİSTİKLER</h2>
+            
+            <div class="p-6 bg-violet-50 dark:bg-[#1a1736] border border-violet-100 dark:border-[#2a264f] rounded-xl text-center shadow-sm">
+                <p class="font-medium text-violet-800 dark:text-violet-200 mb-5 text-[15px] leading-relaxed">
+                    Bugünkü <span id="limitDifficultyText" class="font-bold"></span> Shikaku Hakkını Tamamladın!
+                </p>
+                <button onclick="closeDailyLimit()" class="w-full py-3.5 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold rounded-xl transition-colors text-[15px] shadow-lg shadow-violet-500/20">
+                    Sınırsız Moda Geç
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ====== CONFETTI CANVAS ====== -->
     <canvas id="confettiCanvas" class="fixed inset-0 w-full h-full pointer-events-none z-[99] hidden"></canvas>
 
@@ -920,6 +939,7 @@ function formatTime(s) {
 function closeHelp() { document.getElementById('helpModal').classList.add('hidden'); }
 function closeWin() { document.getElementById('winModal').classList.add('hidden'); }
 function closeGameOver() { document.getElementById('gameOverModal').classList.add('hidden'); }
+function closeDailyLimit() { document.getElementById('dailyLimitModal').classList.add('hidden'); }
 
 document.getElementById('helpBtn').addEventListener('click', () => {
     document.getElementById('helpModal').classList.remove('hidden');
@@ -1098,7 +1118,10 @@ function newGame() {
     else { rows = 10; cols = 10; }
 
     if (isDaily && localStorage.getItem(getDailyKey())) {
-        alert('Bu zorluk seviyesindeki bugünkü bulmacayı zaten oynadın! Sınırsız modda devam edebilirsin.');
+        const diffText = difficulty === 'easy' ? 'Kolay' : difficulty === 'medium' ? 'Orta' : 'Zor';
+        document.getElementById('limitDifficultyText').textContent = diffText;
+        document.getElementById('dailyLimitModal').classList.remove('hidden');
+        // Arka planda hemen sınırsız moda geç ve boardu oluştur.
         setMode('unlimited');
         return;
     }

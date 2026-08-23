@@ -30,6 +30,7 @@
     }
 
     const DEFAULT_DATA = {
+        username: "Bulmaca Sever",
         joinDate: new Date().toISOString(),
         gamesPlayed: 0,
         gamesWon: 0,
@@ -91,6 +92,14 @@
             } catch (e) {
                 console.error("User data could not be saved", e);
             }
+        },
+
+        
+        updateUsername(newName) {
+            if (!newName || newName.trim().length === 0) return;
+            const data = this.getData();
+            data.username = newName.trim().substring(0, 20); // max 20 chars
+            this.saveData(data);
         },
 
         addGameResult(gameId, category, isWin, timeSeconds) {

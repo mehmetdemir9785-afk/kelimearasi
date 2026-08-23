@@ -291,7 +291,10 @@
                     <div class="w-20 h-20 rounded-full bg-white/20 border-[3px] border-white/40 flex items-center justify-center mb-3 shadow-lg">
                         <i data-lucide="user" class="w-10 h-10 text-white"></i>
                     </div>
-                    <h3 class="text-lg font-bold">Bulmaca Sever</h3>
+                    <div class="flex items-center gap-2 group cursor-pointer" id="profile-name-container" title="İsmi Değiştir">
+                        <h3 id="profile-username" class="text-lg font-bold">Bulmaca Sever</h3>
+                        <i data-lucide="pencil" class="w-3.5 h-3.5 text-white/60 group-hover:text-white transition-colors"></i>
+                    </div>
                     <p id="profile-join-date" class="text-xs text-white/80 mt-1">Üye: -</p>
                 </div>
 
@@ -455,6 +458,25 @@
                     <p><strong>kelimearasi.com</strong>, kelime oyunu severler ve dil meraklıları için geliştirilmiş modern, minimalist ve tamamen ücretsiz bir Türkçe platformdur.</p>
                     <p>İçerisinde <strong>'Sözcükle'</strong>, <strong>'Arasında'</strong>, <strong>'İkile'</strong> ve <strong>'Kelime Çemberi'</strong> gibi hem dil bilginizi hem de analitik düşünme yeteneğinizi test eden zeka oyunlarını barındırır.</p>
                     <p>Amacımız her yaştan kullanıcıya karmaşadan uzak, eğlenceli ve öğretici bir deneyim sunmaktır.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- ==================== İSİM DEĞİŞTİR MODAL ==================== -->
+    <div id="modal-edit-name" class="fixed inset-0 z-[110] hidden">
+        <div class="modal-backdrop absolute inset-0" id="modal-edit-name-backdrop"></div>
+        <div class="relative z-10 flex items-center justify-center min-h-full p-4">
+            <div class="w-full max-w-sm bg-white dark:bg-[#12122b] rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/5 overflow-hidden flex flex-col animate-slide-up p-6">
+                <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white">İsmini Değiştir</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">Kendine yeni bir takma ad belirle (Maksimum 20 karakter).</p>
+                
+                <input type="text" id="input-new-name" maxlength="20" class="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white outline-none focus:border-violet-500 dark:focus:border-violet-500 transition-colors mb-6 placeholder-gray-400 dark:placeholder-gray-500" placeholder="Yeni isminiz...">
+                
+                <div class="flex gap-3">
+                    <button id="btn-cancel-name" class="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 font-bold transition-colors">Vazgeç</button>
+                    <button id="btn-save-name" class="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold shadow-lg shadow-violet-500/25 transition-colors">Kaydet</button>
                 </div>
             </div>
         </div>
@@ -720,6 +742,37 @@
         // ——————————————————————————————————————————
         // PROFILE MODAL
         // ——————————————————————————————————————————
+        
+        // ——————————————————————————————————————————
+        // PROFILE EDIT NAME
+        // ——————————————————————————————————————————
+        const inputNewName = document.getElementById('input-new-name');
+        
+        document.getElementById('profile-name-container').addEventListener('click', () => {
+            inputNewName.value = document.getElementById('profile-username').textContent;
+            openModal('modal-edit-name');
+            setTimeout(() => inputNewName.focus(), 100);
+        });
+
+        document.getElementById('modal-edit-name-backdrop').addEventListener('click', () => closeModal('modal-edit-name'));
+        document.getElementById('btn-cancel-name').addEventListener('click', () => closeModal('modal-edit-name'));
+        
+        document.getElementById('btn-save-name').addEventListener('click', () => {
+            const newName = inputNewName.value.trim();
+            if (newName.length > 0) {
+                window.KaUser.updateUsername(newName);
+                document.getElementById('profile-username').textContent = newName.substring(0, 20);
+                closeModal('modal-edit-name');
+            }
+        });
+        
+        // Enter tuşu ile kaydetme desteği
+        inputNewName.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('btn-save-name').click();
+            }
+        });
+
         document.getElementById('btn-profile').addEventListener('click', () => openModal('modal-profile'));
         document.getElementById('modal-profile-close').addEventListener('click', () => closeModal('modal-profile'));
         document.getElementById('modal-profile-backdrop').addEventListener('click', () => closeModal('modal-profile'));
