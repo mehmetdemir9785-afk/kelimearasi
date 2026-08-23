@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kelime Çemberi - Kelime Tahmin Oyunu | kelimearası.com</title>
+    <meta name="description" content="Kelime Çemberi kelime tahmin oyunu. Türk alfabesindeki harfler için soruları cevaplayarak bilginizi test edin.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Yerel Veriseti -->
+    <script src="../parolla kelime veriseti/parolla_kelime_veriseti.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%; height: 100dvh;
+            overflow: hidden;
+            touch-action: none; /* Sayfayı çekip kaydırmayı engeller */
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+        main {
+            touch-action: auto; /* Sadece ana alanın kendi içindeki listeler için izin ver */
+        }
+
+        .neon-title {
+            background: linear-gradient(135deg, #A855F7, #EC4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5));
+        }
+
+        /* --- HORIZONTAL STRIP --- */
+        #keyboardStrip {
+            display: flex;
+            width: 100%;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding: 10px 20px;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        #keyboardStrip::-webkit-scrollbar { display: none; }
+
+        .strip-tile {
+            flex: none;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        /* --- LETTER STATES --- */
+        .letter-pending { background: #f3f4f6; color: #6b7280; border: 2px solid #e5e7eb; }
+        .dark .letter-pending { background: #1F2937; color: #9CA3AF; border: 2px solid #374151; }
+        .letter-active { 
+            background: linear-gradient(135deg, #A855F7, #EC4899); 
+            color: #FFFFFF; 
+            transform: scale(1.15); 
+            border: 2px solid #EC4899; 
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.5); 
+            z-index: 10; 
+        }
+        .letter-correct { background: #10B981; color: #FFFFFF; border: 2px solid #059669; }
+        .letter-wrong { background: #EF4444; color: #FFFFFF; border: 2px solid #B91C1C; }
+        .letter-pass { background: #F59E0B; color: #FFFFFF; border: 2px solid #D97706; }
+        .dark .letter-pass { background: #F59E0B; color: #FFFFFF; border: 2px solid #D97706; }
+
+        /* Helpers & Animations */
+        .timer-warning { color: #EF4444 !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        
+        .input-error { background-color: rgba(239, 68, 68, 0.1) !important; border-color: rgba(239, 68, 68, 0.5) !important; }
+
+        .warning-toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(15, 23, 42, 0.95);
+            color: #FCA5A5;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 100;
+            pointer-events: none;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+        .warning-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .modal-backdrop { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); }
+    </style>
+    <script src="../js/user-system.js"></script>
+</head>
+<body class="bg-gray-50 dark:bg-[#0c0c1d] text-gray-900 dark:text-gray-100 transition-colors duration-300">
+
+    <!-- Warning Toast -->
+    <div id="warningToast" class="warning-toast">⚠️ Cevap aktif harf ile başlamalı!</div>
+
+    <!-- Header -->
+    <header class="px-4 py-3 flex-none flex items-center justify-between sticky top-0 z-50 border-b backdrop-blur-xl bg-white/80 dark:bg-[#12122b]/80 border-gray-200/60 dark:border-white/5 transition-colors duration-300">
+        <a href="../index.html" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Ana Sayfa">🏠</a>
+        <h1 class="neon-title text-2xl sm:text-3xl font-black tracking-widest select-none">KELİME ÇEMBERİ</h1>
+        <button id="helpBtn" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Nasıl Oynanır?">❓</button>
+    </header>
+
+    <!-- Main Game Area -->
+    <main class="flex-1 flex flex-col items-center justify-start px-4 pt-4 pb-4 w-full max-w-2xl mx-auto overflow-y-auto relative">
+        
+        <!-- Timer Display (Independent Element) -->
+        <div id="timerDisplay" class="text-3xl font-black tabular-nums tracking-wider text-center mb-4 mt-2 text-gray-900 dark:text-white transition-colors">05:00</div>
+
+        <!-- Horizontal Strip for Letters -->
+        <div id="keyboardStrip" class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 rounded-2xl shadow-sm mb-4">
+            <div id="horizontalBar" class="flex gap-2 mx-auto w-max px-2">
+                <!-- .strip-tile elements injected here -->
+            </div>
+        </div>
+
+        <!-- Stats Container -->
+        <div class="stats-container flex gap-6 mb-6 text-sm font-bold bg-white dark:bg-[#181836] px-6 py-3 rounded-2xl border border-gray-200/60 dark:border-white/5 shadow-sm">
+            <span class="text-green-600 dark:text-green-400 flex items-center gap-1"><i data-lucide="check-circle-2" class="w-5 h-5"></i> <span id="correctCount" class="text-lg">0</span></span>
+            <span class="text-red-600 dark:text-red-400 flex items-center gap-1"><i data-lucide="x-circle" class="w-5 h-5"></i> <span id="wrongCount" class="text-lg">0</span></span>
+            <span class="text-amber-600 dark:text-amber-500 flex items-center gap-1"><i data-lucide="skip-forward" class="w-5 h-5"></i> <span id="passCount" class="text-lg">0</span></span>
+        </div>
+
+        <!-- Question & Interaction Area -->
+        <div class="w-full mt-6 sm:mt-10 flex flex-col items-center gap-6 shrink-0 z-20">
+            <!-- Question Text -->
+            <div id="questionText" class="text-xl sm:text-2xl md:text-3xl text-center text-gray-800 dark:text-slate-100 font-medium leading-snug px-2 min-h-[80px] flex items-center justify-center">Soru yükleniyor...</div>
+            
+            <div id="gameForm" class="w-full flex flex-col items-center gap-6 shrink-0">
+                <!-- Input with type="search" Anti-Autofill Attributes -->
+                <input
+                    type="search"
+                    id="answerInput"
+                    name="q"
+                    class="w-full max-w-md px-6 py-4 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-gray-300 dark:border-slate-700/50 text-gray-900 dark:text-white text-center text-xl sm:text-2xl font-bold placeholder-gray-400 dark:placeholder-slate-500 outline-none transition-all duration-300 focus:border-purple-500 focus:bg-white dark:focus:bg-slate-800 focus:shadow-[0_0_20px_rgba(168,85,247,0.2)] dark:focus:shadow-[0_0_20px_rgba(168,85,247,0.3)] shadow-sm"
+                    placeholder="Cevabınızı yazın..."
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="characters"
+                    spellcheck="false"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                >
+                
+                <!-- Buttons -->
+                <div class="flex gap-3 w-full max-w-md">
+                    <button id="endBtn" type="button" class="action-btn flex-none px-4 sm:px-6 py-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black text-lg tracking-wider shadow-lg flex items-center justify-center gap-1 sm:gap-2"><i data-lucide="octagon" class="w-5 h-5"></i> BİTİR</button>
+                    <button id="passBtn" type="button" class="action-btn flex-none px-4 sm:px-6 py-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black text-lg tracking-wider shadow-lg flex items-center justify-center gap-1 sm:gap-2"><i data-lucide="fast-forward" class="w-5 h-5"></i> PAS</button>
+                    <button id="answerBtn" type="button" class="action-btn flex-1 py-4 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 text-white font-black text-lg tracking-wider shadow-lg flex items-center justify-center gap-1 sm:gap-2"><i data-lucide="send" class="w-5 h-5"></i> CEVAPLA</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <!-- Help Modal -->
+    <div id="helpModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors duration-300">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold neon-title">Nasıl Oynanır?</h2>
+                <button id="closeHelpBtn" class="text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-white transition-colors"><i data-lucide="x" class="w-7 h-7"></i></button>
+            </div>
+            <div class="space-y-4 text-base text-gray-700 dark:text-slate-300 leading-relaxed">
+                <p><strong>Hedef:</strong> Kelime Çemberindeki her harf için sorulan soruyu, o harf ile başlayan kelimeyle cevaplayarak turu tamamlamak.</p>
+                <p><strong>Kurallar:</strong></p>
+                <ul class="list-disc pl-5 space-y-2 text-sm">
+                    <li>Cevabınız kesinlikle <strong>aktif harf ile başlamalıdır</strong>.</li>
+                    <li>Süreyi en iyi şekilde değerlendirin. Toplam <strong>5 dakikanız</strong> var.</li>
+                    <li>Emin olmadığınız sorularda <strong>"PAS"</strong> diyerek o harfi sonraya bırakabilirsiniz. Pas geçilen harfler tur sonunda tekrar sorulur.</li>
+                </ul>
+                <p class="text-sm mt-4 italic text-gray-500 dark:text-slate-400">Gizli Komut: Kutuya "BİTİR" yazıp onaylarsanız oyunu hemen bitirebilirsiniz.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Already Played Modal -->
+    <div id="alreadyPlayedModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 rounded-3xl max-w-sm w-full p-8 shadow-2xl text-center transition-colors duration-300">
+            <i data-lucide="lock" class="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-slate-400"></i>
+            <h2 class="text-2xl font-black neon-title mb-2">Günlük Hak Doldu!</h2>
+            <p class="text-base text-gray-600 dark:text-slate-400 mb-8">Bugünkü Kelime Çemberi hakkını tamamladın! Yarın yeni sorularla tekrar gel.</p>
+            <div class="flex flex-col gap-3">
+                <a href="?mode=unlimited" class="w-full py-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg text-center shadow-md">Sınırsız Oyna</a>
+                <a href="../index.html" class="w-full py-4 rounded-xl bg-gray-200 dark:bg-slate-800 text-gray-800 dark:text-white font-bold text-lg hover:bg-gray-300 dark:hover:bg-slate-700 text-center transition-colors">Ana Sayfa</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div id="resultModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl flex flex-col max-h-[95vh] transition-colors duration-300">
+            <div class="text-center mb-6 shrink-0">
+                <i data-lucide="award" class="w-16 h-16 mx-auto mb-3 text-yellow-400"></i>
+                <h2 class="text-3xl font-black neon-title mb-1">Oyun Bitti!</h2>
+                <p id="resultMessage" class="text-sm text-gray-500 dark:text-slate-400">Sonuç tablosu aşağıda.</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-3 gap-3 mb-5 shrink-0">
+                <div class="bg-green-100/50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-2xl p-3 text-center">
+                    <div id="finalCorrect" class="text-3xl font-black text-green-600 dark:text-green-400">0</div>
+                    <div class="text-[11px] text-green-700 dark:text-green-400/80 font-bold uppercase mt-1">Doğru</div>
+                </div>
+                <div class="bg-red-100/50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-2xl p-3 text-center">
+                    <div id="finalWrong" class="text-3xl font-black text-red-600 dark:text-red-400">0</div>
+                    <div class="text-[11px] text-red-700 dark:text-red-400/80 font-bold uppercase mt-1">Yanlış</div>
+                </div>
+                <div class="bg-amber-100/50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl p-3 text-center">
+                    <div id="finalPass" class="text-3xl font-black text-amber-600 dark:text-amber-500">0</div>
+                    <div class="text-[11px] text-amber-700 dark:text-amber-500/80 font-bold uppercase mt-1">Boş/Pas</div>
+                </div>
+            </div>
+
+            <!-- Answer List -->
+            <div class="flex-1 overflow-y-auto mb-6 pr-2 rounded-xl bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-transparent p-2">
+                <div id="answerList" class="space-y-2"></div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex flex-col gap-3 shrink-0">
+                <div class="flex gap-3">
+                    <button id="playAgainBtn" class="flex-1 py-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-base hover:opacity-90 flex items-center justify-center gap-2">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Tekrar Oyna
+                    </button>
+                    <button id="shareBtn" class="flex-none px-6 py-4 rounded-xl bg-slate-800 text-white font-bold text-base hover:bg-slate-700 flex items-center justify-center gap-2">
+                        <i data-lucide="share-2" class="w-5 h-5"></i> Paylaş
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    (function() {
+        'use strict';
+
+        // 1. DATA SOURCE
+        let RAW_QUESTIONS = [];
+
+        // 2. GAME STATE
+        let initialQuestions = [];
+        let queue = [];
+        let gameMode = 'daily';
+        let timerSeconds = 300;
+        let timerInterval = null;
+        let gameActive = false;
+        let warningTimeout = null;
+
+        // DOM Elements
+        const circleContainer = document.getElementById('circleContainer');
+        const horizontalBar = document.getElementById('horizontalBar');
+        const centerLetter = document.getElementById('centerLetter');
+        const questionText = document.getElementById('questionText');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const answerInput = document.getElementById('answerInput');
+        
+        function getTodayDateStr() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+        function turkishUpper(str) { return str.toLocaleUpperCase('tr-TR'); }
+        function normalizeTurkish(str) { return turkishUpper(str.trim()); }
+
+        function normalizeForComparison(str) {
+            if (!str) return '';
+            return str.toLocaleUpperCase('tr-TR')
+                .replace(/Ç/g, 'C')
+                .replace(/Ğ/g, 'G')
+                .replace(/İ/g, 'I')
+                .replace(/I/g, 'I')
+                .replace(/Ö/g, 'O')
+                .replace(/Ş/g, 'S')
+                .replace(/Ü/g, 'U');
+        }
+
+        function showWarning(message) {
+            const toast = document.getElementById('warningToast');
+            toast.textContent = '⚠️ ' + message;
+            toast.classList.add('show');
+            if (warningTimeout) clearTimeout(warningTimeout);
+            warningTimeout = setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // INIT DATA
+        async function initializeData() {
+            const params = new URLSearchParams(window.location.search);
+            gameMode = params.get('mode') === 'unlimited' ? 'unlimited' : 'daily';
+
+            if (gameMode === 'daily' && localStorage.getItem('parolla_daily_last_date') === getTodayDateStr()) {
+                document.getElementById('alreadyPlayedModal').classList.remove('hidden');
+                document.getElementById('alreadyPlayedModal').classList.add('flex');
+                answerInput.disabled = true;
+                return false;
+            }
+
+            try {
+                if (!window.KELIME_VERISETI) {
+                    console.error("Veriseti yüklenemedi: KELIME_VERISETI değişkeni bulunamadı.");
+                    document.getElementById('questionText').innerHTML = `<span class="text-red-400 font-bold text-lg">Veriseti yüklenemedi! ⚠️<br><span class="text-sm">Lütfen "parolla_kelime_veriseti.js" dosyasının içeriğinin doğru olduğundan emin olun.</span></span>`;
+                    return false;
+                }
+                const data = window.KELIME_VERISETI;
+                
+                const targetLetters = ['A', 'B', 'C', 'Ç', 'D', 'E', 'F', 'G', 'H', 'İ', 'K', 'L', 'M', 'N', 'O', 'Ö', 'P', 'R', 'S', 'Ş', 'T', 'U', 'Ü', 'V', 'Y', 'Z'];
+                const grouped = {};
+                for (const item of data) {
+                    const l = item.harf.toLocaleUpperCase('tr-TR');
+                    if (!grouped[l]) grouped[l] = [];
+                    grouped[l].push(item);
+                }
+                
+                const isDaily = gameMode === 'daily';
+                const dateStr = getTodayDateStr();
+                
+                RAW_QUESTIONS = targetLetters.map((l, index) => {
+                    const possible = grouped[l];
+                    if (!possible || possible.length === 0) {
+                        return { letter: l, question: 'Soru bulunamadı', answer: 'HATA' };
+                    }
+                    
+                    let rIdx = 0;
+                    if (isDaily) {
+                        let seed = 0;
+                        for (let i = 0; i < dateStr.length; i++) {
+                            seed += dateStr.charCodeAt(i);
+                        }
+                        seed += index * 31; 
+                        const pseudoRand = (Math.sin(seed) * 10000) - Math.floor(Math.sin(seed) * 10000);
+                        rIdx = Math.floor(pseudoRand * possible.length);
+                    } else {
+                        rIdx = Math.floor(Math.random() * possible.length);
+                    }
+                    
+                    const selected = possible[rIdx];
+                    return {
+                        letter: l,
+                        question: selected.tanim,
+                        answer: selected.kelime
+                    };
+                });
+            } catch (err) {
+                console.error("Veriseti işlenemedi:", err);
+                return false;
+            }
+
+            initialQuestions = RAW_QUESTIONS.map((q, index) => ({
+                id: index,
+                letter: q.letter,
+                question: q.question,
+                answer: normalizeTurkish(q.answer),
+                status: 'pending',
+                userAnswer: ''
+            }));
+
+            queue = initialQuestions.map(q => q.id);
+            return true;
+        }
+
+        // UI RENDERERS
+        function renderCircleAndStrip() {
+            horizontalBar.innerHTML = '';
+            
+            initialQuestions.forEach((q) => {
+                // Horizontal Strip element
+                const stripTile = document.createElement('div');
+                stripTile.id = `strip-tile-${q.id}`;
+                stripTile.textContent = q.letter;
+                stripTile.className = `strip-tile letter-${q.status}`;
+                horizontalBar.appendChild(stripTile);
+            });
+        }
+
+        function updateLiveStats() {
+            const correct = initialQuestions.filter(q => q.status === 'correct').length;
+            const wrong = initialQuestions.filter(q => q.status === 'wrong').length;
+            const pending = initialQuestions.filter(q => q.status === 'pending').length;
+
+            document.getElementById('correctCount').textContent = correct;
+            document.getElementById('wrongCount').textContent = wrong;
+            document.getElementById('passCount').textContent = pending;
+        }
+
+        function highlightActiveTile(activeId) {
+            initialQuestions.forEach(q => {
+                const stripTile = document.getElementById(`strip-tile-${q.id}`);
+                
+                let baseClass = `letter-${q.status}`;
+                if (q.status === 'pending' && q.hasPassed) baseClass = 'letter-pass';
+                
+                if (stripTile) stripTile.className = `strip-tile ${baseClass}`;
+
+                if (q.id === activeId) {
+                    if (stripTile) {
+                        stripTile.classList.add('letter-active');
+                        // Center active letter in scroll view
+                        stripTile.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                    }
+                }
+            });
+        }
+
+        // GAME FLOW
+        async function startGame() {
+            const initialized = await initializeData();
+            if (!initialized) return;
+            
+            gameActive = true;
+            timerSeconds = 300;
+            renderCircleAndStrip();
+            updateLiveStats();
+            
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                const m = Math.floor(timerSeconds / 60);
+                const s = timerSeconds % 60;
+                timerDisplay.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2, '0')}`;
+                
+                if (timerSeconds <= 30) timerDisplay.classList.add('timer-warning');
+                if (timerSeconds <= 0) endGame();
+            }, 1000);
+
+            showNextQuestion();
+        }
+
+        function showNextQuestion() {
+            if (queue.length === 0) {
+                endGame();
+                return;
+            }
+            
+            const activeId = queue[0];
+            const q = initialQuestions[activeId];
+            
+            // Soru metnine o anki harfi belirten neon ve şık bir etiket eklendi
+            questionText.innerHTML = `<div class="flex items-center text-left gap-3 w-full"><span class="flex items-center justify-center bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg w-10 h-10 shrink-0 font-black text-xl shadow-md">${q.letter}</span> <span>${q.question}</span></div>`;
+            
+            highlightActiveTile(activeId);
+            
+            answerInput.value = '';
+        }
+
+        function handleCommand(inputValue) {
+            if (!gameActive || queue.length === 0) return;
+
+            const val = normalizeTurkish(inputValue);
+            if (!val) return;
+
+            if (val === 'PAS') processPass();
+            else if (val === 'BİTİR') endGame();
+            else processAnswer(val);
+        }
+
+        function processPass() {
+            const activeId = queue.shift();
+            const q = initialQuestions[activeId];
+            q.status = 'pending';
+            q.hasPassed = true;
+            queue.push(activeId);
+            updateLiveStats();
+            showNextQuestion();
+        }
+
+        function processAnswer(userAnswer) {
+            const activeId = queue[0];
+            const q = initialQuestions[activeId];
+
+            // İlk harf kontrolünü toleranslı yap
+            const userFirstChar = normalizeForComparison(userAnswer.charAt(0));
+            const qFirstChar = normalizeForComparison(q.letter);
+
+            if (userFirstChar !== qFirstChar) {
+                answerInput.classList.add('shake', 'input-error');
+                setTimeout(() => answerInput.classList.remove('shake', 'input-error'), 500);
+                showWarning(`Cevap "${q.letter}" harfi ile başlamalıdır!`);
+                return;
+            }
+
+            // Tam cevap kontrolünü toleranslı yap
+            const normalizedUserAnswer = normalizeForComparison(userAnswer);
+            const normalizedCorrectAnswer = normalizeForComparison(q.answer);
+
+            if (normalizedUserAnswer === normalizedCorrectAnswer) {
+                q.status = 'correct';
+                q.userAnswer = userAnswer; 
+            } else {
+                q.status = 'wrong';
+                q.userAnswer = userAnswer;
+            }
+
+            queue.shift();
+            updateLiveStats();
+            highlightActiveTile(queue.length > 0 ? queue[0] : null);
+            showNextQuestion();
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            highlightActiveTile(null);
+            answerInput.blur();
+
+            const correct = initialQuestions.filter(q => q.status === 'correct').length;
+            const wrong = initialQuestions.filter(q => q.status === 'wrong').length;
+            const pending = initialQuestions.filter(q => q.status === 'pending').length;
+            const total = initialQuestions.length;
+
+            const isWin = correct >= (total / 2); // %50'den fazla doğru varsa kazanmış say
+            const gecenSureSaniye = 300 - timerSeconds;
+
+            if (window.KaUser) {
+                window.KaUser.addGameResult('parolla', 'word', isWin, gecenSureSaniye);
+            }
+
+            if (gameMode === 'daily') {
+                localStorage.setItem('parolla_daily_last_date', getTodayDateStr());
+            }
+
+            document.getElementById('finalCorrect').textContent = correct;
+            document.getElementById('finalWrong').textContent = wrong;
+            document.getElementById('finalPass').textContent = pending;
+
+            const listEl = document.getElementById('answerList');
+            listEl.innerHTML = '';
+            
+            initialQuestions.forEach(q => {
+                const row = document.createElement('div');
+                let bg = 'bg-gray-100 dark:bg-slate-800/50';
+                let icon = '<i data-lucide="minus" class="w-4 h-4 text-amber-500"></i>';
+                let textHtml = `<span class="text-amber-500 dark:text-amber-400 font-semibold">${q.answer}</span>`;
+                
+                if (q.status === 'correct') {
+                    bg = 'bg-green-100/50 dark:bg-green-500/10';
+                    icon = '<i data-lucide="check" class="w-4 h-4 text-green-500 dark:text-green-400"></i>';
+                    textHtml = `<span class="text-green-600 dark:text-green-400 font-semibold">${q.answer}</span>`;
+                } else if (q.status === 'wrong') {
+                    bg = 'bg-red-100/50 dark:bg-red-500/10';
+                    icon = '<i data-lucide="x" class="w-4 h-4 text-red-500 dark:text-red-400"></i>';
+                    textHtml = `<span class="text-red-500 dark:text-red-400 line-through mr-2 opacity-80">${q.userAnswer}</span><span class="text-green-600 dark:text-green-400 font-semibold">${q.answer}</span>`;
+                }
+
+                row.className = `flex flex-col py-2 px-3 rounded-xl mb-1 cursor-pointer transition-colors hover:bg-gray-200 dark:hover:bg-slate-700/50 ${bg}`;
+                row.innerHTML = `
+                    <div class="flex items-center gap-3 w-full">
+                        <span class="w-7 h-7 flex items-center justify-center rounded-full bg-gray-300 dark:bg-slate-900 text-gray-800 dark:text-white font-bold text-[11px] shrink-0">${q.letter}</span>
+                        <span class="shrink-0 text-sm">${icon}</span>
+                        <span class="text-gray-700 dark:text-slate-300 text-sm flex-1 truncate">${textHtml}</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0 transition-transform duration-300" id="chevron-${q.id}"></i>
+                    </div>
+                    <div class="hidden w-full mt-2 pt-2 border-t border-gray-200 dark:border-white/10 text-xs text-gray-600 dark:text-slate-400 leading-relaxed" id="desc-${q.id}">
+                        <span class="text-purple-600 dark:text-purple-400 font-bold">Soru:</span> ${q.question}
+                    </div>
+                `;
+
+                row.onclick = () => {
+                    const descEl = document.getElementById(`desc-${q.id}`);
+                    const chevronEl = document.getElementById(`chevron-${q.id}`);
+                    if (descEl.classList.contains('hidden')) {
+                        descEl.classList.remove('hidden');
+                        chevronEl.style.transform = 'rotate(180deg)';
+                    } else {
+                        descEl.classList.add('hidden');
+                        chevronEl.style.transform = 'rotate(0deg)';
+                    }
+                };
+                listEl.appendChild(row);
+            });
+
+            // Re-init lucide icons inside modal
+            lucide.createIcons();
+
+            const playBtn = document.getElementById('playAgainBtn');
+            if (gameMode === 'daily') {
+                playBtn.innerHTML = '<i data-lucide="infinity" class="w-5 h-5"></i> Sınırsız Mod';
+                playBtn.onclick = () => window.location.href = '?mode=unlimited';
+            } else {
+                playBtn.innerHTML = '<i data-lucide="rotate-ccw" class="w-5 h-5"></i> Tekrar Oyna';
+                playBtn.onclick = () => window.location.reload();
+            }
+
+            document.getElementById('resultModal').classList.remove('hidden');
+            document.getElementById('resultModal').classList.add('flex');
+        }
+
+        // EVENT LISTENERS
+        
+        answerInput.addEventListener('focus', () => {
+            setTimeout(() => {
+                window.scrollTo(0, 0); // Force scroll to top
+                if (queue.length > 0) {
+                    highlightActiveTile(queue[0]);
+                }
+            }, 150);
+        });
+
+        // Klavyenin kapanmasını (blur) engelleyip aynı anda aksiyonu tetikleyen fonksiyon
+        const handleBtnPress = (e, action) => {
+            e.preventDefault(); // Odak kaybını engeller, klavye açık kalır
+            if (action === 'PAS') {
+                handleCommand('PAS');
+            } else {
+                handleCommand(answerInput.value);
+            }
+        };
+
+        const answerBtn = document.getElementById('answerBtn');
+        const passBtn = document.getElementById('passBtn');
+        const endBtn = document.getElementById('endBtn');
+
+        // Sadece pointerdown kullanıyoruz (Hem dokunmatik hem mouse için kusursuz çalışır)
+        answerBtn.addEventListener('pointerdown', (e) => handleBtnPress(e, 'ANSWER'));
+        passBtn.addEventListener('pointerdown', (e) => handleBtnPress(e, 'PAS'));
+        endBtn.addEventListener('click', () => endGame()); // Bitir butonu standart kalabilir
+        
+        answerInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleCommand(answerInput.value);
+            }
+        });
+
+        document.getElementById('helpBtn').addEventListener('click', () => {
+            document.getElementById('helpModal').classList.remove('hidden');
+            document.getElementById('helpModal').classList.add('flex');
+        });
+        
+        document.getElementById('closeHelpBtn').addEventListener('click', () => {
+            document.getElementById('helpModal').classList.add('hidden');
+            document.getElementById('helpModal').classList.remove('flex');
+            if (gameActive) answerInput.focus();
+        });
+
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            const correct = initialQuestions.filter(q => q.status === 'correct').length;
+            const wrong = initialQuestions.filter(q => q.status === 'wrong').length;
+            const pending = initialQuestions.filter(q => q.status === 'pending').length;
+            const total = initialQuestions.length;
+            const rate = Math.round((correct / total) * 100);
+
+            let text = `🟣 KELİME ÇEMBERİ ${gameMode === 'daily' ? '(Günlük)' : '(Sınırsız)'}\n`;
+            text += `📅 ${getTodayDateStr()}\n\n`;
+            text += `✅ ${correct} | ❌ ${wrong} | 🟡 ${pending}\n`;
+            text += `📊 Başarı: %${rate}\n\n`;
+
+            initialQuestions.forEach(q => {
+                if (q.status === 'correct') text += '🟢';
+                else if (q.status === 'wrong') text += '🔴';
+                else text += '🟡';
+            });
+            text += '\n\nkelimearası.com/oyunlar/parolla.html';
+
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('shareBtn');
+                btn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i> Kopyalandı!';
+                lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = '<i data-lucide="share-2" class="w-5 h-5"></i> Paylaş';
+                    lucide.createIcons();
+                }, 2000);
+            });
+        });
+
+        window.addEventListener('DOMContentLoaded', startGame);
+
+    })();
+    </script>
+</body>
+</html>

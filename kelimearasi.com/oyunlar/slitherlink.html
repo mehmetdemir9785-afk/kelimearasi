@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Kelimearası Çit (Slitherlink) - Mantık bulmacası. Tek bir kapalı döngü oluştur!">
+    <title>Çit (Slitherlink) | Kelimearası</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        bg: '#0c0c1d',
+                        panel: '#181836',
+                    }
+                }
+            }
+        };
+    </script>
+
+    <style>
+        body {
+            touch-action: none;
+            overscroll-behavior: none;
+        }
+        html, body { height: 100%; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { display: none; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ====== GRID STYLES ====== */
+        .sl-dot {
+            width: var(--dot-size);
+            height: var(--dot-size);
+            border-radius: 50%;
+            background: #94a3b8;
+            z-index: 10;
+            flex-shrink: 0;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        html.dark .sl-dot { background: #64748b; }
+        .sl-dot.active { background: #06b6d4; box-shadow: 0 0 6px rgba(6,182,212,0.6); }
+
+        .sl-edge {
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            z-index: 5;
+            border-radius: 3px;
+            transition: background 0.15s;
+        }
+        .sl-edge:hover { background: rgba(6,182,212,0.12); }
+        html.dark .sl-edge:hover { background: rgba(6,182,212,0.08); }
+
+        .sl-edge.h-edge {
+            width: var(--cell-size);
+            height: var(--dot-size);
+            margin: 0;
+        }
+        .sl-edge.v-edge {
+            width: var(--dot-size);
+            height: var(--cell-size);
+            margin: 0;
+        }
+
+        /* Line state */
+        .sl-edge .edge-line {
+            position: absolute;
+            border-radius: 2px;
+            transition: all 0.15s ease;
+        }
+        .sl-edge.h-edge .edge-line {
+            width: calc(100% + var(--dot-size));
+            height: 4px;
+            left: calc(var(--dot-size) / -2);
+        }
+        .sl-edge.v-edge .edge-line {
+            height: calc(100% + var(--dot-size));
+            width: 4px;
+            top: calc(var(--dot-size) / -2);
+        }
+        .sl-edge.state-line .edge-line {
+            background: linear-gradient(135deg, #06b6d4, #14b8a6);
+            box-shadow: 0 0 8px rgba(6,182,212,0.4);
+        }
+        html:not(.dark) .sl-edge.state-line .edge-line {
+            background: linear-gradient(135deg, #0891b2, #0d9488);
+            box-shadow: 0 0 6px rgba(8,145,178,0.3);
+        }
+
+        /* X state */
+        .sl-edge .edge-x {
+            font-size: calc(var(--dot-size) * 1.2);
+            font-weight: 700;
+            color: #9ca3af;
+            opacity: 0;
+            transition: opacity 0.15s;
+            line-height: 1;
+            pointer-events: none;
+        }
+        html.dark .sl-edge .edge-x { color: #4b5563; }
+        .sl-edge.state-x .edge-x { opacity: 1; }
+
+        /* Cell */
+        .sl-cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: calc(var(--cell-size) * 0.48);
+            color: #374151;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: color 0.2s;
+        }
+        html.dark .sl-cell { color: #cbd5e1; }
+        .sl-cell.num-0 { color: #9ca3af; }
+        html.dark .sl-cell.num-0 { color: #4b5563; }
+        .sl-cell.satisfied { color: #10b981; }
+        .sl-cell.over { color: #ef4444; }
+
+        /* ====== ANIMATIONS ====== */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+            20%, 40%, 60%, 80% { transform: translateX(4px); }
+        }
+        @keyframes errorFlash {
+            0%, 100% { opacity: 1; }
+            25% { opacity: 0.3; background: rgba(239,68,68,0.4); }
+            50% { opacity: 1; }
+            75% { opacity: 0.3; background: rgba(239,68,68,0.4); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px) scale(0.95); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        @keyframes confettiDrop {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes heartBreak {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.4); }
+            60% { transform: scale(0.6); }
+            100% { transform: scale(1); opacity: 0.3; }
+        }
+        @keyframes winPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(6,182,212,0.2); }
+            50% { box-shadow: 0 0 40px rgba(6,182,212,0.5); }
+        }
+
+        .animate-shake { animation: shake 0.5s ease-in-out; }
+        .animate-error { animation: errorFlash 0.4s ease-in-out 2; }
+        .animate-pop { animation: popIn 0.3s ease-out forwards; }
+        .animate-heart-break { animation: heartBreak 0.5s ease forwards; }
+
+        .modal { animation: fadeIn 0.3s ease-out; }
+        .modal-content { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        .confetti-piece {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -20px;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        /* Grid container glow */
+        .grid-container {
+            border-radius: 12px;
+            padding: 6px;
+            background: white;
+            border: 1px solid rgba(229,231,235,0.6);
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        html.dark .grid-container {
+            background: #181836;
+            border-color: rgba(255,255,255,0.05);
+            box-shadow: 0 0 40px rgba(6,182,212,0.05), 0 0 80px rgba(6,182,212,0.03);
+        }
+        .grid-container.win-glow {
+            animation: winPulse 2s ease-in-out infinite;
+        }
+
+        /* Toggle button */
+        .tool-toggle {
+            position: relative;
+            overflow: hidden;
+        }
+        .tool-toggle .toggle-slider {
+            position: absolute;
+            top: 4px; bottom: 4px;
+            width: calc(50% - 4px);
+            border-radius: 8px;
+            background: linear-gradient(135deg, #06b6d4, #14b8a6);
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(6,182,212,0.3);
+        }
+        .tool-toggle .toggle-slider.right { left: calc(50% + 2px); }
+        .tool-toggle .toggle-slider.left { left: 4px; }
+    </style>
+    <script src="../js/user-system.js"></script>
+</head>
+<body class="bg-gray-50 dark:bg-[#0c0c1d] text-gray-900 dark:text-gray-100 font-sans h-full flex flex-col transition-colors duration-300">
+
+    <!-- ====== HEADER ====== -->
+    <header class="px-4 py-3 sticky top-0 z-50 w-full flex items-center justify-between border-b border-gray-200/60 dark:border-white/5 backdrop-blur-xl bg-white/80 dark:bg-[#12122b]/80 flex-shrink-0 transition-colors duration-300">
+        <a href="../index.html" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Ana Sayfa">🏠</a>
+        <h1 class="text-xl md:text-2xl font-extrabold tracking-widest bg-gradient-to-r from-cyan-500 via-teal-400 to-cyan-500 text-transparent bg-clip-text drop-shadow-sm dark:drop-shadow-[0_0_12px_rgba(6,182,212,0.5)]">
+            ÇİT
+        </h1>
+        <button id="helpBtn" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Yardım">❓</button>
+    </header>
+
+    <!-- ====== MAIN ====== -->
+    <main class="flex-1 flex flex-col w-full max-w-lg mx-auto p-3 gap-2.5 overflow-hidden">
+
+        <!-- Mode Toggles -->
+        <div class="flex gap-2 shrink-0">
+            <!-- Game Type -->
+            <div class="flex p-1 bg-white dark:bg-panel rounded-xl border border-gray-200/60 dark:border-white/5 flex-1 transition-colors">
+                <button id="modeDaily" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-cyan-500 to-teal-500 shadow text-white transition">Günlük</button>
+                <button id="modeUnlimited" class="flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white transition">Sınırsız</button>
+            </div>
+            <!-- Checking Mode -->
+            <div class="flex p-1 bg-white dark:bg-panel rounded-xl border border-gray-200/60 dark:border-white/5 flex-1 transition-colors">
+                <button id="modeLive" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-gray-600 shadow text-white transition">Canlı</button>
+                <button id="modeClassic" class="flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white transition">Cansız</button>
+            </div>
+        </div>
+
+        <!-- Difficulty Selector -->
+        <div id="difficultySelector" class="flex gap-2 shrink-0">
+            <button class="diff-btn flex-1 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-panel border border-cyan-500 text-cyan-600 dark:text-cyan-400 transition-colors" data-size="5">5×5 Kolay</button>
+            <button class="diff-btn flex-1 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-panel text-gray-400 border border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" data-size="7">7×7 Orta</button>
+            <button class="diff-btn flex-1 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-panel text-gray-400 border border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" data-size="10">10×10 Zor</button>
+        </div>
+
+        <!-- Info Bar -->
+        <div class="flex justify-between items-center bg-white dark:bg-panel p-3 rounded-xl border border-gray-200/60 dark:border-white/5 shrink-0 transition-colors">
+            <div id="livesContainer" class="flex gap-1 text-lg">
+                <span class="heart" data-i="0">❤️</span>
+                <span class="heart" data-i="1">❤️</span>
+                <span class="heart" data-i="2">❤️</span>
+            </div>
+            <div class="flex items-center gap-2 text-gray-500 dark:text-gray-300 font-mono font-medium">
+                <i data-lucide="timer" class="w-4 h-4"></i>
+                <span id="timer">00:00</span>
+            </div>
+        </div>
+
+        <!-- Game Grid Area -->
+        <div class="flex-1 w-full flex items-center justify-center min-h-0 overflow-hidden">
+            <div id="gridWrapper" class="grid-container">
+                <div id="gameGrid" class="inline-grid" style="touch-action: none;"></div>
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="bg-white dark:bg-panel p-3 rounded-xl border border-gray-200/60 dark:border-white/5 flex gap-2 items-center justify-between shrink-0 transition-colors">
+            <!-- Undo & Clear -->
+            <div class="flex gap-2">
+                <button id="undoBtn" class="p-2.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition active:scale-95" title="Geri Al">
+                    <i data-lucide="undo-2" class="w-5 h-5"></i>
+                </button>
+                <button id="clearBtn" class="p-2.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition active:scale-95" title="Sil">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Line / X Toggle -->
+            <div class="tool-toggle flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl relative w-48" id="toolToggle">
+                <div class="toggle-slider left"></div>
+                <button id="toolLine" class="flex-1 py-2 text-sm font-semibold rounded-lg z-10 text-white transition flex items-center justify-center gap-1.5" title="Çizgi Çiz">
+                    <i data-lucide="minus" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Çizgi</span>
+                </button>
+                <button id="toolX" class="flex-1 py-2 text-sm font-medium rounded-lg z-10 text-gray-500 dark:text-gray-400 transition flex items-center justify-center gap-1.5" title="Çarpı Koy">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Çarpı</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ====== HELP MODAL ====== -->
+    <div id="helpModal" class="fixed inset-0 bg-gray-900/40 dark:bg-black/70 backdrop-blur-sm hidden items-center justify-center z-[100] modal p-4" style="display:none;">
+        <div class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 p-6 rounded-2xl max-w-md w-full shadow-2xl modal-content transition-colors">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="text-xl font-bold bg-gradient-to-r from-cyan-500 to-teal-500 text-transparent bg-clip-text">Nasıl Oynanır?</h2>
+                <button onclick="hideModal('helpModal')" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-slate-400">✕</button>
+            </div>
+            <div class="space-y-4 text-sm text-gray-600 dark:text-slate-300 leading-relaxed">
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-500/20 flex items-center justify-center shrink-0 mt-0.5">🎯</div>
+                    <div>
+                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Amaç</div>
+                        <div>Noktalar arasında çizgiler çizerek <strong class="text-cyan-600 dark:text-cyan-400">tek bir kapalı döngü</strong> (halka) oluştur.</div>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-500/20 flex items-center justify-center shrink-0 mt-0.5">🔢</div>
+                    <div>
+                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Sayı İpuçları</div>
+                        <div>Hücrelerdeki sayılar, o hücrenin kenarlarından kaçının döngünün parçası olduğunu gösterir. Boş hücrelerin ipucu yoktur.</div>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">👆</div>
+                    <div>
+                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Tıklama & Sürükleme</div>
+                        <div>Kenarları tıkla veya sürükle. <strong>Çizgi modu</strong>nda çizgi çekersin, <strong>Çarpı (X) modu</strong>nda kenarları "çizgi yok" diye işaretlersin.</div>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0 mt-0.5">⚠️</div>
+                    <div>
+                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Canlı Mod</div>
+                        <div><strong class="text-cyan-600 dark:text-cyan-400">Canlı modda</strong> hatalı çizgiler anında tespit edilir ve 1 can kaybedersin. 3 can biterse oyun biter!</div>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-500/20 flex items-center justify-center shrink-0 mt-0.5">🏆</div>
+                    <div>
+                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Kazanma</div>
+                        <div>Tüm çizgiler tek bir kopuksuz halka oluşturduğunda ve tüm sayı ipuçları sağlandığında bulmacayı çözmüş olursun!</div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="hideModal('helpModal')" class="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 transition-all font-semibold text-sm active:scale-95 text-white shadow-md">
+                Anladım!
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== RESULT MODAL ====== -->
+    <div id="resultModal" class="fixed inset-0 bg-gray-900/40 dark:bg-black/70 backdrop-blur-sm hidden items-center justify-center z-[100] modal p-4" style="display:none;">
+        <div class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 p-6 rounded-2xl max-w-sm w-full shadow-2xl modal-content text-center transition-colors">
+            <div class="text-6xl mb-3">🎉</div>
+            <h2 id="resultTitle" class="text-2xl font-black bg-gradient-to-r from-cyan-500 via-teal-400 to-cyan-500 text-transparent bg-clip-text mb-1">TEBRİKLER!</h2>
+            <p id="resultMsg" class="text-gray-500 dark:text-slate-400 text-sm mb-6">Bulmacayı başarıyla çözdün!</p>
+
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/5 rounded-xl p-3">
+                    <div class="text-2xl font-black text-cyan-600 dark:text-cyan-400" id="resultTime">00:00</div>
+                    <div class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider mt-1">Süre</div>
+                </div>
+                <div class="bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/5 rounded-xl p-3">
+                    <div class="text-2xl font-black text-teal-600 dark:text-teal-400" id="resultMode">Kolay</div>
+                    <div class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider mt-1">Zorluk</div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <button id="shareBtn" class="w-full py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all font-semibold text-sm text-gray-700 dark:text-slate-300 active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="share-2" class="w-4 h-4"></i> Sonucu Paylaş
+                </button>
+                <button id="newGameBtn" class="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 transition-all font-semibold text-sm active:scale-95 shadow-lg shadow-cyan-500/20 text-white">
+                    🔄 Yeni Oyun
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== GAME OVER MODAL ====== -->
+    <div id="gameOverModal" class="fixed inset-0 bg-gray-900/40 dark:bg-black/70 backdrop-blur-sm hidden items-center justify-center z-[100] modal p-4" style="display:none;">
+        <div class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 p-6 rounded-2xl max-w-sm w-full shadow-2xl modal-content text-center transition-colors">
+            <div class="text-6xl mb-3">💔</div>
+            <h2 class="text-2xl font-black text-red-500 mb-1">OYUN BİTTİ!</h2>
+            <p class="text-gray-500 dark:text-slate-400 text-sm mb-6">Tüm canlarını kaybettin.</p>
+            <button id="retryBtn" class="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 transition-all font-semibold text-sm active:scale-95 shadow-lg shadow-cyan-500/20 text-white">
+                🔄 Tekrar Dene
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== TOAST ====== -->
+    <div id="toastContainer" class="fixed top-20 left-1/2 -translate-x-1/2 z-[200] flex flex-col items-center gap-2 pointer-events-none"></div>
+
+
+    <!-- ============================== -->
+    <!-- ========= JAVASCRIPT ========= -->
+    <!-- ============================== -->
+    <script>
+    (function() {
+        'use strict';
+
+        // ====== CONSTANTS ======
+        const EDGE_EMPTY = 0;
+        const EDGE_LINE = 1;
+        const EDGE_X = 2;
+
+        // ====== STATE ======
+        let mode = 'daily';           // 'daily' | 'unlimited'
+        let checkingMode = 'live';    // 'live' | 'classic'
+        let gridSize = 5;            // 5, 7, 10
+        let rows = 5, cols = 5;
+
+        let puzzle = null;            // { numbers, visible, solutionH, solutionV }
+        let hEdges = [];              // horizontal edge states [rows+1][cols]
+        let vEdges = [];              // vertical edge states [rows][cols+1]
+        let lives = 3;
+        let timer = 0;
+        let timerInterval = null;
+        let timerStarted = false;
+        let gameOver = false;
+        let gameWon = false;
+        let history = [];             // undo history
+        let activeTool = 'line';      // 'line' | 'x'
+
+        // Drag state
+        let isDragging = false;
+        let dragTool = null;
+        let dragBatch = [];           // edges modified in this drag
+
+        // ====== SEEDED RANDOM ======
+        function mulberry32(seed) {
+            return function() {
+                seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+                let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+
+        function dateToSeed(dateStr) {
+            let hash = 0;
+            for (let i = 0; i < dateStr.length; i++) {
+                const ch = dateStr.charCodeAt(i);
+                hash = ((hash << 5) - hash) + ch;
+                hash |= 0;
+            }
+            return Math.abs(hash);
+        }
+
+        function getTodaySeed(size) {
+            const d = new Date();
+            const str = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}-sl-${size}`;
+            return dateToSeed(str);
+        }
+
+        // ====== PUZZLE GENERATION ======
+        function generatePuzzle(r, c, seed) {
+            const rng = mulberry32(seed);
+            const inside = generateLoop(r, c, rng);
+            const sol = computeSolutionEdges(inside, r, c);
+            const numbers = computeCellNumbers(sol.hEdges, sol.vEdges, r, c);
+            const visible = decideVisibleNumbers(numbers, r, c, rng);
+            return {
+                numbers, visible,
+                solutionH: sol.hEdges,
+                solutionV: sol.vEdges,
+                inside
+            };
+        }
+
+        function generateLoop(r, c, rng) {
+            const inside = Array.from({length: r}, () => Array(c).fill(false));
+            const startR = Math.floor(rng() * r);
+            const startC = Math.floor(rng() * c);
+            inside[startR][startC] = true;
+
+            let frontier = [];
+            addNeighbors(frontier, startR, startC, inside, r, c);
+
+            const minSize = Math.max(3, Math.floor(r * c * 0.2));
+            const targetSize = Math.floor(r * c * (0.28 + rng() * 0.22));
+            let currentSize = 1;
+            let attempts = 0;
+            const maxAttempts = r * c * 4;
+
+            while (currentSize < targetSize && frontier.length > 0 && attempts < maxAttempts) {
+                attempts++;
+                const idx = Math.floor(rng() * frontier.length);
+                const [fr, fc] = frontier[idx];
+                frontier.splice(idx, 1);
+
+                if (inside[fr][fc]) continue;
+
+                inside[fr][fc] = true;
+                if (isOutsideConnected(inside, r, c)) {
+                    currentSize++;
+                    addNeighbors(frontier, fr, fc, inside, r, c);
+                } else {
+                    inside[fr][fc] = false;
+                }
+            }
+
+            // If too small, retry with different start
+            if (currentSize < minSize) {
+                return generateLoop(r, c, mulberry32(Math.floor(rng() * 999999)));
+            }
+
+            return inside;
+        }
+
+        function addNeighbors(frontier, r, c, inside, rows, cols) {
+            const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+            for (const [dr, dc] of dirs) {
+                const nr = r + dr, nc = c + dc;
+                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !inside[nr][nc]) {
+                    if (!frontier.some(f => f[0] === nr && f[1] === nc)) {
+                        frontier.push([nr, nc]);
+                    }
+                }
+            }
+        }
+
+        function isOutsideConnected(inside, rows, cols) {
+            const eR = rows + 2, eC = cols + 2;
+            const visited = Array.from({length: eR}, () => Array(eC).fill(false));
+            const queue = [[0, 0]];
+            visited[0][0] = true;
+            let count = 1;
+            let head = 0;
+
+            while (head < queue.length) {
+                const [r, c] = queue[head++];
+                for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+                    const nr = r + dr, nc = c + dc;
+                    if (nr >= 0 && nr < eR && nc >= 0 && nc < eC && !visited[nr][nc]) {
+                        const isInside = (nr >= 1 && nr <= rows && nc >= 1 && nc <= cols) ? inside[nr-1][nc-1] : false;
+                        if (!isInside) {
+                            visited[nr][nc] = true;
+                            queue.push([nr, nc]);
+                            count++;
+                        }
+                    }
+                }
+            }
+
+            let totalOutside = eR * eC;
+            for (let r = 0; r < rows; r++)
+                for (let c = 0; c < cols; c++)
+                    if (inside[r][c]) totalOutside--;
+            return count === totalOutside;
+        }
+
+        function computeSolutionEdges(inside, rows, cols) {
+            const hE = Array.from({length: rows + 1}, () => Array(cols).fill(false));
+            const vE = Array.from({length: rows}, () => Array(cols + 1).fill(false));
+
+            for (let r = 0; r <= rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const above = r > 0 ? inside[r-1][c] : false;
+                    const below = r < rows ? inside[r][c] : false;
+                    hE[r][c] = above !== below;
+                }
+            }
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c <= cols; c++) {
+                    const left = c > 0 ? inside[r][c-1] : false;
+                    const right = c < cols ? inside[r][c] : false;
+                    vE[r][c] = left !== right;
+                }
+            }
+            return { hEdges: hE, vEdges: vE };
+        }
+
+        function computeCellNumbers(hE, vE, rows, cols) {
+            const nums = Array.from({length: rows}, () => Array(cols).fill(0));
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    let n = 0;
+                    if (hE[r][c]) n++;
+                    if (hE[r+1][c]) n++;
+                    if (vE[r][c]) n++;
+                    if (vE[r][c+1]) n++;
+                    nums[r][c] = n;
+                }
+            }
+            return nums;
+        }
+
+        function decideVisibleNumbers(numbers, rows, cols, rng) {
+            let showRate;
+            if (gridSize <= 5) showRate = 0.78;
+            else if (gridSize <= 7) showRate = 0.62;
+            else showRate = 0.48;
+
+            const vis = Array.from({length: rows}, () => Array(cols).fill(false));
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (numbers[r][c] === 0 || numbers[r][c] === 3) {
+                        vis[r][c] = true;
+                    } else {
+                        vis[r][c] = rng() < showRate;
+                    }
+                }
+            }
+            return vis;
+        }
+
+        // ====== GRID RENDERING ======
+        function buildGrid() {
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = '';
+
+            // Calculate cell size based on available space
+            const wrapper = document.getElementById('gridWrapper');
+            const available = Math.min(
+                wrapper.parentElement.clientWidth - 32,
+                wrapper.parentElement.clientHeight - 16,
+                500
+            );
+            const dotSize = gridSize <= 5 ? 12 : (gridSize <= 7 ? 10 : 8);
+            const cellSize = Math.floor((available - (cols + 1) * dotSize) / cols);
+            const clampedCellSize = Math.max(24, Math.min(cellSize, gridSize <= 5 ? 64 : (gridSize <= 7 ? 50 : 38)));
+
+            grid.style.setProperty('--dot-size', dotSize + 'px');
+            grid.style.setProperty('--cell-size', clampedCellSize + 'px');
+
+            // Build grid template
+            const colParts = [];
+            const rowParts = [];
+            for (let c = 0; c <= 2 * cols; c++) {
+                colParts.push(c % 2 === 0 ? `${dotSize}px` : `${clampedCellSize}px`);
+            }
+            for (let r = 0; r <= 2 * rows; r++) {
+                rowParts.push(r % 2 === 0 ? `${dotSize}px` : `${clampedCellSize}px`);
+            }
+            grid.style.gridTemplateColumns = colParts.join(' ');
+            grid.style.gridTemplateRows = rowParts.join(' ');
+            grid.style.gap = '0px';
+
+            for (let r = 0; r <= 2 * rows; r++) {
+                for (let c = 0; c <= 2 * cols; c++) {
+                    if (r % 2 === 0 && c % 2 === 0) {
+                        // Dot
+                        const dot = document.createElement('div');
+                        dot.className = 'sl-dot';
+                        dot.dataset.dr = r / 2;
+                        dot.dataset.dc = c / 2;
+                        grid.appendChild(dot);
+                    } else if (r % 2 === 0 && c % 2 === 1) {
+                        // Horizontal edge
+                        const edge = createEdge('h', r / 2, (c - 1) / 2);
+                        grid.appendChild(edge);
+                    } else if (r % 2 === 1 && c % 2 === 0) {
+                        // Vertical edge
+                        const edge = createEdge('v', (r - 1) / 2, c / 2);
+                        grid.appendChild(edge);
+                    } else {
+                        // Cell
+                        const cell = document.createElement('div');
+                        cell.className = 'sl-cell';
+                        const cr = (r - 1) / 2, cc = (c - 1) / 2;
+                        cell.dataset.r = cr;
+                        cell.dataset.c = cc;
+                        if (puzzle.visible[cr][cc]) {
+                            cell.textContent = puzzle.numbers[cr][cc];
+                            cell.classList.add('num-' + puzzle.numbers[cr][cc]);
+                        }
+                        grid.appendChild(cell);
+                    }
+                }
+            }
+        }
+
+        function createEdge(type, r, c) {
+            const edge = document.createElement('div');
+            edge.className = `sl-edge ${type === 'h' ? 'h-edge' : 'v-edge'}`;
+            edge.dataset.type = type;
+            edge.dataset.r = r;
+            edge.dataset.c = c;
+
+            const line = document.createElement('div');
+            line.className = 'edge-line';
+            edge.appendChild(line);
+
+            const xMark = document.createElement('div');
+            xMark.className = 'edge-x';
+            xMark.textContent = '×';
+            edge.appendChild(xMark);
+
+            // Mouse events
+            edge.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                startDrag(edge);
+            });
+            edge.addEventListener('mouseenter', (e) => {
+                if (isDragging) continueDrag(edge);
+            });
+
+            // Touch events handled globally
+            edge.dataset.edgeId = `${type}-${r}-${c}`;
+
+            return edge;
+        }
+
+        // ====== EDGE STATE MANAGEMENT ======
+        function getEdgeState(type, r, c) {
+            return type === 'h' ? hEdges[r][c] : vEdges[r][c];
+        }
+
+        function setEdgeState(type, r, c, state) {
+            if (type === 'h') hEdges[r][c] = state;
+            else vEdges[r][c] = state;
+        }
+
+        function getEdgeEl(type, r, c) {
+            return document.querySelector(`.sl-edge[data-type="${type}"][data-r="${r}"][data-c="${c}"]`);
+        }
+
+        function updateEdgeVisual(type, r, c) {
+            const el = getEdgeEl(type, r, c);
+            if (!el) return;
+            const state = getEdgeState(type, r, c);
+            el.classList.remove('state-line', 'state-x');
+            if (state === EDGE_LINE) el.classList.add('state-line');
+            else if (state === EDGE_X) el.classList.add('state-x');
+        }
+
+        // ====== DOT VISUAL ======
+        function updateDotVisuals() {
+            document.querySelectorAll('.sl-dot').forEach(dot => {
+                const dr = parseInt(dot.dataset.dr);
+                const dc = parseInt(dot.dataset.dc);
+                const count = countDotLines(dr, dc);
+                dot.classList.toggle('active', count > 0);
+            });
+        }
+
+        // ====== CELL NUMBER VISUAL ======
+        function updateCellVisuals() {
+            document.querySelectorAll('.sl-cell').forEach(cell => {
+                const r = parseInt(cell.dataset.r);
+                const c = parseInt(cell.dataset.c);
+                if (!puzzle.visible[r][c]) return;
+
+                const target = puzzle.numbers[r][c];
+                const current = countCellLines(r, c);
+                cell.classList.remove('satisfied', 'over');
+                if (current === target && target > 0) cell.classList.add('satisfied');
+                else if (current > target) cell.classList.add('over');
+            });
+        }
+
+        // ====== COUNT HELPERS ======
+        function countCellLines(r, c) {
+            let n = 0;
+            if (hEdges[r][c] === EDGE_LINE) n++;
+            if (hEdges[r+1][c] === EDGE_LINE) n++;
+            if (vEdges[r][c] === EDGE_LINE) n++;
+            if (vEdges[r][c+1] === EDGE_LINE) n++;
+            return n;
+        }
+
+        function countDotLines(dr, dc) {
+            let n = 0;
+            // Up: vertical edge at row dr-1, col dc
+            if (dr > 0 && vEdges[dr-1][dc] === EDGE_LINE) n++;
+            // Down: vertical edge at row dr, col dc
+            if (dr < rows && vEdges[dr][dc] === EDGE_LINE) n++;
+            // Left: horizontal edge at row dr, col dc-1
+            if (dc > 0 && hEdges[dr][dc-1] === EDGE_LINE) n++;
+            // Right: horizontal edge at row dr, col dc
+            if (dc < cols && hEdges[dr][dc] === EDGE_LINE) n++;
+            return n;
+        }
+
+        // Get adjacent cells of an edge
+        function getAdjacentCells(type, r, c) {
+            const cells = [];
+            if (type === 'h') {
+                // Horizontal edge at dot-row r, cell-col c
+                if (r > 0) cells.push([r-1, c]);   // cell above
+                if (r < rows) cells.push([r, c]);   // cell below
+            } else {
+                // Vertical edge at cell-row r, dot-col c
+                if (c > 0) cells.push([r, c-1]);   // cell left
+                if (c < cols) cells.push([r, c]);   // cell right
+            }
+            return cells;
+        }
+
+        // Get endpoint dots of an edge
+        function getEndpointDots(type, r, c) {
+            if (type === 'h') {
+                return [[r, c], [r, c+1]];
+            } else {
+                return [[r, c], [r+1, c]];
+            }
+        }
+
+        // ====== LIVE MODE VALIDATION ======
+        function validateMove(type, r, c) {
+            if (checkingMode !== 'live') return true;
+
+            // Check 1: Would any adjacent cell exceed its number?
+            const adjCells = getAdjacentCells(type, r, c);
+            for (const [cr, cc] of adjCells) {
+                if (puzzle.visible[cr][cc]) {
+                    const target = puzzle.numbers[cr][cc];
+                    const current = countCellLines(cr, cc);
+                    if (current >= target) {
+                        return false; // Would exceed
+                    }
+                }
+            }
+
+            // Check 2: Would any endpoint dot have 3+ lines?
+            const dots = getEndpointDots(type, r, c);
+            for (const [dr, dc] of dots) {
+                const dotCount = countDotLines(dr, dc);
+                if (dotCount >= 2) {
+                    return false; // Would create branching (3+ lines at dot)
+                }
+            }
+
+            return true;
+        }
+
+        function triggerError(type, r, c) {
+            const el = getEdgeEl(type, r, c);
+            if (el) {
+                el.classList.add('animate-error');
+                setTimeout(() => el.classList.remove('animate-error'), 800);
+            }
+
+            // Flash adjacent problematic cells
+            const adjCells = getAdjacentCells(type, r, c);
+            for (const [cr, cc] of adjCells) {
+                const cellEl = document.querySelector(`.sl-cell[data-r="${cr}"][data-c="${cc}"]`);
+                if (cellEl && puzzle.visible[cr][cc]) {
+                    const current = countCellLines(cr, cc);
+                    if (current >= puzzle.numbers[cr][cc]) {
+                        cellEl.classList.add('animate-error');
+                        setTimeout(() => cellEl.classList.remove('animate-error'), 800);
+                    }
+                }
+            }
+
+            // Grid shake
+            document.getElementById('gridWrapper').classList.add('animate-shake');
+            setTimeout(() => document.getElementById('gridWrapper').classList.remove('animate-shake'), 500);
+
+            // Lose a life
+            loseLife();
+        }
+
+        function loseLife() {
+            lives--;
+            updateLivesDisplay();
+            if (lives <= 0) {
+                endGame(false);
+            }
+        }
+
+        function updateLivesDisplay() {
+            const hearts = document.querySelectorAll('.heart');
+            hearts.forEach((h, i) => {
+                if (i >= lives) {
+                    h.textContent = '🖤';
+                    if (!h.classList.contains('broken')) {
+                        h.classList.add('broken', 'animate-heart-break');
+                    }
+                } else {
+                    h.textContent = '❤️';
+                    h.classList.remove('broken', 'animate-heart-break');
+                }
+            });
+            // Show/hide lives based on mode
+            document.getElementById('livesContainer').style.opacity = checkingMode === 'live' ? '1' : '0.3';
+        }
+
+        // ====== INTERACTION ======
+        function applyAction(edge) {
+            if (gameOver || gameWon) return false;
+
+            const type = edge.dataset.type;
+            const r = parseInt(edge.dataset.r);
+            const c = parseInt(edge.dataset.c);
+            const currentState = getEdgeState(type, r, c);
+
+            if (!timerStarted) startTimer();
+
+            let newState;
+            if (activeTool === 'line') {
+                if (currentState === EDGE_LINE) {
+                    newState = EDGE_EMPTY;
+                } else {
+                    // Trying to place a line
+                    if (currentState === EDGE_X) {
+                        newState = EDGE_LINE; // Replace X with line
+                    } else {
+                        newState = EDGE_LINE;
+                    }
+                }
+            } else {
+                // X tool
+                if (currentState === EDGE_X) {
+                    newState = EDGE_EMPTY;
+                } else {
+                    newState = EDGE_X;
+                }
+            }
+
+            // Validate if placing a line in live mode
+            if (newState === EDGE_LINE && currentState !== EDGE_LINE) {
+                if (!validateMove(type, r, c)) {
+                    triggerError(type, r, c);
+                    return false;
+                }
+            }
+
+            // Apply
+            const oldState = currentState;
+            setEdgeState(type, r, c, newState);
+            updateEdgeVisual(type, r, c);
+            updateDotVisuals();
+            updateCellVisuals();
+
+            return { type, r, c, oldState, newState };
+        }
+
+        function startDrag(edge) {
+            if (gameOver || gameWon) return;
+            isDragging = true;
+            dragTool = activeTool;
+            dragBatch = [];
+
+            const result = applyAction(edge);
+            if (result) {
+                dragBatch.push(result);
+            }
+        }
+
+        function continueDrag(edge) {
+            if (!isDragging || gameOver || gameWon) return;
+            const type = edge.dataset.type;
+            const r = parseInt(edge.dataset.r);
+            const c = parseInt(edge.dataset.c);
+            const currentState = getEdgeState(type, r, c);
+
+            // During drag, only apply if edge is empty (for lines) or doesn't have X yet (for X tool)
+            if (dragTool === 'line' && currentState !== EDGE_EMPTY) return;
+            if (dragTool === 'x' && currentState !== EDGE_EMPTY) return;
+
+            const result = applyAction(edge);
+            if (result) {
+                dragBatch.push(result);
+            }
+        }
+
+        function endDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+
+            if (dragBatch.length > 0) {
+                history.push(dragBatch);
+                checkWin();
+            }
+            dragBatch = [];
+        }
+
+        // Single click (non-drag)
+        function handleClick(edge) {
+            if (gameOver || gameWon) return;
+            const result = applyAction(edge);
+            if (result) {
+                history.push([result]);
+                checkWin();
+            }
+        }
+
+        // ====== UNDO ======
+        function undo() {
+            if (history.length === 0 || gameOver || gameWon) return;
+            const batch = history.pop();
+            for (let i = batch.length - 1; i >= 0; i--) {
+                const { type, r, c, oldState } = batch[i];
+                setEdgeState(type, r, c, oldState);
+                updateEdgeVisual(type, r, c);
+            }
+            updateDotVisuals();
+            updateCellVisuals();
+        }
+
+        // ====== CLEAR ======
+        function clearBoard() {
+            if (gameOver || gameWon) return;
+            const batch = [];
+            for (let r = 0; r <= rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (hEdges[r][c] !== EDGE_EMPTY) {
+                        batch.push({ type: 'h', r, c, oldState: hEdges[r][c], newState: EDGE_EMPTY });
+                        hEdges[r][c] = EDGE_EMPTY;
+                        updateEdgeVisual('h', r, c);
+                    }
+                }
+            }
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c <= cols; c++) {
+                    if (vEdges[r][c] !== EDGE_EMPTY) {
+                        batch.push({ type: 'v', r, c, oldState: vEdges[r][c], newState: EDGE_EMPTY });
+                        vEdges[r][c] = EDGE_EMPTY;
+                        updateEdgeVisual('v', r, c);
+                    }
+                }
+            }
+            if (batch.length > 0) history.push(batch);
+            updateDotVisuals();
+            updateCellVisuals();
+        }
+
+        // ====== WIN CHECK ======
+        function checkWin() {
+            // 1. Check all numbered cells satisfy constraint
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (puzzle.visible[r][c]) {
+                        if (countCellLines(r, c) !== puzzle.numbers[r][c]) return false;
+                    }
+                }
+            }
+
+            // 2. Check every dot has 0 or 2 lines (no branching)
+            for (let dr = 0; dr <= rows; dr++) {
+                for (let dc = 0; dc <= cols; dc++) {
+                    const n = countDotLines(dr, dc);
+                    if (n !== 0 && n !== 2) return false;
+                }
+            }
+
+            // 3. Check all lines are connected and form single loop
+            const lineEdges = [];
+            for (let r = 0; r <= rows; r++)
+                for (let c = 0; c < cols; c++)
+                    if (hEdges[r][c] === EDGE_LINE) lineEdges.push(['h', r, c]);
+            for (let r = 0; r < rows; r++)
+                for (let c = 0; c <= cols; c++)
+                    if (vEdges[r][c] === EDGE_LINE) lineEdges.push(['v', r, c]);
+
+            if (lineEdges.length === 0) return false;
+
+            // BFS on edges via shared dots
+            const visited = new Set();
+            const queue = [edgeKey(lineEdges[0][0], lineEdges[0][1], lineEdges[0][2])];
+            visited.add(queue[0]);
+
+            while (queue.length > 0) {
+                const key = queue.shift();
+                const [type, r, c] = parseEdgeKey(key);
+                const dots = getEndpointDots(type, r, c);
+
+                for (const [dr, dc] of dots) {
+                    const connected = getEdgesAtDot(dr, dc);
+                    for (const ek of connected) {
+                        if (!visited.has(ek)) {
+                            visited.add(ek);
+                            queue.push(ek);
+                        }
+                    }
+                }
+            }
+
+            if (visited.size !== lineEdges.length) return false;
+
+            // 4. Also verify against solution: all numbered cells match
+            // (already checked in step 1)
+
+            // WIN!
+            endGame(true);
+            return true;
+        }
+
+        function edgeKey(type, r, c) { return `${type}-${r}-${c}`; }
+        function parseEdgeKey(key) {
+            const parts = key.split('-');
+            return [parts[0], parseInt(parts[1]), parseInt(parts[2])];
+        }
+
+        function getEdgesAtDot(dr, dc) {
+            const edges = [];
+            if (dr > 0 && vEdges[dr-1][dc] === EDGE_LINE) edges.push(edgeKey('v', dr-1, dc));
+            if (dr < rows && vEdges[dr][dc] === EDGE_LINE) edges.push(edgeKey('v', dr, dc));
+            if (dc > 0 && hEdges[dr][dc-1] === EDGE_LINE) edges.push(edgeKey('h', dr, dc-1));
+            if (dc < cols && hEdges[dr][dc] === EDGE_LINE) edges.push(edgeKey('h', dr, dc));
+            return edges;
+        }
+
+        // ====== GAME FLOW ======
+        function endGame(won) {
+            if (won) {
+                gameWon = true;
+                stopTimer();
+                if (window.KaUser) {
+                    window.KaUser.addGameResult('slitherlink', 'logic', true, timer);
+                }
+                document.getElementById('gridWrapper').classList.add('win-glow');
+                launchConfetti();
+                setTimeout(() => showResult(), 1200);
+            } else {
+                gameOver = true;
+                stopTimer();
+                if (window.KaUser) {
+                    window.KaUser.addGameResult('slitherlink', 'logic', false, timer);
+                }
+                showModal('gameOverModal');
+            }
+        }
+
+        function showResult() {
+            document.getElementById('resultTime').textContent = formatTime(timer);
+            const diffLabel = gridSize <= 5 ? 'Kolay (5×5)' : (gridSize <= 7 ? 'Orta (7×7)' : 'Zor (10×10)');
+            document.getElementById('resultMode').textContent = diffLabel;
+            showModal('resultModal');
+        }
+
+        // ====== TIMER ======
+        function startTimer() {
+            if (timerStarted) return;
+            timerStarted = true;
+            timerInterval = setInterval(() => {
+                timer++;
+                document.getElementById('timer').textContent = formatTime(timer);
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timer = 0;
+            timerStarted = false;
+            document.getElementById('timer').textContent = '00:00';
+        }
+
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const sec = s % 60;
+            return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        }
+
+        // ====== MODALS ======
+        function showModal(id) {
+            const m = document.getElementById(id);
+            m.style.display = 'flex';
+            m.classList.remove('hidden');
+        }
+
+        function hideModal(id) {
+            const m = document.getElementById(id);
+            m.style.display = 'none';
+            m.classList.add('hidden');
+        }
+        window.hideModal = hideModal;
+
+        // ====== CONFETTI ======
+        function launchConfetti() {
+            const colors = ['#06b6d4', '#14b8a6', '#22d3ee', '#2dd4bf', '#67e8f9', '#a7f3d0', '#fbbf24', '#f472b6'];
+            const container = document.body;
+            for (let i = 0; i < 80; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + 'vw';
+                piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                piece.style.width = (Math.random() * 8 + 5) + 'px';
+                piece.style.height = (Math.random() * 8 + 5) + 'px';
+                piece.style.animation = `confettiDrop ${Math.random() * 2 + 2}s linear ${Math.random() * 1}s forwards`;
+                container.appendChild(piece);
+                setTimeout(() => piece.remove(), 4000);
+            }
+        }
+
+        // ====== SHARE ======
+        function shareResult() {
+            const diffLabel = gridSize <= 5 ? 'Kolay (5×5)' : (gridSize <= 7 ? 'Orta (7×7)' : 'Zor (10×10)');
+            const modeLabel = mode === 'daily' ? '📅 Günlük' : '♾️ Sınırsız';
+            const checkLabel = checkingMode === 'live' ? '🔴 Canlı' : '⚪ Cansız';
+            const heartsStr = checkingMode === 'live' ? ('❤️'.repeat(lives) + '🖤'.repeat(3 - lives) + ` ${lives}/3 Can`) : '';
+
+            const d = new Date();
+            const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+
+            const text = [
+                `🔲 ÇİT (SLITHERLINK) 🔲`,
+                `📅 ${dateStr} | ⏱ ${formatTime(timer)}`,
+                `${modeLabel} | ${diffLabel} | ${checkLabel}`,
+                heartsStr,
+                ``,
+                `kelimearasi.com`
+            ].filter(Boolean).join('\n');
+
+            if (navigator.share) {
+                navigator.share({ text }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(text).then(() => showToast('Panoya kopyalandı!')).catch(() => {});
+            }
+        }
+
+        function showToast(msg) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'px-4 py-2 bg-gray-800 dark:bg-white text-white dark:text-gray-900 text-sm font-medium rounded-lg shadow-lg animate-pop';
+            toast.textContent = msg;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 2000);
+        }
+
+        // ====== INIT ======
+        function initGame() {
+            rows = gridSize;
+            cols = gridSize;
+            gameOver = false;
+            gameWon = false;
+            lives = 3;
+            history = [];
+            resetTimer();
+
+            // Generate puzzle
+            const seed = mode === 'daily' ? getTodaySeed(gridSize) : Math.floor(Math.random() * 999999999);
+            puzzle = generatePuzzle(rows, cols, seed);
+
+            // Init edge arrays
+            hEdges = Array.from({length: rows + 1}, () => Array(cols).fill(EDGE_EMPTY));
+            vEdges = Array.from({length: rows}, () => Array(cols + 1).fill(EDGE_EMPTY));
+
+            // Build UI
+            buildGrid();
+            updateLivesDisplay();
+            updateDotVisuals();
+            updateCellVisuals();
+
+            document.getElementById('gridWrapper').classList.remove('win-glow');
+            hideModal('resultModal');
+            hideModal('gameOverModal');
+
+            // Save daily state key
+            if (mode === 'daily') {
+                loadDailyState();
+            }
+        }
+
+        // ====== DAILY STATE PERSISTENCE ======
+        function getDailyKey() {
+            const d = new Date();
+            return `sl-daily-${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}-${gridSize}`;
+        }
+
+        function saveDailyState() {
+            if (mode !== 'daily') return;
+            const state = {
+                hEdges, vEdges, lives, timer, history: history.length,
+                gameOver, gameWon
+            };
+            try { localStorage.setItem(getDailyKey(), JSON.stringify(state)); } catch(e) {}
+        }
+
+        function loadDailyState() {
+            if (mode !== 'daily') return;
+            try {
+                const saved = localStorage.getItem(getDailyKey());
+                if (!saved) return;
+                const state = JSON.parse(saved);
+                if (state.gameWon) {
+                    // Already completed today
+                    hEdges = state.hEdges;
+                    vEdges = state.vEdges;
+                    lives = state.lives;
+                    timer = state.timer;
+                    gameWon = true;
+                    rebuildVisuals();
+                    document.getElementById('timer').textContent = formatTime(timer);
+                    updateLivesDisplay();
+                    document.getElementById('gridWrapper').classList.add('win-glow');
+                    showToast('Bugünün bulmacasını zaten çözdün!');
+                    return;
+                }
+                if (state.gameOver) return; // Let them retry
+
+                hEdges = state.hEdges;
+                vEdges = state.vEdges;
+                lives = state.lives;
+                timer = state.timer;
+                rebuildVisuals();
+                document.getElementById('timer').textContent = formatTime(timer);
+                updateLivesDisplay();
+            } catch(e) {}
+        }
+
+        function rebuildVisuals() {
+            for (let r = 0; r <= rows; r++)
+                for (let c = 0; c < cols; c++)
+                    updateEdgeVisual('h', r, c);
+            for (let r = 0; r < rows; r++)
+                for (let c = 0; c <= cols; c++)
+                    updateEdgeVisual('v', r, c);
+            updateDotVisuals();
+            updateCellVisuals();
+        }
+
+        // ====== EVENT LISTENERS ======
+        function setupEventListeners() {
+            // Global mouse up
+            document.addEventListener('mouseup', () => {
+                endDrag();
+                if (mode === 'daily' && !gameOver && !gameWon) saveDailyState();
+            });
+
+            // Touch events
+            const grid = document.getElementById('gameGrid');
+            grid.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (el && el.classList.contains('sl-edge')) {
+                    startDrag(el);
+                } else if (el && el.parentElement && el.parentElement.classList.contains('sl-edge')) {
+                    startDrag(el.parentElement);
+                }
+            }, { passive: false });
+
+            grid.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (!isDragging) return;
+                const touch = e.touches[0];
+                const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (el && el.classList.contains('sl-edge')) {
+                    continueDrag(el);
+                } else if (el && el.parentElement && el.parentElement.classList.contains('sl-edge')) {
+                    continueDrag(el.parentElement);
+                }
+            }, { passive: false });
+
+            grid.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                endDrag();
+                if (mode === 'daily' && !gameOver && !gameWon) saveDailyState();
+            });
+
+            // Mode buttons
+            document.getElementById('modeDaily').addEventListener('click', () => setMode('daily'));
+            document.getElementById('modeUnlimited').addEventListener('click', () => setMode('unlimited'));
+            document.getElementById('modeLive').addEventListener('click', () => setCheckingMode('live'));
+            document.getElementById('modeClassic').addEventListener('click', () => setCheckingMode('classic'));
+
+            // Difficulty
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const size = parseInt(btn.dataset.size);
+                    setDifficulty(size);
+                });
+            });
+
+            // Tool toggle
+            document.getElementById('toolLine').addEventListener('click', () => setTool('line'));
+            document.getElementById('toolX').addEventListener('click', () => setTool('x'));
+
+            // Undo & Clear
+            document.getElementById('undoBtn').addEventListener('click', undo);
+            document.getElementById('clearBtn').addEventListener('click', clearBoard);
+
+            // Help
+            document.getElementById('helpBtn').addEventListener('click', () => showModal('helpModal'));
+
+            // Result modal
+            document.getElementById('shareBtn').addEventListener('click', shareResult);
+            document.getElementById('newGameBtn').addEventListener('click', () => {
+                hideModal('resultModal');
+                if (mode === 'daily') {
+                    setMode('unlimited');
+                } else {
+                    initGame();
+                }
+            });
+
+            // Game over
+            document.getElementById('retryBtn').addEventListener('click', () => {
+                hideModal('gameOverModal');
+                initGame();
+            });
+
+            // Close modals on backdrop click
+            ['helpModal', 'resultModal', 'gameOverModal'].forEach(id => {
+                document.getElementById(id).addEventListener('click', (e) => {
+                    if (e.target === e.currentTarget) hideModal(id);
+                });
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); }
+                if (e.key === '1') setTool('line');
+                if (e.key === '2') setTool('x');
+            });
+
+            // Window resize
+            window.addEventListener('resize', () => {
+                if (puzzle) buildGrid();
+                rebuildVisuals();
+            });
+        }
+
+        function setMode(m) {
+            mode = m;
+            const daily = document.getElementById('modeDaily');
+            const unlimited = document.getElementById('modeUnlimited');
+            if (m === 'daily') {
+                daily.className = 'flex-1 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-cyan-500 to-teal-500 shadow text-white transition';
+                unlimited.className = 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white transition';
+            } else {
+                unlimited.className = 'flex-1 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-cyan-500 to-teal-500 shadow text-white transition';
+                daily.className = 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white transition';
+            }
+            initGame();
+        }
+
+        function setCheckingMode(m) {
+            checkingMode = m;
+            const live = document.getElementById('modeLive');
+            const classic = document.getElementById('modeClassic');
+            if (m === 'live') {
+                live.className = 'flex-1 py-2 text-sm font-semibold rounded-lg bg-gray-600 shadow text-white transition';
+                classic.className = 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white transition';
+            } else {
+                classic.className = 'flex-1 py-2 text-sm font-semibold rounded-lg bg-gray-600 shadow text-white transition';
+                live.className = 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white transition';
+            }
+            lives = 3;
+            updateLivesDisplay();
+        }
+
+        function setDifficulty(size) {
+            gridSize = size;
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                const s = parseInt(btn.dataset.size);
+                if (s === size) {
+                    btn.className = 'diff-btn flex-1 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-panel border border-cyan-500 text-cyan-600 dark:text-cyan-400 transition-colors';
+                } else {
+                    btn.className = 'diff-btn flex-1 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-panel text-gray-400 border border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors';
+                }
+            });
+            initGame();
+        }
+
+        function setTool(tool) {
+            activeTool = tool;
+            const slider = document.querySelector('.toggle-slider');
+            const lineBtn = document.getElementById('toolLine');
+            const xBtn = document.getElementById('toolX');
+            if (tool === 'line') {
+                slider.classList.remove('right');
+                slider.classList.add('left');
+                lineBtn.className = 'flex-1 py-2 text-sm font-semibold rounded-lg z-10 text-white transition flex items-center justify-center gap-1.5';
+                xBtn.className = 'flex-1 py-2 text-sm font-medium rounded-lg z-10 text-gray-500 dark:text-gray-400 transition flex items-center justify-center gap-1.5';
+            } else {
+                slider.classList.remove('left');
+                slider.classList.add('right');
+                xBtn.className = 'flex-1 py-2 text-sm font-semibold rounded-lg z-10 text-white transition flex items-center justify-center gap-1.5';
+                lineBtn.className = 'flex-1 py-2 text-sm font-medium rounded-lg z-10 text-gray-500 dark:text-gray-400 transition flex items-center justify-center gap-1.5';
+            }
+        }
+
+        // ====== DARK MODE ======
+        function initTheme() {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const saved = localStorage.getItem('sl-theme');
+            if (saved === 'light') {
+                document.documentElement.classList.remove('dark');
+            } else if (saved === 'dark' || prefersDark) {
+                document.documentElement.classList.add('dark');
+            }
+        }
+
+        // ====== BOOT ======
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            lucide.createIcons();
+            setupEventListeners();
+            initGame();
+        });
+
+    })();
+    </script>
+</body>
+</html>

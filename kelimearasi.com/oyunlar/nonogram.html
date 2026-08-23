@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kare Karalama (Nonogram)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        bg: '#0c0c1d',
+                        panel: '#181836',
+                        primary: '#f43f5e',
+                        secondary: '#ec4899',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { 
+            touch-action: none; 
+            overscroll-behavior: none; 
+        }
+        .grid-cell { 
+            transition: background-color 0.15s ease; 
+            user-select: none; 
+        }
+        .grid-cell.filled { 
+            background-color: #f43f5e !important; 
+        }
+        .grid-cell.crossed { 
+            background-color: transparent; 
+            position: relative; 
+        }
+        .grid-cell.crossed::after {
+            content: '×';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 1.25rem;
+            font-weight: 300;
+            line-height: 1;
+        }
+        .grid-cell.error { 
+            background-color: #ef4444 !important; 
+            animation: shake 0.4s; 
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        
+        .modal { animation: fadeIn 0.3s ease-out; }
+        .modal-content { animation: slideUp 0.3s ease-out; }
+        
+        .clue-cell span { line-height: 1.2; }
+        
+        /* Custom scrollbar for game container */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #181836; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 8px; }
+    </style>
+    <script src="../js/user-system.js"></script>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden antialiased selection:bg-rose-500/30 bg-gray-50 dark:bg-[#0c0c1d] text-gray-900 dark:text-gray-100">
+
+    <!-- Header -->
+    <header class="px-4 py-3 sticky top-0 z-50 flex items-center justify-between border-b border-gray-200/60 dark:border-white/5 backdrop-blur-xl bg-white/80 dark:bg-[#12122b]/80 flex-shrink-0 transition-colors duration-300">
+        <a href="../index.html" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Ana Sayfa">🏠</a>
+        <h1 class="text-xl font-extrabold tracking-widest bg-gradient-to-r from-rose-500 via-pink-500 to-rose-400 dark:from-rose-400 dark:via-pink-500 dark:to-rose-300 text-transparent bg-clip-text drop-shadow-sm dark:drop-shadow-[0_0_12px_rgba(244,63,94,0.5)]">KARE KARALAMA</h1>
+        <button id="helpBtn" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Yardım">❓</button>
+    </header>
+
+    <main class="flex-1 flex flex-col w-full max-w-lg mx-auto p-3 gap-3 overflow-hidden">
+        
+        <!-- Modes -->
+        <div class="flex gap-2 shrink-0">
+            <!-- Game Type -->
+            <div class="flex p-1 bg-panel rounded-xl flex-1">
+                <button id="modeDaily" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-rose-500 to-pink-500 shadow text-white transition">Günlük</button>
+                <button id="modeUnlimited" class="flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition">Sınırsız</button>
+            </div>
+            <!-- Checking Mode -->
+            <div class="flex p-1 bg-panel rounded-xl flex-1">
+                <button id="modeLive" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-gray-600 shadow text-white transition">Canlı</button>
+                <button id="modeClassic" class="flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition">Cansız</button>
+            </div>
+        </div>
+
+        <!-- Difficulty -->
+        <div id="difficultySelector" class="hidden flex gap-2 shrink-0">
+            <button class="diff-btn flex-1 py-1.5 text-xs font-medium rounded-lg bg-panel text-gray-400 border border-transparent hover:bg-gray-800 transition" data-size="5">5x5 Kolay</button>
+            <button class="diff-btn flex-1 py-1.5 text-xs font-semibold rounded-lg bg-panel border border-rose-500 text-rose-400 transition" data-size="10">10x10 Orta</button>
+            <button class="diff-btn flex-1 py-1.5 text-xs font-medium rounded-lg bg-panel text-gray-400 border border-transparent hover:bg-gray-800 transition" data-size="15">15x15 Zor</button>
+        </div>
+
+        <!-- Info Bar -->
+        <div class="flex justify-between items-center bg-panel p-3 rounded-xl shrink-0">
+            <div id="lives" class="flex gap-1">
+                <!-- Hearts injected via JS -->
+            </div>
+            <div class="flex items-center gap-2 text-gray-300 font-mono font-medium ml-auto">
+                <i data-lucide="timer" class="w-4 h-4"></i>
+                <span id="timer">00:00</span>
+            </div>
+        </div>
+
+        <!-- Game Area Container -->
+        <div class="flex-1 w-full overflow-auto flex items-center justify-center min-h-0 relative rounded-xl bg-bg border border-gray-800 p-2">
+            <div id="gameBoard" class="grid gap-0 w-max mx-auto border-2 border-gray-700 bg-panel shadow-lg touch-none">
+                <!-- Grid items generated by JS -->
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="bg-panel p-3 rounded-xl flex gap-2 items-center justify-between shrink-0">
+            <!-- Draw Tools -->
+            <div class="flex bg-gray-800 rounded-lg p-1">
+                <button id="toolFill" class="p-2 rounded-md bg-gray-600 text-white transition" title="Doldur"><i data-lucide="square" class="w-5 h-5 fill-current"></i></button>
+                <button id="toolCross" class="p-2 rounded-md text-gray-400 hover:text-white transition" title="X Koy"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button id="toolErase" class="p-2 rounded-md text-gray-400 hover:text-white transition" title="Sil (Silgi)"><i data-lucide="eraser" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="flex gap-2">
+                <button id="undoBtn" class="p-3 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition" title="Geri Al"><i data-lucide="undo-2" class="w-5 h-5"></i></button>
+                <button id="hintBtn" class="p-3 bg-gray-800 text-yellow-400 rounded-lg hover:bg-gray-700 transition relative" title="İpucu">
+                    <i data-lucide="lightbulb" class="w-5 h-5"></i>
+                    <span id="hintCount" class="absolute -top-1 -right-1 bg-rose-500 text-[10px] w-4 h-4 flex items-center justify-center rounded-full text-white font-bold">3</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 modal p-4">
+        <div class="bg-panel p-6 rounded-2xl max-w-md w-full border border-gray-700 shadow-2xl modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-white">Nasıl Oynanır?</h2>
+                <button onclick="hideModal('helpModal')" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="text-sm text-gray-300 space-y-3">
+                <p><strong>Amaç:</strong> Satır ve sütunlardaki ipuçlarına (sayılara) bakarak gizli resmi ortaya çıkarmaktır.</p>
+                <p><strong>Kurallar:</strong></p>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li>Sayılar, o satır veya sütunda art arda doldurulması gereken kare sayısını gösterir.</li>
+                    <li>Eğer birden fazla sayı varsa (örn. "2 3"), o gruplar arasında en az bir boş kare olmalıdır.</li>
+                    <li>Dolu olması gerektiğini düşündüğün kareleri <i data-lucide="square" class="w-4 h-4 inline text-white align-middle mx-1"></i> aracıyla doldur.</li>
+                    <li>Boş kalması gerektiğinden emin olduğun yerlere <i data-lucide="x" class="w-4 h-4 inline text-gray-400 align-middle mx-1"></i> aracıyla çarpı koy.</li>
+                    <li><strong class="text-rose-400">Canlı Mod:</strong> Yanlış bir kareyi doldurursan anında fark edilir ve 1 can kaybedersin. 3 can biterse oyun biter! Ayrıca 3 ipucu hakkın bulunur.</li>
+                    <li><strong class="text-gray-300">Cansız Mod:</strong> Hata kontrolü anında yapılmaz, sadece bulmaca tamamen doğru çözüldüğünde oyun biter. Can veya ipucu hakkı bulunmaz.</li>
+                </ul>
+            </div>
+            <button onclick="hideModal('helpModal')" class="w-full mt-6 py-3 bg-gray-800 text-white font-bold rounded-xl hover:bg-gray-700 transition">Anladım</button>
+        </div>
+    </div>
+
+    <!-- Daily Limit Modal -->
+    <div id="dailyLimitModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 modal p-4">
+        <div class="bg-panel p-6 rounded-2xl max-w-sm w-full border border-gray-700 shadow-2xl modal-content text-center">
+            <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="calendar-check" class="w-8 h-8 text-rose-500"></i>
+            </div>
+            <h2 class="text-xl font-bold text-white mb-2">Günlük Oyun Tamamlandı!</h2>
+            <p class="text-sm text-gray-400 mb-6">Bugünün bulmacasını zaten çözdün. Sınırsız modda oynamaya devam edebilir veya yarın tekrar gelebilirsin.</p>
+            <button onclick="hideModal('dailyLimitModal')" class="w-full py-3 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-bold rounded-xl hover:opacity-90 transition">Sınırsız Moda Geç</button>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div id="resultModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 modal p-4">
+        <div class="bg-panel p-6 rounded-2xl max-w-sm w-full border border-gray-700 shadow-2xl modal-content text-center">
+            <h2 id="resultTitle" class="text-2xl font-bold text-white mb-2">Tebrikler!</h2>
+            <p id="resultMsg" class="text-gray-400 mb-6">Bulmacayı başarıyla tamamladın.</p>
+            
+            <div class="flex justify-center gap-6 mb-6">
+                <div class="text-center">
+                    <div class="text-gray-500 text-xs mb-1">Süre</div>
+                    <div id="resultTime" class="text-xl font-mono text-white">00:00</div>
+                </div>
+                <div class="text-center">
+                    <div id="resultMistakesLabel" class="text-gray-500 text-xs mb-1">Hata</div>
+                    <div id="resultMistakes" class="text-xl font-mono text-rose-500">0</div>
+                </div>
+            </div>
+            
+            <button id="shareBtn" class="w-full py-3 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-bold rounded-xl hover:opacity-90 transition mb-3 flex items-center justify-center gap-2">
+                <i data-lucide="share-2" class="w-5 h-5"></i> <span>Sonucu Paylaş</span>
+            </button>
+            <button id="nextBtn" class="w-full py-3 bg-gray-800 text-white font-bold rounded-xl hover:bg-gray-700 transition">
+                Yeni Oyun
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- State ---
+        let mode = 'daily'; // 'daily' or 'unlimited'
+        let checkingMode = 'live'; // 'live' or 'classic'
+        let difficulty = 10; // 5, 10, 15
+        let n = 10;
+        let solutionGrid = [];
+        let playerGrid = [];
+        let rowClues = [];
+        let colClues = [];
+        
+        let lives = 3;
+        let hints = 3;
+        let timer = 0;
+        let timerInterval = null;
+        let history = [];
+        
+        let activeTool = 'fill'; // 'fill', 'cross', 'erase'
+        let isDragging = false;
+        let dragAction = null; // 0, 1, 2
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initGame();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Mode switching
+            document.getElementById('modeDaily').addEventListener('click', () => setMode('daily'));
+            document.getElementById('modeUnlimited').addEventListener('click', () => setMode('unlimited'));
+            
+            document.getElementById('modeLive').addEventListener('click', () => setCheckingMode('live'));
+            document.getElementById('modeClassic').addEventListener('click', () => setCheckingMode('classic'));
+            
+            // Difficulty
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.diff-btn').forEach(b => {
+                        b.className = 'diff-btn flex-1 py-1.5 text-xs font-medium rounded-lg bg-panel text-gray-400 border border-transparent hover:bg-gray-800 transition';
+                    });
+                    e.target.className = 'diff-btn flex-1 py-1.5 text-xs font-semibold rounded-lg bg-panel border border-rose-500 text-rose-400 transition';
+                    difficulty = parseInt(e.target.dataset.size);
+                    if (mode === 'unlimited') initGame();
+                });
+            });
+
+            // Tools
+            document.getElementById('toolFill').addEventListener('click', () => setTool('fill'));
+            document.getElementById('toolCross').addEventListener('click', () => setTool('cross'));
+            document.getElementById('toolErase').addEventListener('click', () => setTool('erase'));
+            
+            // Action Buttons
+            document.getElementById('undoBtn').addEventListener('click', undo);
+            document.getElementById('hintBtn').addEventListener('click', useHint);
+            document.getElementById('helpBtn').addEventListener('click', () => showModal('helpModal'));
+            
+            // Modal Buttons
+            document.getElementById('nextBtn').addEventListener('click', () => {
+                hideModal('resultModal');
+                initGame();
+            });
+            
+            document.getElementById('shareBtn').addEventListener('click', shareResult);
+
+            // Global Drag ends
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+        }
+
+        // --- Game Logic ---
+        function setMode(newMode) {
+            if (newMode === 'daily') {
+                document.getElementById('modeUnlimited').className = 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition';
+                document.getElementById('modeDaily').className = 'flex-1 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-rose-500 to-pink-500 shadow text-white transition';
+                document.getElementById('difficultySelector').classList.add('hidden');
+            } else {
+                document.getElementById('modeDaily').className = 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition';
+                document.getElementById('modeUnlimited').className = 'flex-1 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-rose-500 to-pink-500 shadow text-white transition';
+                document.getElementById('difficultySelector').classList.remove('hidden');
+            }
+            mode = newMode;
+            initGame();
+        }
+
+        function setCheckingMode(newMode) {
+            if (newMode === 'live') {
+                document.getElementById('modeClassic').className = 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition';
+                document.getElementById('modeLive').className = 'flex-1 py-2 text-sm font-semibold rounded-lg bg-gray-600 shadow text-white transition';
+                document.getElementById('lives').style.visibility = 'visible';
+                document.getElementById('hintBtn').style.display = 'block';
+            } else {
+                document.getElementById('modeLive').className = 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition';
+                document.getElementById('modeClassic').className = 'flex-1 py-2 text-sm font-semibold rounded-lg bg-gray-600 shadow text-white transition';
+                document.getElementById('lives').style.visibility = 'hidden';
+                document.getElementById('hintBtn').style.display = 'none';
+            }
+            checkingMode = newMode;
+            initGame();
+        }
+
+        function checkDailyAccess() {
+            const today = new Date().toISOString().slice(0, 10);
+            const lastWin = localStorage.getItem('nonogram_daily_win');
+            if (mode === 'daily' && lastWin === today) {
+                showModal('dailyLimitModal');
+                // Automatically switch UI to unlimited mode so they can play
+                document.getElementById('modeDaily').className = 'flex-1 py-2 text-sm font-medium rounded-lg text-gray-400 hover:text-white transition';
+                document.getElementById('modeUnlimited').className = 'flex-1 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-rose-500 to-pink-500 shadow text-white transition';
+                document.getElementById('difficultySelector').classList.remove('hidden');
+                mode = 'unlimited';
+                return false;
+            }
+            return true;
+        }
+
+        function initGame() {
+            if (mode === 'daily' && !checkDailyAccess()) {
+                initGame(); // re-init as unlimited
+                return;
+            }
+            
+            n = (mode === 'daily') ? 10 : difficulty;
+            
+            let seed = null;
+            if (mode === 'daily') {
+                seed = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            }
+            
+            generatePuzzle(n, seed);
+            
+            playerGrid = Array(n).fill(0).map(() => Array(n).fill(0));
+            history = [];
+            lives = 3;
+            hints = 3;
+            
+            updateLives();
+            updateHints();
+            renderGrid();
+            startTimer();
+            setTool('fill');
+        }
+
+        function generatePuzzle(size, seed) {
+            let rng;
+            if (seed) {
+                let hash = 0;
+                for (let i = 0; i < seed.length; i++) {
+                    hash = Math.imul(31, hash) + seed.charCodeAt(i) | 0;
+                }
+                let a = hash;
+                rng = function() {
+                    var t = a += 0x6D2B79F5;
+                    t = Math.imul(t ^ t >>> 15, t | 1);
+                    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+                    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+                }
+            } else {
+                rng = Math.random;
+            }
+            
+            solutionGrid = Array(size).fill(0).map(() => Array(size).fill(0));
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    solutionGrid[r][c] = rng() < 0.55 ? 1 : 0;
+                }
+            }
+            
+            // Guarantee at least one cell filled per row/col to avoid [0] clues
+            for (let r = 0; r < size; r++) {
+                if (solutionGrid[r].every(v => v === 0)) solutionGrid[r][Math.floor(rng() * size)] = 1;
+            }
+            for (let c = 0; c < size; c++) {
+                let empty = true;
+                for (let r = 0; r < size; r++) if (solutionGrid[r][c] === 1) empty = false;
+                if (empty) solutionGrid[Math.floor(rng() * size)][c] = 1;
+            }
+            
+            // Compute clues
+            rowClues = [];
+            colClues = [];
+            for (let r = 0; r < size; r++) {
+                let clues = [], count = 0;
+                for (let c = 0; c < size; c++) {
+                    if (solutionGrid[r][c] === 1) count++;
+                    else if (count > 0) { clues.push(count); count = 0; }
+                }
+                if (count > 0) clues.push(count);
+                if (clues.length === 0) clues.push(0);
+                rowClues.push(clues);
+            }
+            for (let c = 0; c < size; c++) {
+                let clues = [], count = 0;
+                for (let r = 0; r < size; r++) {
+                    if (solutionGrid[r][c] === 1) count++;
+                    else if (count > 0) { clues.push(count); count = 0; }
+                }
+                if (count > 0) clues.push(count);
+                if (clues.length === 0) clues.push(0);
+                colClues.push(clues);
+            }
+        }
+
+        // --- Rendering ---
+        function renderGrid() {
+            const board = document.getElementById('gameBoard');
+            
+            // Responsive cell sizing
+            const isMobile = window.innerWidth < 600;
+            let cellSize = isMobile ? (n === 15 ? 18 : n === 10 ? 24 : 32) : (n === 15 ? 24 : n === 10 ? 32 : 40);
+            
+            board.style.gridTemplateColumns = `auto repeat(${n}, ${cellSize}px)`;
+            board.style.gridTemplateRows = `auto repeat(${n}, ${cellSize}px)`;
+            board.innerHTML = '';
+            
+            // Top-left corner
+            const corner = document.createElement('div');
+            corner.className = 'bg-panel border-b-2 border-r-2 border-gray-600';
+            board.appendChild(corner);
+            
+            // Column clues
+            for (let c = 0; c < n; c++) {
+                const colClue = document.createElement('div');
+                colClue.className = 'flex flex-col justify-end items-center pb-1 text-xs font-semibold bg-panel text-gray-300 clue-cell';
+                
+                colClue.style.borderBottom = '2px solid #4b5563';
+                if ((c + 1) % 5 === 0 && c !== n - 1) colClue.style.borderRight = '2px solid #6b7280';
+                else if (c !== n - 1) colClue.style.borderRight = '1px solid #374151';
+                
+                colClue.innerHTML = colClues[c].map(num => `<span>${num}</span>`).join('');
+                board.appendChild(colClue);
+            }
+            
+            // Rows & Grid Cells
+            for (let r = 0; r < n; r++) {
+                // Row clue
+                const rowClue = document.createElement('div');
+                rowClue.className = 'flex justify-end items-center pr-2 gap-1 text-xs font-semibold bg-panel text-gray-300 clue-cell';
+                
+                rowClue.style.borderRight = '2px solid #4b5563';
+                if ((r + 1) % 5 === 0 && r !== n - 1) rowClue.style.borderBottom = '2px solid #6b7280';
+                else if (r !== n - 1) rowClue.style.borderBottom = '1px solid #374151';
+                
+                rowClue.innerHTML = rowClues[r].map(num => `<span>${num}</span>`).join('');
+                board.appendChild(rowClue);
+                
+                // Cells
+                for (let c = 0; c < n; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell bg-gray-800 cursor-crosshair';
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+                    
+                    if ((c + 1) % 5 === 0 && c !== n - 1) cell.style.borderRight = '2px solid #6b7280';
+                    else if (c !== n - 1) cell.style.borderRight = '1px solid #374151';
+                    
+                    if ((r + 1) % 5 === 0 && r !== n - 1) cell.style.borderBottom = '2px solid #6b7280';
+                    else if (r !== n - 1) cell.style.borderBottom = '1px solid #374151';
+                    
+                    // Interaction
+                    cell.addEventListener('mousedown', onPointerDown);
+                    cell.addEventListener('mouseenter', onPointerEnter);
+                    cell.addEventListener('touchstart', onPointerDown, {passive: false});
+                    cell.addEventListener('touchmove', onTouchMove, {passive: false});
+                    
+                    board.appendChild(cell);
+                }
+            }
+            renderPlayerGrid();
+        }
+
+        function updateCellDOM(r, c) {
+            const board = document.getElementById('gameBoard');
+            const cellEl = board.querySelector(`.grid-cell[data-r="${r}"][data-c="${c}"]`);
+            if (!cellEl) return;
+            
+            cellEl.className = cellEl.className.replace(/filled|crossed|error/g, '').trim();
+            if (playerGrid[r][c] === 1) cellEl.classList.add('filled');
+            if (playerGrid[r][c] === 2) cellEl.classList.add('crossed');
+        }
+
+        function renderPlayerGrid() {
+            for (let r=0; r<n; r++) {
+                for (let c=0; c<n; c++) {
+                    updateCellDOM(r, c);
+                }
+            }
+        }
+
+        // --- Interaction Logic ---
+        function setTool(tool) {
+            activeTool = tool;
+            ['toolFill', 'toolCross', 'toolErase'].forEach(id => {
+                const btn = document.getElementById(id);
+                btn.classList.remove('bg-gray-600', 'text-white', 'text-rose-500');
+                btn.classList.add('text-gray-400');
+            });
+            
+            const activeBtn = document.getElementById(
+                tool === 'fill' ? 'toolFill' : tool === 'cross' ? 'toolCross' : 'toolErase'
+            );
+            activeBtn.classList.remove('text-gray-400');
+            if (tool === 'erase') activeBtn.classList.add('bg-gray-600', 'text-rose-500');
+            else activeBtn.classList.add('bg-gray-600', 'text-white');
+        }
+
+        function onPointerDown(e) {
+            if (checkingMode === 'live' && lives <= 0) return;
+            if (e.type === 'touchstart') e.preventDefault();
+            
+            const cell = e.target.closest('.grid-cell');
+            if (!cell) return;
+            
+            let r = parseInt(cell.dataset.r);
+            let c = parseInt(cell.dataset.c);
+            let currentVal = playerGrid[r][c];
+            
+            if (activeTool === 'fill') {
+                dragAction = (currentVal === 1) ? 0 : 1;
+            } else if (activeTool === 'cross') {
+                dragAction = (currentVal === 2) ? 0 : 2;
+            } else if (activeTool === 'erase') {
+                dragAction = 0;
+            }
+            
+            isDragging = true;
+            saveHistory();
+            applyCell(r, c, dragAction, cell);
+        }
+
+        function onPointerEnter(e) {
+            if (!isDragging || (checkingMode === 'live' && lives <= 0)) return;
+            const cell = e.target.closest('.grid-cell');
+            if (!cell) return;
+            applyCell(parseInt(cell.dataset.r), parseInt(cell.dataset.c), dragAction, cell);
+        }
+
+        function onTouchMove(e) {
+            if (!isDragging || (checkingMode === 'live' && lives <= 0)) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const el = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (el && el.classList.contains('grid-cell')) {
+                applyCell(parseInt(el.dataset.r), parseInt(el.dataset.c), dragAction, el);
+            }
+        }
+
+        function applyCell(r, c, action, cellEl) {
+            if (playerGrid[r][c] === action) return;
+            
+            // Live check for Fill mistakes ONLY in 'live' mode
+            if (checkingMode === 'live' && action === 1 && solutionGrid[r][c] === 0) {
+                handleMistake(r, c, cellEl);
+                isDragging = false; // Break combo
+                return;
+            }
+            
+            playerGrid[r][c] = action;
+            updateCellDOM(r, c);
+        }
+
+        function endDrag() {
+            if (isDragging) {
+                isDragging = false;
+                checkWin();
+            }
+        }
+
+        function handleMistake(r, c, cellEl) {
+            playerGrid[r][c] = 2; // Auto-cross
+            updateCellDOM(r, c);
+            
+            cellEl.classList.add('error');
+            setTimeout(() => cellEl.classList.remove('error'), 400);
+            
+            lives--;
+            updateLives();
+            
+            if (lives <= 0) {
+                gameOver();
+            }
+        }
+
+        function saveHistory() {
+            history.push(JSON.parse(JSON.stringify(playerGrid)));
+            if (history.length > 30) history.shift();
+        }
+
+        function undo() {
+            if (history.length === 0 || (checkingMode === 'live' && lives <= 0)) return;
+            playerGrid = history.pop();
+            renderPlayerGrid();
+        }
+
+        function useHint() {
+            if (checkingMode === 'classic' || hints <= 0 || lives <= 0) return;
+            
+            let candidates = [];
+            for (let r=0; r<n; r++) {
+                for (let c=0; c<n; c++) {
+                    if (solutionGrid[r][c] === 1 && playerGrid[r][c] !== 1) {
+                        candidates.push({r, c});
+                    }
+                }
+            }
+            
+            if (candidates.length > 0) {
+                let pick = candidates[Math.floor(Math.random() * candidates.length)];
+                saveHistory();
+                hints--;
+                updateHints();
+                playerGrid[pick.r][pick.c] = 1;
+                updateCellDOM(pick.r, pick.c);
+                checkWin();
+            }
+        }
+
+        // --- UI Updates ---
+        function updateLives() {
+            const container = document.getElementById('lives');
+            container.innerHTML = '';
+            for(let i=0; i<3; i++) {
+                const heart = document.createElement('i');
+                heart.setAttribute('data-lucide', 'heart');
+                heart.className = `w-5 h-5 ${i < lives ? 'fill-current text-rose-500' : 'text-gray-700'}`;
+                container.appendChild(heart);
+            }
+            lucide.createIcons({root: container});
+        }
+
+        function updateHints() {
+            document.getElementById('hintCount').textContent = hints;
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timer = 0;
+            updateTimerDOM();
+            timerInterval = setInterval(() => {
+                timer++;
+                updateTimerDOM();
+            }, 1000);
+        }
+
+        function updateTimerDOM() {
+            const m = Math.floor(timer / 60).toString().padStart(2, '0');
+            const s = (timer % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${m}:${s}`;
+        }
+
+        // --- Modals & Game End ---
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function checkWin() {
+            let won = true;
+            for (let r=0; r<n; r++) {
+                for (let c=0; c<n; c++) {
+                    if (solutionGrid[r][c] === 1 && playerGrid[r][c] !== 1) won = false;
+                    if (solutionGrid[r][c] === 0 && playerGrid[r][c] === 1) won = false;
+                }
+            }
+            
+            if (won && (checkingMode === 'classic' || lives > 0)) {
+                clearInterval(timerInterval);
+                if (mode === 'daily') {
+                    const today = new Date().toISOString().slice(0,10);
+                    localStorage.setItem('nonogram_daily_win', today);
+                }
+                
+                showConfetti();
+                setTimeout(() => {
+                    document.getElementById('resultTitle').textContent = 'Tebrikler!';
+                    document.getElementById('resultTitle').className = 'text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-pink-500 mb-2';
+                    document.getElementById('resultMsg').textContent = 'Bulmacayı başarıyla tamamladın.';
+                    document.getElementById('resultTime').textContent = document.getElementById('timer').textContent;
+                    
+                    if (checkingMode === 'live') {
+                        document.getElementById('resultMistakesLabel').textContent = 'Hata';
+                        document.getElementById('resultMistakes').textContent = (3 - lives).toString();
+                    } else {
+                        document.getElementById('resultMistakesLabel').textContent = 'Mod';
+                        document.getElementById('resultMistakes').textContent = 'Cansız';
+                    }
+                    
+                    if (window.KaUser) {
+                        window.KaUser.addGameResult('nonogram', 'number', true, timer);
+                    }
+                    
+                    document.getElementById('nextBtn').textContent = 'Yeni Oyun';
+                    showModal('resultModal');
+                }, 1000);
+            }
+        }
+
+        function gameOver() {
+            clearInterval(timerInterval);
+            document.getElementById('resultTitle').textContent = 'Oyun Bitti!';
+            document.getElementById('resultTitle').className = 'text-2xl font-bold text-gray-300 mb-2';
+            document.getElementById('resultMsg').textContent = 'Tüm canlarını kaybettin.';
+            document.getElementById('resultTime').textContent = document.getElementById('timer').textContent;
+            
+            document.getElementById('resultMistakesLabel').textContent = 'Hata';
+            document.getElementById('resultMistakes').textContent = '3';
+            
+            if (window.KaUser) {
+                window.KaUser.addGameResult('nonogram', 'number', false, timer);
+            }
+            
+            document.getElementById('nextBtn').textContent = 'Tekrar Dene';
+            showModal('resultModal');
+        }
+
+        function showConfetti() {
+            const colors = ['#f43f5e', '#ec4899', '#3b82f6', '#10b981', '#f59e0b'];
+            for(let i=0; i<50; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'absolute w-2 h-2 rounded-sm z-50 pointer-events-none';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.top = '-20px';
+                conf.style.animation = `confetti ${2 + Math.random()*2}s linear forwards`;
+                document.body.appendChild(conf);
+                setTimeout(() => conf.remove(), 4000);
+            }
+        }
+
+        function shareResult() {
+            const modeText = mode === 'daily' ? 'Günün Bulmacası' : `${n}x${n} Serbest Mod`;
+            const chkText = checkingMode === 'live' ? 'Canlı Mod' : 'Cansız Mod';
+            const mistakes = checkingMode === 'live' ? `\n💔 ${3 - lives} Hata` : '';
+            const time = document.getElementById('timer').textContent;
+            const text = `Kare Karalama - ${modeText} (${chkText})\n⏱️ ${time}${mistakes}\nSen de oyna!`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('shareBtn');
+                const origText = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i> <span>Kopyalandı!</span>';
+                lucide.createIcons({root: btn});
+                setTimeout(() => {
+                    btn.innerHTML = origText;
+                    lucide.createIcons({root: btn});
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

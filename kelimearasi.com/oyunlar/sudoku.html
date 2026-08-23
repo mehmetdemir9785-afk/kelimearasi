@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Kelimearası Sudoku - Klasik 9x9 Sudoku bulmacası. Günlük ve Sınırsız modlarda oyna!">
+    <title>Sudoku | Kelimearası</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ====== ANIMATIONS ====== */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            0% { transform: translateY(30px) scale(0.95); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        @keyframes numberEnter {
+            0% { transform: scale(0); opacity: 0; }
+            60% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes errorFlash {
+            0% { background-color: rgba(239, 68, 68, 0.4); }
+            50% { background-color: rgba(239, 68, 68, 0.1); }
+            100% { background-color: rgba(239, 68, 68, 0.4); }
+        }
+
+        @keyframes confettiDrop {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            50% { transform: scale(1.02); box-shadow: 0 0 30px 10px rgba(34, 197, 94, 0.2); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .animate-shake { animation: shake 0.5s ease-in-out; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-number-enter { animation: numberEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .animate-error-flash { animation: errorFlash 0.5s ease-in-out 3; }
+        .animate-success-pulse { animation: successPulse 1.5s ease-in-out infinite; }
+
+        /* ====== SUDOKU GRID ====== */
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            grid-template-rows: repeat(9, 1fr);
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #e5e7eb; /* Light mode border */
+            background: #ffffff; /* Light mode bg */
+            touch-action: none;
+        }
+        .dark .sudoku-grid {
+            border-color: rgba(255,255,255,0.1); /* Dark mode border */
+            background: #181836; /* Dark mode bg */
+        }
+
+        .sudoku-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            position: relative;
+            font-size: 1.25rem;
+            font-weight: 700;
+            transition: background-color 0.15s ease;
+            border-right: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+            background: #ffffff;
+            z-index: 10;
+        }
+        .dark .sudoku-cell {
+            border-color: rgba(255,255,255,0.05);
+            background: #181836;
+        }
+
+        .sudoku-cell:active {
+            transform: scale(0.95);
+        }
+
+        /* 3x3 subgrid thick borders */
+        .sudoku-cell.border-right-thick { border-right: 2px solid #cbd5e1 !important; }
+        .sudoku-cell.border-bottom-thick { border-bottom: 2px solid #cbd5e1 !important; }
+        .dark .sudoku-cell.border-right-thick { border-right: 2px solid rgba(255,255,255,0.1) !important; }
+        .dark .sudoku-cell.border-bottom-thick { border-bottom: 2px solid rgba(255,255,255,0.1) !important; }
+        .sudoku-cell.border-right-none { border-right: none !important; }
+        .sudoku-cell.border-bottom-none { border-bottom: none !important; }
+
+        /* Cell States */
+        .sudoku-cell.given { color: #111827; font-weight: 800; }
+        .dark .sudoku-cell.given { color: #f3f4f6; }
+
+        .sudoku-cell.user-input { color: #6366f1; }
+        .dark .sudoku-cell.user-input { color: #818cf8; }
+
+        .sudoku-cell.selected { background: rgba(99, 102, 241, 0.2) !important; }
+        .dark .sudoku-cell.selected { background: rgba(99, 102, 241, 0.4) !important; }
+
+        .sudoku-cell.highlighted-line { background: rgba(99, 102, 241, 0.05) !important; }
+        .dark .sudoku-cell.highlighted-line { background: rgba(99, 102, 241, 0.15) !important; }
+
+        .sudoku-cell.highlighted-same { background: rgba(99, 102, 241, 0.1) !important; }
+        .dark .sudoku-cell.highlighted-same { background: rgba(99, 102, 241, 0.25) !important; }
+
+        .sudoku-cell.error { color: #ef4444 !important; background: rgba(239, 68, 68, 0.1) !important; }
+        .dark .sudoku-cell.error { background: rgba(239, 68, 68, 0.15) !important; }
+
+        .sudoku-cell.hint-cell { color: #10b981 !important; }
+        .dark .sudoku-cell.hint-cell { color: #34d399 !important; }
+
+        /* Notes Grid */
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 1px;
+            pointer-events: none;
+        }
+        .notes-grid span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.55rem;
+            font-weight: 600;
+            color: #6b7280;
+            line-height: 1;
+        }
+        .dark .notes-grid span { color: #9ca3af; }
+
+        @media (min-width: 400px) {
+            .notes-grid span { font-size: 0.65rem; }
+            .sudoku-cell { font-size: 1.5rem; }
+        }
+
+        /* Numpad & Actions */
+        .numpad-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            cursor: pointer;
+            position: relative;
+            z-index: 50;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: all 0.1s ease;
+            height: 54px;
+            border-radius: 12px;
+            
+            color: #374151;
+            background: #ffffff;
+            border: 1px solid rgba(229,231,235, 0.6);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .dark .numpad-btn {
+            color: #e2e8f0;
+            background: #181836;
+            border-color: rgba(255,255,255,0.05);
+            box-shadow: none;
+        }
+
+        .numpad-btn:active { transform: scale(0.92); background: #e0e7ff; border-color: #6366f1; }
+        .dark .numpad-btn:active { background: #4f46e5; border-color: #6366f1; }
+
+        .numpad-btn.completed { opacity: 0.3; pointer-events: none; }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            z-index: 50;
+            user-select: none;
+            transition: all 0.1s ease;
+            border-radius: 12px;
+            
+            color: #4b5563;
+            background: #ffffff;
+            border: 1px solid rgba(229,231,235, 0.6);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .dark .action-btn {
+            color: #94a3b8;
+            background: #181836;
+            border-color: rgba(255,255,255,0.05);
+            box-shadow: none;
+        }
+
+        .action-btn:active { transform: scale(0.92); }
+
+        .action-btn.active { background: rgba(99, 102, 241, 0.1); border-color: #6366f1; color: #4f46e5; }
+        .dark .action-btn.active { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+
+        /* Difficulty Buttons */
+        .diff-btn {
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 20px;
+            cursor: pointer;
+            position: relative;
+            z-index: 50;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        .diff-btn.active-diff { background: #4f46e5; border-color: #6366f1; color: white; box-shadow: 0 0 8px rgba(99,102,241,0.3); }
+        .dark .diff-btn.active-diff { box-shadow: 0 0 8px rgba(99,102,241,0.5); }
+        .diff-btn:not(.active-diff) { color: #6b7280; background: #f3f4f6; border-color: #e5e7eb; }
+        .dark .diff-btn:not(.active-diff) { color: #94a3b8; background: #181836; border-color: rgba(255,255,255,0.05); }
+        .diff-btn:not(.active-diff):hover { background: #e5e7eb; color: #374151; }
+        .dark .diff-btn:not(.active-diff):hover { background: rgba(255,255,255,0.1); color: #cbd5e1; }
+
+        /* Live Mode Toggle */
+        .live-toggle-btn {
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 50;
+            cursor: pointer;
+        }
+        .live-toggle-btn.active { background: #10b981; color: white; box-shadow: 0 0 8px rgba(16, 185, 129, 0.3); }
+        .dark .live-toggle-btn.active { box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+        .live-toggle-btn:not(.active) { background: transparent; color: #6b7280; }
+        .dark .live-toggle-btn:not(.active) { color: #94a3b8; }
+        .live-toggle-btn:not(.active):hover { color: #374151; }
+        .dark .live-toggle-btn:not(.active):hover { color: #cbd5e1; }
+
+        /* Error hearts */
+        .heart { transition: all 0.3s ease; }
+        .heart.lost { opacity: 0.2; transform: scale(0.8); filter: grayscale(1); }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .modal-content {
+            background: #ffffff;
+            border: 1px solid rgba(229,231,235, 0.6);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 320px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 110;
+            color: #1f2937;
+        }
+        .dark .modal-content {
+            background: #181836;
+            border-color: rgba(255,255,255,0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            color: #f3f4f6;
+        }
+
+        /* Confetti */
+        .confetti-piece {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -20px;
+            z-index: 200;
+            animation: confettiDrop 3s linear forwards;
+            pointer-events: none;
+        }
+
+        /* Mode Toggle */
+        .mode-toggle-btn {
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 50;
+            cursor: pointer;
+        }
+        .mode-toggle-btn.active { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; box-shadow: 0 0 8px rgba(99,102,241,0.3); }
+        .dark .mode-toggle-btn.active { box-shadow: 0 0 12px rgba(99,102,241,0.4); }
+        .mode-toggle-btn:not(.active) { background: transparent; color: #6b7280; }
+        .dark .mode-toggle-btn:not(.active) { color: #94a3b8; }
+        .mode-toggle-btn:not(.active):hover { color: #374151; }
+        .dark .mode-toggle-btn:not(.active):hover { color: #cbd5e1; }
+    </style>
+    <script src="../js/user-system.js"></script>
+</head>
+
+<body class="bg-gray-50 dark:bg-[#0c0c1d] text-gray-900 dark:text-gray-100 font-sans h-full flex flex-col select-none transition-colors duration-300">
+
+    <!-- ====== HEADER ====== -->
+    <header class="px-4 py-3 sticky top-0 z-50 flex items-center justify-between border-b border-gray-200/60 dark:border-white/5 backdrop-blur-xl bg-white/80 dark:bg-[#12122b]/80 flex-shrink-0 transition-colors duration-300">
+        <a href="../index.html" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Ana Sayfa">
+            🏠
+        </a>
+        <h1 class="text-xl font-extrabold tracking-widest bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-500 dark:from-blue-400 dark:via-indigo-500 dark:to-purple-400 text-transparent bg-clip-text drop-shadow-sm dark:drop-shadow-[0_0_12px_rgba(99,102,241,0.5)]">
+            SUDOKU
+        </h1>
+        <button id="helpBtn" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Yardım">
+            ❓
+        </button>
+    </header>
+
+    <!-- ====== TOP TOGGLES: Mode & Live/Dead ====== -->
+    <div class="flex items-center justify-center gap-3 p-3 flex-shrink-0 relative z-50">
+        <!-- Mode Toggle -->
+        <div class="flex bg-white dark:bg-[#181836] p-1 rounded-xl border border-gray-200/60 dark:border-white/5 transition-colors duration-300">
+            <button id="modeDailyBtn" class="mode-toggle-btn px-3 py-1.5 rounded-lg text-xs font-bold active">Günlük</button>
+            <button id="modeUnlimitedBtn" class="mode-toggle-btn px-3 py-1.5 rounded-lg text-xs font-bold">Sınırsız</button>
+        </div>
+        
+        <!-- Live/Dead Toggle -->
+        <div class="flex bg-white dark:bg-[#181836] p-1 rounded-xl border border-gray-200/60 dark:border-white/5 transition-all duration-300" id="liveToggleContainer">
+            <button id="liveModeBtn" class="live-toggle-btn px-3 py-1.5 rounded-lg text-xs font-bold active">Canlı</button>
+            <button id="deadModeBtn" class="live-toggle-btn px-3 py-1.5 rounded-lg text-xs font-bold">Cansız</button>
+        </div>
+    </div>
+
+    <!-- ====== INFO BAR: Zorluk + Süre ====== -->
+    <div class="flex items-center justify-between px-4 pb-3 flex-shrink-0 relative z-50">
+        <!-- Sol: Zorluk Seçici -->
+        <div class="flex items-center gap-1.5" id="difficultyContainer">
+            <button class="diff-btn active-diff" data-diff="easy">Kolay</button>
+            <button class="diff-btn" data-diff="medium">Orta</button>
+            <button class="diff-btn" data-diff="hard">Zor</button>
+        </div>
+
+        <!-- Sağ: Hata Sayacı + Süre -->
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1" id="errorDisplay">
+                <span class="heart text-red-500 text-sm" id="heart1">❤️</span>
+                <span class="heart text-red-500 text-sm" id="heart2">❤️</span>
+                <span class="heart text-red-500 text-sm" id="heart3">❤️</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300 font-mono bg-white dark:bg-[#181836] px-2 py-1 rounded-md border border-gray-200/60 dark:border-white/5 shadow-sm dark:shadow-none transition-colors duration-300">
+                <i data-lucide="clock" class="w-3.5 h-3.5 pointer-events-none"></i>
+                <span id="timerDisplay" class="pointer-events-none">00:00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== GAME AREA ====== -->
+    <div class="flex-1 flex flex-col items-center px-4 gap-4 min-h-0">
+
+        <!-- Sudoku Grid -->
+        <div class="sudoku-grid shadow-sm dark:shadow-none" id="sudokuGrid">
+            <!-- Hücreler JS ile oluşturulacak -->
+        </div>
+
+        <!-- ====== CONTROL PANEL ====== -->
+        <div class="w-full max-w-[400px] flex flex-col gap-3 pb-4 relative z-50">
+            <!-- Aksiyon Butonları -->
+            <div class="grid grid-cols-4 gap-2">
+                <button class="action-btn" id="undoBtn" onclick="undoAction()">
+                    <i data-lucide="undo-2" class="w-5 h-5 pointer-events-none"></i>
+                    <span class="pointer-events-none">Geri Al</span>
+                </button>
+                <button class="action-btn" id="noteModeBtn" onclick="toggleNoteMode()">
+                    <i data-lucide="pencil" class="w-5 h-5 pointer-events-none"></i>
+                    <span class="pointer-events-none">Not</span>
+                </button>
+                <button class="action-btn" id="hintBtn" onclick="useHint()">
+                    <i data-lucide="lightbulb" class="w-5 h-5 pointer-events-none"></i>
+                    <span class="pointer-events-none">İpucu</span>
+                </button>
+                <button class="action-btn" id="eraseBtn" onclick="eraseCell()">
+                    <i data-lucide="eraser" class="w-5 h-5 pointer-events-none"></i>
+                    <span class="pointer-events-none">Sil</span>
+                </button>
+            </div>
+
+            <!-- Numpad: İki satır -->
+            <div class="grid grid-cols-5 gap-2" id="numpadGrid">
+                <button class="numpad-btn" data-num="1" onclick="inputNumber(1)">1</button>
+                <button class="numpad-btn" data-num="2" onclick="inputNumber(2)">2</button>
+                <button class="numpad-btn" data-num="3" onclick="inputNumber(3)">3</button>
+                <button class="numpad-btn" data-num="4" onclick="inputNumber(4)">4</button>
+                <button class="numpad-btn" data-num="5" onclick="inputNumber(5)">5</button>
+                <button class="numpad-btn" data-num="6" onclick="inputNumber(6)">6</button>
+                <button class="numpad-btn" data-num="7" onclick="inputNumber(7)">7</button>
+                <button class="numpad-btn" data-num="8" onclick="inputNumber(8)">8</button>
+                <button class="numpad-btn" data-num="9" onclick="inputNumber(9)">9</button>
+                <!-- Yeni Oyun butonu -->
+                <button class="numpad-btn !bg-indigo-600 !border-indigo-500 hover:!bg-indigo-500 hidden !text-white !shadow-md" id="newGameBtn" onclick="initGame()" title="Yeni Oyun">
+                    <i data-lucide="refresh-cw" class="w-5 h-5 pointer-events-none"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== YARDIM MODALI ====== -->
+    <div id="helpModal" class="modal-overlay hidden">
+        <div class="modal-content !max-w-[350px]">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white">Nasıl Oynanır?</h2>
+                <button onclick="closeHelpModal()" class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors relative z-50 cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-slate-400 pointer-events-none"></i>
+                </button>
+            </div>
+            <div class="text-left text-sm text-gray-600 dark:text-slate-300 space-y-3">
+                <p>9x9'luk ızgarayı 1'den 9'a kadar olan rakamlarla doldurun. Ancak aşağıdaki kurallara dikkat edin:</p>
+                <ul class="space-y-1.5 ml-4 list-disc text-gray-500 dark:text-slate-400">
+                    <li>Her satırda 1'den 9'a kadar rakamlar birer kez bulunmalıdır.</li>
+                    <li>Her sütunda 1'den 9'a kadar rakamlar birer kez bulunmalıdır.</li>
+                    <li>Her 3x3'lük kutuda 1'den 9'a kadar rakamlar birer kez bulunmalıdır.</li>
+                </ul>
+                <div class="mt-4 p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200/60 dark:border-white/5">
+                    <div class="flex items-center gap-2 mb-2 text-indigo-500 dark:text-indigo-400 font-semibold">
+                        <i data-lucide="calendar" class="w-4 h-4 pointer-events-none"></i> Günlük Mod
+                    </div>
+                    <p class="text-xs">Her gün herkes için aynı olan tek bir bulmaca üretilir. 3 hata yaparsanız oyun biter.</p>
+                </div>
+                <div class="p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200/60 dark:border-white/5">
+                    <div class="flex items-center gap-2 mb-2 text-emerald-500 dark:text-emerald-400 font-semibold">
+                        <i data-lucide="eye" class="w-4 h-4 pointer-events-none"></i> Canlı / Cansız
+                    </div>
+                    <p class="text-xs">Canlı modda dijital yardımlar ve anında hata bildirimi açıktır. Cansız mod ise gerçek gazete bulmacası gibidir; yardımlar kapanır.</p>
+                </div>
+            </div>
+            <button onclick="closeHelpModal()" class="mt-5 w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl relative z-50 cursor-pointer shadow-md transition-colors">Anladım</button>
+        </div>
+    </div>
+
+    <!-- ====== GÜNLÜK HAK DOLDU MODALI ====== -->
+    <div id="dailyPlayedModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="text-5xl mb-3">🕒</div>
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Günlük Hak Doldu</h2>
+            <p class="text-sm text-gray-600 dark:text-slate-300 mb-5">Bugünkü Sudoku bulmacasını zaten oynadınız. Yarın tekrar gelin veya Sınırsız Mod'da oynamaya devam edin!</p>
+            <button onclick="switchMode('unlimited'); document.getElementById('dailyPlayedModal').classList.add('hidden');" class="w-full py-3 bg-gradient-to-r from-purple-500 to-indigo-500 dark:from-purple-600 dark:to-indigo-600 text-white font-semibold rounded-xl shadow-lg relative z-50 cursor-pointer hover:opacity-90 transition-opacity">
+                Sınırsız Moda Geç
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== OYUN BİTTİ (KAYIP/KAZANÇ) MODALI ====== -->
+    <div id="resultModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div id="resultIcon" class="text-6xl mb-3">🎉</div>
+            <h2 id="resultTitle" class="text-2xl font-bold mb-1">Tebrikler!</h2>
+            <p id="resultDesc" class="text-sm text-gray-500 dark:text-slate-400 mb-5">Bulmacayı başarıyla çözdünüz.</p>
+            
+            <div class="bg-gray-50 dark:bg-white/5 rounded-xl p-4 mb-5 border border-gray-200/60 dark:border-white/5">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-500 dark:text-slate-400 text-sm">Mod</span>
+                    <span id="statMode" class="font-semibold text-gray-900 dark:text-white">Günlük</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-500 dark:text-slate-400 text-sm">Süre</span>
+                    <span id="statTime" class="font-semibold text-gray-900 dark:text-white font-mono">00:00</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 dark:text-slate-400 text-sm">Hatalar</span>
+                    <span id="statErrors" class="font-semibold text-red-500 dark:text-red-400">0/3</span>
+                </div>
+            </div>
+
+            <button onclick="shareResult()" class="w-full py-3 mb-2 bg-green-500 dark:bg-green-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2 relative z-50 cursor-pointer shadow-md hover:bg-green-600 dark:hover:bg-green-700 transition-colors">
+                <i data-lucide="share-2" class="w-5 h-5 pointer-events-none"></i> Sonucu Paylaş
+            </button>
+            
+            <button id="nextActionBtn" onclick="switchMode('unlimited')" class="w-full py-3 bg-gray-200 dark:bg-white/10 text-gray-800 dark:text-white font-semibold rounded-xl hidden relative z-50 cursor-pointer hover:bg-gray-300 dark:hover:bg-white/20 transition-colors">
+                Sınırsız Modda Devam Et
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== GAME LOGIC ====== -->
+    <script>
+    (function() {
+        'use strict';
+
+        // ==================== GAME STATE ====================
+        let currentMode = 'daily'; 
+        let isLiveMode = true;     
+        let hasMadeFirstMove = false; 
+        let currentSeed = 0;       
+        let shareContent = '';
+
+        let board = [];           
+        let solution = [];        
+        let givenCells = [];      
+        let notes = [];           
+        let selectedRow = -1;
+        let selectedCol = -1;
+        let errors = 0;
+        let maxErrors = 3;
+        let noteMode = false;
+        let timerSeconds = 0;
+        let timerInterval = null;
+        let gameActive = true;
+        let difficulty = 'easy';
+        let undoStack = [];       
+
+        const difficultyLevels = { easy: 30, medium: 45, hard: 55 };
+        const difficultyNames = { easy: 'Kolay', medium: 'Orta', hard: 'Zor' };
+
+        // ==================== EVENT BINDING ====================
+        function bindButtonEvents() {
+            document.getElementById('modeDailyBtn').addEventListener('click', () => {
+                switchMode('daily');
+            });
+            document.getElementById('modeUnlimitedBtn').addEventListener('click', () => {
+                switchMode('unlimited');
+            });
+
+            document.getElementById('liveModeBtn').addEventListener('click', () => {
+                switchLiveMode(true);
+            });
+            document.getElementById('deadModeBtn').addEventListener('click', () => {
+                switchLiveMode(false);
+            });
+
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const selectedDiff = e.currentTarget.dataset.diff;
+                    changeDifficulty(selectedDiff);
+                });
+            });
+        }
+
+        // ==================== SEEDED RANDOM ====================
+        function getTodayString() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+
+        function getSeedForDate(dateStr) {
+            let seed = 0;
+            for (let i = 0; i < dateStr.length; i++) {
+                seed += dateStr.charCodeAt(i) * (i + 1);
+            }
+            return seed + 98765; 
+        }
+
+        function myRandom() {
+            if (currentMode === 'daily') {
+                var x = Math.sin(currentSeed++) * 10000;
+                return x - Math.floor(x);
+            }
+            return Math.random();
+        }
+
+        // ==================== GENERATOR ====================
+        function generateSolution() {
+            const grid = Array.from({ length: 9 }, () => Array(9).fill(0));
+            fillGrid(grid);
+            return grid;
+        }
+
+        function fillGrid(grid) {
+            const emptyCell = findEmpty(grid);
+            if (!emptyCell) return true;
+
+            const [row, col] = emptyCell;
+            const numbers = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+            for (const num of numbers) {
+                if (isValidPlacement(grid, row, col, num)) {
+                    grid[row][col] = num;
+                    if (fillGrid(grid)) return true;
+                    grid[row][col] = 0;
+                }
+            }
+            return false;
+        }
+
+        function findEmpty(grid) {
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (grid[r][c] === 0) return [r, c];
+                }
+            }
+            return null;
+        }
+
+        function isValidPlacement(grid, row, col, num) {
+            for (let c = 0; c < 9; c++) if (grid[row][c] === num) return false;
+            for (let r = 0; r < 9; r++) if (grid[r][col] === num) return false;
+            const boxRow = Math.floor(row / 3) * 3;
+            const boxCol = Math.floor(col / 3) * 3;
+            for (let r = boxRow; r < boxRow + 3; r++) {
+                for (let c = boxCol; c < boxCol + 3; c++) {
+                    if (grid[r][c] === num) return false;
+                }
+            }
+            return true;
+        }
+
+        function shuffle(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(myRandom() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function createPuzzle(solvedGrid, removals) {
+            const puzzle = solvedGrid.map(row => [...row]);
+            const positions = [];
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) positions.push([r, c]);
+            }
+            const shuffled = shuffle(positions);
+            let removed = 0;
+            for (const [r, c] of shuffled) {
+                if (removed >= removals) break;
+                puzzle[r][c] = 0;
+                removed++;
+            }
+            return puzzle;
+        }
+
+        // ==================== MODE & LOCK MANAGEMENT ====================
+        function lockLiveModeToggle() {
+            hasMadeFirstMove = true;
+            const container = document.getElementById('liveToggleContainer');
+            if (container) {
+                container.classList.add('opacity-50', 'pointer-events-none', 'cursor-not-allowed');
+            }
+        }
+
+        function unlockLiveModeToggle() {
+            hasMadeFirstMove = false;
+            const container = document.getElementById('liveToggleContainer');
+            if (container) {
+                container.classList.remove('opacity-50', 'pointer-events-none', 'cursor-not-allowed');
+            }
+        }
+
+        function initMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'unlimited') {
+                currentMode = 'unlimited';
+            } else {
+                currentMode = 'daily';
+            }
+            updateModeUI();
+            checkAndStartGame();
+        }
+
+        window.switchMode = function(mode) {
+            if (mode === currentMode) return;
+            try {
+                const url = new URL(window.location);
+                if (mode === 'unlimited') url.searchParams.set('mode', 'unlimited');
+                else url.searchParams.delete('mode');
+                window.history.pushState({}, '', url);
+            } catch (e) {
+                console.warn('pushState failed, likely running locally via file://', e);
+            }
+            
+            currentMode = mode;
+            updateModeUI();
+            checkAndStartGame();
+        };
+
+        window.switchLiveMode = function(isLive) {
+            if (isLiveMode === isLive || hasMadeFirstMove) return; 
+            isLiveMode = isLive;
+            
+            const liveBtn = document.getElementById('liveModeBtn');
+            const deadBtn = document.getElementById('deadModeBtn');
+            
+            if (isLive) {
+                liveBtn.classList.add('active');
+                deadBtn.classList.remove('active');
+            } else {
+                deadBtn.classList.add('active');
+                liveBtn.classList.remove('active');
+            }
+            
+            if (gameActive) {
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        refreshCell(r, c);
+                    }
+                }
+                updateHighlights();
+                updateNumpadCompletion();
+            }
+        };
+
+        window.changeDifficulty = function(selectedDiff) {
+            if (difficulty === selectedDiff) return; 
+            
+            difficulty = selectedDiff;
+            
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                if (btn.dataset.diff === selectedDiff) {
+                    btn.classList.add('active-diff');
+                } else {
+                    btn.classList.remove('active-diff');
+                }
+            });
+
+            if (currentMode === 'daily') {
+                checkAndStartGame(); 
+            } else {
+                initGame();
+            }
+        };
+
+        function updateModeUI() {
+            const dailyBtn = document.getElementById('modeDailyBtn');
+            const unlimitedBtn = document.getElementById('modeUnlimitedBtn');
+            const newGameBtn = document.getElementById('newGameBtn');
+            const hintBtn = document.getElementById('hintBtn');
+
+            if (currentMode === 'daily') {
+                dailyBtn.classList.add('active');
+                unlimitedBtn.classList.remove('active');
+                newGameBtn.classList.add('hidden');
+                if (hintBtn) hintBtn.classList.add('opacity-50', 'pointer-events-none', 'cursor-not-allowed');
+            } else {
+                unlimitedBtn.classList.add('active');
+                dailyBtn.classList.remove('active');
+                newGameBtn.classList.remove('hidden');
+                if (hintBtn) hintBtn.classList.remove('opacity-50', 'pointer-events-none', 'cursor-not-allowed');
+            }
+            
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                if (btn.dataset.diff === difficulty) {
+                    btn.classList.add('active-diff');
+                } else {
+                    btn.classList.remove('active-diff');
+                }
+            });
+        }
+
+        function checkAndStartGame() {
+            document.getElementById('resultModal').classList.add('hidden');
+            
+            if (currentMode === 'daily') {
+                const todayStr = getTodayString();
+                const lastPlayed = localStorage.getItem('sudoku_daily_last_date');
+                if (lastPlayed === todayStr) {
+                    document.getElementById('dailyPlayedModal').classList.remove('hidden');
+                    return;
+                }
+                currentSeed = getSeedForDate(todayStr); 
+            }
+            initGame();
+        }
+
+        // ==================== INIT GAME ====================
+        window.initGame = function() {
+            if (currentMode === 'daily') {
+                currentSeed = getSeedForDate(getTodayString()); 
+            }
+
+            solution = generateSolution();
+            const removals = difficultyLevels[difficulty];
+            board = createPuzzle(solution, removals);
+            givenCells = board.map(row => row.map(cell => cell !== 0));
+            notes = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => new Set()));
+
+            selectedRow = -1;
+            selectedCol = -1;
+            errors = 0;
+            noteMode = false;
+            undoStack = [];
+            gameActive = true;
+            timerSeconds = 0;
+
+            unlockLiveModeToggle(); 
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (gameActive) {
+                    timerSeconds++;
+                    document.getElementById('timerDisplay').textContent = formatTime(timerSeconds);
+                }
+            }, 1000);
+
+            updateErrorDisplay();
+            document.getElementById('timerDisplay').textContent = "00:00";
+            updateNoteModeUI();
+            buildGrid();
+            updateNumpadCompletion();
+        };
+
+        // ==================== GRID & INTERACTION ====================
+        function buildGrid() {
+            const gridEl = document.getElementById('sudokuGrid');
+            gridEl.innerHTML = '';
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'sudoku-cell';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    if (c === 2 || c === 5) cell.classList.add('border-right-thick');
+                    if (c === 8) cell.classList.add('border-right-none');
+                    if (r === 2 || r === 5) cell.classList.add('border-bottom-thick');
+                    if (r === 8) cell.classList.add('border-bottom-none');
+
+                    if (board[r][c] !== 0) {
+                        cell.textContent = board[r][c];
+                        if (givenCells[r][c]) cell.classList.add('given');
+                        else {
+                            cell.classList.add('user-input');
+                            if (isLiveMode && board[r][c] !== solution[r][c]) cell.classList.add('error');
+                        }
+                    } else if (notes[r][c].size > 0) {
+                        renderNotes(cell, r, c);
+                    }
+                    cell.addEventListener('click', () => selectCell(r, c));
+                    gridEl.appendChild(cell);
+                }
+            }
+            updateHighlights();
+        }
+
+        function refreshCell(r, c) {
+            const cell = document.querySelector(`.sudoku-cell[data-row="${r}"][data-col="${c}"]`);
+            if (!cell) return;
+            cell.innerHTML = '';
+            cell.className = 'sudoku-cell';
+            
+            if (c === 2 || c === 5) cell.classList.add('border-right-thick');
+            if (c === 8) cell.classList.add('border-right-none');
+            if (r === 2 || r === 5) cell.classList.add('border-bottom-thick');
+            if (r === 8) cell.classList.add('border-bottom-none');
+
+            if (board[r][c] !== 0) {
+                cell.textContent = board[r][c];
+                if (givenCells[r][c]) cell.classList.add('given');
+                else {
+                    cell.classList.add('user-input');
+                    if (isLiveMode && board[r][c] !== solution[r][c]) cell.classList.add('error');
+                    if (cell.dataset.hint === 'true') cell.classList.add('hint-cell');
+                }
+            } else if (notes[r][c].size > 0) {
+                renderNotes(cell, r, c);
+            }
+        }
+
+        function renderNotes(cellEl, r, c) {
+            const noteGrid = document.createElement('div');
+            noteGrid.className = 'notes-grid';
+            for (let n = 1; n <= 9; n++) {
+                const span = document.createElement('span');
+                span.textContent = notes[r][c].has(n) ? n : '';
+                noteGrid.appendChild(span);
+            }
+            cellEl.appendChild(noteGrid);
+        }
+
+        function selectCell(r, c) {
+            if (!gameActive) return;
+            selectedRow = r;
+            selectedCol = c;
+            updateHighlights();
+        }
+
+        function updateHighlights() {
+            document.querySelectorAll('.sudoku-cell').forEach(cell => {
+                const r = parseInt(cell.dataset.row);
+                const c = parseInt(cell.dataset.col);
+                cell.classList.remove('selected', 'highlighted-line', 'highlighted-same');
+                
+                if (selectedRow === -1 || selectedCol === -1) return;
+                
+                if (r === selectedRow && c === selectedCol) {
+                    cell.classList.add('selected');
+                    return;
+                }
+
+                if (isLiveMode) {
+                    if (r === selectedRow || c === selectedCol || 
+                       (Math.floor(r/3) === Math.floor(selectedRow/3) && Math.floor(c/3) === Math.floor(selectedCol/3))) {
+                        cell.classList.add('highlighted-line');
+                    }
+                    const selectedVal = board[selectedRow][selectedCol];
+                    if (selectedVal !== 0 && board[r][c] === selectedVal) {
+                        cell.classList.add('highlighted-same');
+                    }
+                }
+            });
+        }
+
+        window.inputNumber = function(num) {
+            if (!gameActive || selectedRow === -1 || givenCells[selectedRow][selectedCol]) return;
+            if (noteMode) inputNote(num);
+            else inputValue(num);
+        };
+
+        function inputValue(num) {
+            const r = selectedRow, c = selectedCol;
+            undoStack.push({ type: 'value', r, c, prevVal: board[r][c], prevNotes: new Set(notes[r][c]), wasHint: document.querySelector(`.sudoku-cell[data-row="${r}"][data-col="${c}"]`)?.dataset.hint === 'true' });
+            notes[r][c].clear();
+
+            board[r][c] = num;
+
+            if (!hasMadeFirstMove) lockLiveModeToggle(); 
+
+            if (isLiveMode) {
+                if (num === solution[r][c]) {
+                    refreshCell(r, c);
+                    const cell = document.querySelector(`.sudoku-cell[data-row="${r}"][data-col="${c}"]`);
+                    cell.classList.add('animate-number-enter');
+                    setTimeout(() => cell.classList.remove('animate-number-enter'), 300);
+                    removeNotesForPlacement(r, c, num);
+                    updateNumpadCompletion();
+                    if (checkWin()) handleGameEnd('win');
+                } else {
+                    errors++;
+                    updateErrorDisplay();
+                    refreshCell(r, c);
+                    const cell = document.querySelector(`.sudoku-cell[data-row="${r}"][data-col="${c}"]`);
+                    cell.classList.add('error', 'error-flash');
+                    setTimeout(() => cell.classList.remove('error-flash'), 1500);
+                    document.getElementById('sudokuGrid').classList.add('animate-shake');
+                    setTimeout(() => document.getElementById('sudokuGrid').classList.remove('animate-shake'), 500);
+                    if (errors >= maxErrors) handleGameEnd('lose');
+                }
+            } else {
+                refreshCell(r, c);
+                const cell = document.querySelector(`.sudoku-cell[data-row="${r}"][data-col="${c}"]`);
+                cell.classList.add('animate-number-enter');
+                setTimeout(() => cell.classList.remove('animate-number-enter'), 300);
+
+                if (isBoardFull()) {
+                    if (checkWin()) {
+                        handleGameEnd('win');
+                    } else {
+                        document.getElementById('sudokuGrid').classList.add('animate-shake');
+                        setTimeout(() => document.getElementById('sudokuGrid').classList.remove('animate-shake'), 500);
+                    }
+                }
+            }
+            
+            updateHighlights();
+        }
+
+        function inputNote(num) {
+            const r = selectedRow, c = selectedCol;
+            if (board[r][c] !== 0) return;
+
+            if (!hasMadeFirstMove) lockLiveModeToggle(); 
+
+            undoStack.push({ type: 'note', r, c, prevNotes: new Set(notes[r][c]) });
+            if (notes[r][c].has(num)) notes[r][c].delete(num);
+            else notes[r][c].add(num);
+            refreshCell(r, c);
+            updateHighlights();
+        }
+
+        function removeNotesForPlacement(row, col, num) {
+            for (let c = 0; c < 9; c++) if (notes[row][c].has(num)) { notes[row][c].delete(num); refreshCell(row, c); }
+            for (let r = 0; r < 9; r++) if (notes[r][col].has(num)) { notes[r][col].delete(num); refreshCell(r, col); }
+            const boxR = Math.floor(row/3)*3, boxC = Math.floor(col/3)*3;
+            for (let r = boxR; r < boxR+3; r++) {
+                for (let c = boxC; c < boxC+3; c++) {
+                    if (notes[r][c].has(num)) { notes[r][c].delete(num); refreshCell(r, c); }
+                }
+            }
+        }
+
+        window.undoAction = function() {
+            if (!gameActive || undoStack.length === 0) return;
+            const action = undoStack.pop();
+            const r = action.r, c = action.c;
+            
+            if (action.type === 'value' || action.type === 'erase') {
+                if (isLiveMode && board[r][c] !== 0 && board[r][c] !== solution[r][c]) {
+                    errors = Math.max(0, errors - 1);
+                    updateErrorDisplay();
+                }
+                board[r][c] = action.prevVal || 0;
+                notes[r][c] = new Set(action.prevNotes);
+                const cell = document.querySelector(`.sudoku-cell[data-row="${r}"][data-col="${c}"]`);
+                if (cell) {
+                    if (action.wasHint) cell.dataset.hint = 'true';
+                    else delete cell.dataset.hint;
+                }
+            } else if (action.type === 'note') {
+                notes[r][c] = new Set(action.prevNotes);
+            }
+            refreshCell(r, c);
+            updateHighlights();
+            updateNumpadCompletion();
+        };
+
+        window.toggleNoteMode = function() {
+            noteMode = !noteMode;
+            updateNoteModeUI();
+        };
+
+        function updateNoteModeUI() {
+            document.getElementById('noteModeBtn').classList.toggle('active', noteMode);
+        }
+
+        window.useHint = function() {
+            if (currentMode === 'daily') return;
+            if (!gameActive || selectedRow === -1 || givenCells[selectedRow][selectedCol]) return;
+            const r = selectedRow, c = selectedCol;
+            if (board[r][c] === solution[r][c]) return;
+            
+            if (!hasMadeFirstMove) lockLiveModeToggle(); 
+
+            undoStack.push({ type: 'value', r, c, prevVal: board[r][c], prevNotes: new Set(notes[r][c]), wasHint: false });
+            board[r][c] = solution[r][c];
+            notes[r][c].clear();
+            refreshCell(r, c);
+            
+            const cell = document.querySelector(`.sudoku-cell[data-row="${r}"][data-col="${c}"]`);
+            cell.dataset.hint = 'true';
+            cell.classList.add('hint-cell', 'animate-number-enter');
+            setTimeout(() => cell.classList.remove('animate-number-enter'), 300);
+            
+            removeNotesForPlacement(r, c, solution[r][c]);
+            updateHighlights();
+            updateNumpadCompletion();
+            
+            if (isBoardFull() && checkWin()) {
+                handleGameEnd('win');
+            }
+        };
+
+        window.eraseCell = function() {
+            if (!gameActive || selectedRow === -1 || givenCells[selectedRow][selectedCol]) return;
+            const r = selectedRow, c = selectedCol;
+            if (board[r][c] === 0 && notes[r][c].size === 0) return;
+            
+            if (!hasMadeFirstMove) lockLiveModeToggle(); 
+
+            undoStack.push({ type: 'erase', r, c, prevVal: board[r][c], prevNotes: new Set(notes[r][c]), wasHint: document.querySelector(`.sudoku-cell[data-row="${r}"][data-col="${c}"]`)?.dataset.hint === 'true' });
+            if (isLiveMode && board[r][c] !== 0 && board[r][c] !== solution[r][c]) {
+                errors = Math.max(0, errors - 1);
+                updateErrorDisplay();
+            }
+            board[r][c] = 0;
+            notes[r][c].clear();
+            refreshCell(r, c);
+            updateHighlights();
+            updateNumpadCompletion();
+        };
+
+        function updateNumpadCompletion() {
+            for (let num = 1; num <= 9; num++) {
+                let count = 0;
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        if (board[r][c] === num && board[r][c] === solution[r][c]) count++;
+                    }
+                }
+                const btn = document.querySelector(`.numpad-btn[data-num="${num}"]`);
+                if (btn) btn.classList.toggle('completed', isLiveMode ? count >= 9 : false);
+            }
+        }
+
+        function isBoardFull() {
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (board[r][c] === 0) return false;
+                }
+            }
+            return true;
+        }
+
+        function checkWin() {
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (board[r][c] !== solution[r][c]) return false;
+                }
+            }
+            return true;
+        }
+
+        // ==================== ENDGAME & SHARE ====================
+        function handleGameEnd(result) {
+            gameActive = false;
+            clearInterval(timerInterval);
+
+            if (currentMode === 'daily') {
+                localStorage.setItem('sudoku_daily_last_date', getTodayString());
+                localStorage.setItem('sudoku_daily_last_result', result);
+            }
+
+            const isWin = (result === 'win');
+            if (window.KaUser) {
+                window.KaUser.addGameResult('sudoku', 'number', isWin, timerSeconds);
+            }
+
+            const modal = document.getElementById('resultModal');
+            const title = document.getElementById('resultTitle');
+            const desc = document.getElementById('resultDesc');
+            const icon = document.getElementById('resultIcon');
+            const btn = document.getElementById('nextActionBtn');
+            
+            document.getElementById('statMode').textContent = currentMode === 'daily' ? 'Günlük' : `Sınırsız (${difficultyNames[difficulty]})`;
+            document.getElementById('statTime').textContent = formatTime(timerSeconds);
+            document.getElementById('statErrors').textContent = isLiveMode ? `${errors}/3` : `-`;
+
+            if (result === 'win') {
+                icon.textContent = '🎉';
+                title.textContent = 'Tebrikler!';
+                title.className = 'text-2xl font-bold mb-1 text-green-500 dark:text-green-400';
+                desc.textContent = isLiveMode ? 'Bulmacayı başarıyla çözdünüz.' : 'Cansız modda bulmacayı kusursuz çözdünüz!';
+                document.getElementById('sudokuGrid').style.animation = 'successPulse 1.5s ease-in-out 2';
+                launchConfetti();
+            } else {
+                icon.textContent = '😞';
+                title.textContent = 'Oyun Bitti!';
+                title.className = 'text-2xl font-bold mb-1 text-red-500';
+                desc.textContent = '3 hata hakkınızı tükettiniz.';
+                document.getElementById('sudokuGrid').classList.add('animate-shake');
+            }
+
+            if (currentMode === 'daily') {
+                btn.textContent = 'Sınırsız Modda Oyna';
+                btn.onclick = () => switchMode('unlimited');
+                btn.classList.remove('hidden');
+            } else {
+                btn.textContent = 'Yeni Oyun';
+                btn.onclick = () => { modal.classList.add('hidden'); initGame(); };
+                btn.classList.remove('hidden');
+            }
+
+            generateShareText(result);
+            setTimeout(() => modal.classList.remove('hidden'), 800);
+        }
+
+        function generateShareText(result) {
+            const modeText = currentMode === 'daily' ? `Günlük Sudoku #${getTodayString()}` : `Sınırsız Sudoku (${difficultyNames[difficulty]})`;
+            const resultEmoji = result === 'win' ? '✅' : '❌';
+            const errorText = isLiveMode ? `❤️ ${3 - errors}/3` : `👻 Cansız Mod`;
+            const timeText = `⏱️ ${formatTime(timerSeconds)}`;
+            
+            shareContent = `Kelimearası ${modeText}\n${resultEmoji} ${errorText} | ${timeText}\n\nOyna: https://kelimearasi.com/oyunlar/sudoku.html`;
+        }
+
+        window.shareResult = function() {
+            if (navigator.share) {
+                navigator.share({ title: 'Kelimearası Sudoku', text: shareContent }).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(shareContent).then(() => alert('Sonuç panoya kopyalandı!'));
+            }
+        };
+
+        // ==================== UI HELPERS ====================
+
+        function updateErrorDisplay() {
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById(`heart${i}`).classList.toggle('lost', i > (3 - errors));
+            }
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        window.closeHelpModal = function() {
+            document.getElementById('helpModal').classList.add('hidden');
+        };
+
+        document.getElementById('helpBtn').addEventListener('click', () => {
+            document.getElementById('helpModal').classList.remove('hidden');
+        });
+
+        // ==================== KEYBOARD ====================
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            const key = e.key;
+            if (key >= '1' && key <= '9') { e.preventDefault(); inputNumber(parseInt(key)); return; }
+            if (key.startsWith('Arrow')) {
+                e.preventDefault();
+                let newR = selectedRow === -1 ? 0 : selectedRow;
+                let newC = selectedCol === -1 ? 0 : selectedCol;
+                if (key === 'ArrowUp') newR = Math.max(0, newR - 1);
+                if (key === 'ArrowDown') newR = Math.min(8, newR + 1);
+                if (key === 'ArrowLeft') newC = Math.max(0, newC - 1);
+                if (key === 'ArrowRight') newC = Math.min(8, newC + 1);
+                selectCell(newR, newC);
+                return;
+            }
+            if (key === 'Backspace' || key === 'Delete') { e.preventDefault(); eraseCell(); return; }
+            if ((e.ctrlKey || e.metaKey) && key === 'z') { e.preventDefault(); undoAction(); return; }
+            if (key === 'n' || key === 'N') { e.preventDefault(); toggleNoteMode(); return; }
+        });
+
+        function launchConfetti() {
+            const colors = ['#818cf8', '#a78bfa', '#34d399', '#fbbf24', '#f87171', '#60a5fa'];
+            for (let i = 0; i < 60; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti-piece';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 1.5 + 's';
+                confetti.style.animationDuration = (2 + Math.random() * 1.5) + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 4000);
+            }
+        }
+
+        // ==================== BOOTSTRAP ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            bindButtonEvents();
+            initMode();
+        });
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            setTimeout(() => {
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                bindButtonEvents();
+                initMode();
+            }, 100);
+        }
+    })();
+    </script>
+</body>
+</html>

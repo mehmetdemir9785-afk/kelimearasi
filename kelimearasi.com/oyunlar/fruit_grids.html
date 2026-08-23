@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Kelimearası Meyve Izgarası - Takuzu/Binairo mantık bulmacası. Meyveleri kurallara uygun yerleştir!">
+    <title>Meyve Izgarası | Kelimearası</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        /* ====== ANIMATIONS ====== */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            0% { transform: translateY(30px) scale(0.95); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        @keyframes fruitEnter {
+            0% { transform: scale(0); opacity: 0; }
+            60% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes errorFlash {
+            0% { background-color: rgba(239, 68, 68, 0.5); }
+            50% { background-color: rgba(239, 68, 68, 0.1); }
+            100% { background-color: rgba(239, 68, 68, 0.5); }
+        }
+
+        @keyframes confettiDrop {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { transform: scale(1.02); box-shadow: 0 0 30px 10px rgba(239, 68, 68, 0.2); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        @keyframes heartBreak {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.3); }
+            50% { transform: scale(0.7); }
+            100% { transform: scale(0.8); opacity: 0.2; filter: grayscale(1); }
+        }
+
+        .animate-shake { animation: shake 0.5s ease-in-out; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-fruit-enter { animation: fruitEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .animate-error-flash { animation: errorFlash 0.4s ease-in-out 3; }
+        .animate-success-pulse { animation: successPulse 1.5s ease-in-out infinite; }
+        .animate-heart-break { animation: heartBreak 0.5s ease forwards; }
+
+        /* ====== GRID STYLES ====== */
+        .fruit-grid {
+            display: grid;
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            touch-action: none;
+            position: relative;
+        }
+
+        .fruit-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            position: relative;
+            transition: all 0.15s ease;
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+        }
+        .dark .fruit-cell {
+            border-color: rgba(255,255,255,0.06);
+            background: #181836;
+        }
+
+        .fruit-cell:hover {
+            filter: brightness(1.05);
+            z-index: 10;
+        }
+        .dark .fruit-cell:hover {
+            filter: brightness(1.2);
+        }
+
+        .fruit-cell:active {
+            transform: scale(0.93);
+        }
+
+        .fruit-cell.given {
+            background: #f3f4f6;
+        }
+        .dark .fruit-cell.given {
+            background: #1e1e42;
+        }
+
+        .fruit-cell.selected {
+            box-shadow: inset 0 0 0 2.5px #f43f5e;
+        }
+        .dark .fruit-cell.selected {
+            box-shadow: inset 0 0 0 2.5px #fb7185;
+        }
+
+        .fruit-cell.error-cell {
+            animation: errorFlash 0.4s ease-in-out 3;
+        }
+
+        .fruit-cell.win-cell {
+            transition: all 0.5s ease;
+        }
+
+        /* Cell emoji sizes */
+        .cell-emoji {
+            font-size: 1.4rem;
+            line-height: 1;
+            pointer-events: none;
+        }
+        @media (min-width: 400px) { .cell-emoji { font-size: 1.6rem; } }
+        @media (min-width: 640px) { .cell-emoji { font-size: 1.8rem; } }
+
+        .given-lock {
+            position: absolute;
+            bottom: 1px;
+            right: 2px;
+            font-size: 0.5rem;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* ====== SIGN MARKERS ====== */
+        .sign-marker {
+            position: absolute;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: 800;
+            pointer-events: none;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            line-height: 1;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        @media (min-width: 400px) {
+            .sign-marker { width: 22px; height: 22px; font-size: 0.75rem; }
+        }
+
+        .sign-eq {
+            background: #dbeafe;
+            color: #2563eb;
+            border: 1.5px solid #93c5fd;
+        }
+        .dark .sign-eq {
+            background: rgba(37, 99, 235, 0.25);
+            color: #93c5fd;
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .sign-neq {
+            background: #fce7f3;
+            color: #db2777;
+            border: 1.5px solid #f9a8d4;
+        }
+        .dark .sign-neq {
+            background: rgba(219, 39, 119, 0.25);
+            color: #f9a8d4;
+            border-color: rgba(236, 72, 153, 0.4);
+        }
+
+        /* ====== GRID CONTAINER ====== */
+        .grid-container {
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            overflow: visible;
+            background-color: white;
+            transition: background-color 0.3s;
+            border: 2px solid #e5e7eb;
+            position: relative;
+        }
+        .dark .grid-container {
+            box-shadow: 0 0 40px rgba(239, 68, 68, 0.06), 0 0 80px rgba(239, 68, 68, 0.03);
+            background-color: #181836;
+            border-color: rgba(255,255,255,0.08);
+        }
+
+        /* ====== BUTTON STYLES ====== */
+        .mode-toggle-btn {
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 50;
+            cursor: pointer;
+        }
+        .mode-toggle-btn.active {
+            background: linear-gradient(135deg, #ef4444, #f43f5e);
+            color: white;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+        }
+        .dark .mode-toggle-btn.active { box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); }
+        .mode-toggle-btn:not(.active) { background: transparent; color: #6b7280; }
+        .dark .mode-toggle-btn:not(.active) { color: #94a3b8; }
+        .mode-toggle-btn:not(.active):hover { color: #374151; }
+        .dark .mode-toggle-btn:not(.active):hover { color: #cbd5e1; }
+
+        .live-toggle-btn {
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 50;
+            cursor: pointer;
+        }
+        .live-toggle-btn.active { background: #10b981; color: white; box-shadow: 0 0 8px rgba(16, 185, 129, 0.3); }
+        .dark .live-toggle-btn.active { box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+        .live-toggle-btn:not(.active) { background: transparent; color: #6b7280; }
+        .dark .live-toggle-btn:not(.active) { color: #94a3b8; }
+        .live-toggle-btn:not(.active):hover { color: #374151; }
+        .dark .live-toggle-btn:not(.active):hover { color: #cbd5e1; }
+
+        .diff-btn {
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 20px;
+            cursor: pointer;
+            position: relative;
+            z-index: 50;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        .diff-btn.active-diff {
+            background: linear-gradient(135deg, #ef4444, #f43f5e);
+            border-color: #f43f5e;
+            color: white;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+        }
+        .dark .diff-btn.active-diff { box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+        .diff-btn:not(.active-diff) { color: #6b7280; background: #f3f4f6; border-color: #e5e7eb; }
+        .dark .diff-btn:not(.active-diff) { color: #94a3b8; background: #181836; border-color: rgba(255,255,255,0.05); }
+        .diff-btn:not(.active-diff):hover { background: #e5e7eb; color: #374151; }
+        .dark .diff-btn:not(.active-diff):hover { background: rgba(255,255,255,0.1); color: #cbd5e1; }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            z-index: 50;
+            user-select: none;
+            transition: all 0.1s ease;
+            border-radius: 12px;
+            color: #4b5563;
+            background: #ffffff;
+            border: 1px solid rgba(229,231,235, 0.6);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .dark .action-btn {
+            color: #94a3b8;
+            background: #181836;
+            border-color: rgba(255,255,255,0.05);
+            box-shadow: none;
+        }
+        .action-btn:active { transform: scale(0.92); }
+
+        /* Hearts */
+        .heart { transition: all 0.3s ease; }
+        .heart.lost { opacity: 0.2; transform: scale(0.8); filter: grayscale(1); }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .modal-content {
+            background: #ffffff;
+            border: 1px solid rgba(229,231,235, 0.6);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 360px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 110;
+            color: #1f2937;
+        }
+        .dark .modal-content {
+            background: #181836;
+            border-color: rgba(255,255,255,0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            color: #f3f4f6;
+        }
+
+        /* Confetti */
+        .confetti-piece {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -20px;
+            z-index: 200;
+            animation: confettiDrop 3s linear forwards;
+            pointer-events: none;
+        }
+
+        /* Scrollbar hiding */
+        ::-webkit-scrollbar { display: none; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+    <script src="../js/user-system.js"></script>
+</head>
+
+<body class="bg-gray-50 dark:bg-[#0c0c1d] text-gray-900 dark:text-gray-100 font-sans h-full flex flex-col select-none transition-colors duration-300">
+
+    <!-- ====== HEADER ====== -->
+    <header class="px-4 py-3 sticky top-0 z-50 w-full flex items-center justify-between border-b border-gray-200/60 dark:border-white/5 backdrop-blur-xl bg-white/80 dark:bg-[#12122b]/80 flex-shrink-0 transition-colors duration-300">
+        <a href="../index.html" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Ana Sayfa">🏠</a>
+        <h1 class="text-xl md:text-2xl font-extrabold tracking-widest bg-gradient-to-r from-red-500 via-rose-500 to-red-400 text-transparent bg-clip-text drop-shadow-sm dark:drop-shadow-[0_0_12px_rgba(239,68,68,0.5)]">
+            MEYVE IZGARASI
+        </h1>
+        <button id="helpBtn" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Yardım">❓</button>
+    </header>
+
+    <!-- ====== TOP TOGGLES: Mode & Live/Dead ====== -->
+    <div class="flex items-center justify-center gap-3 p-2 flex-shrink-0 relative z-50">
+        <!-- Mode Toggle -->
+        <div class="flex bg-white dark:bg-[#181836] p-1 rounded-xl border border-gray-200/60 dark:border-white/5 transition-colors duration-300">
+            <button id="modeDailyBtn" class="mode-toggle-btn px-3 py-1.5 rounded-lg text-xs font-bold active">Günlük</button>
+            <button id="modeUnlimitedBtn" class="mode-toggle-btn px-3 py-1.5 rounded-lg text-xs font-bold">Sınırsız</button>
+        </div>
+
+        <!-- Live/Dead Toggle -->
+        <div class="flex bg-white dark:bg-[#181836] p-1 rounded-xl border border-gray-200/60 dark:border-white/5 transition-all duration-300" id="liveToggleContainer">
+            <button id="liveModeBtn" class="live-toggle-btn px-3 py-1.5 rounded-lg text-xs font-bold active">Canlı</button>
+            <button id="deadModeBtn" class="live-toggle-btn px-3 py-1.5 rounded-lg text-xs font-bold">Cansız</button>
+        </div>
+    </div>
+
+    <!-- ====== INFO BAR: Zorluk + Süre + Can ====== -->
+    <div class="flex items-center justify-center gap-4 px-4 pb-2 flex-shrink-0 relative z-50 flex-wrap">
+        <!-- Zorluk Seçici -->
+        <div class="flex items-center gap-1.5" id="difficultyContainer">
+            <button class="diff-btn active-diff" data-diff="easy">Kolay 6×6</button>
+            <button class="diff-btn" data-diff="medium">Orta 8×8</button>
+            <button class="diff-btn" data-diff="hard">Zor 10×10</button>
+        </div>
+
+        <!-- Can + Süre -->
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1" id="errorDisplay">
+                <span class="heart text-red-500 text-sm" id="heart1">❤️</span>
+                <span class="heart text-red-500 text-sm" id="heart2">❤️</span>
+                <span class="heart text-red-500 text-sm" id="heart3">❤️</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-slate-300 font-mono bg-white dark:bg-[#181836] px-2 py-1 rounded-md border border-gray-200/60 dark:border-white/5 shadow-sm dark:shadow-none transition-colors duration-300">
+                <i data-lucide="clock" class="w-3.5 h-3.5 pointer-events-none"></i>
+                <span id="timerDisplay" class="pointer-events-none">00:00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== GAME AREA ====== -->
+    <div class="flex-1 flex flex-col items-center px-4 gap-3 min-h-0 overflow-hidden">
+
+        <!-- Grid Wrapper -->
+        <div id="gameWrapper" class="grid-container relative" style="max-width:400px; width:100%;">
+            <div id="fruitGrid" class="fruit-grid"></div>
+            <!-- Sign markers will be positioned absolutely here -->
+        </div>
+
+        <!-- ====== CONTROL PANEL ====== -->
+        <div class="w-full max-w-[400px] flex flex-col gap-3 pb-4 relative z-50">
+            <div class="grid grid-cols-3 gap-2">
+                <button class="action-btn" id="undoBtn">
+                    <i data-lucide="undo-2" class="w-5 h-5 pointer-events-none"></i>
+                    <span class="pointer-events-none">Geri Al</span>
+                </button>
+                <button class="action-btn" id="eraseBtn">
+                    <i data-lucide="eraser" class="w-5 h-5 pointer-events-none"></i>
+                    <span class="pointer-events-none">Sil</span>
+                </button>
+                <button class="action-btn" id="hintBtn">
+                    <i data-lucide="lightbulb" class="w-5 h-5 pointer-events-none"></i>
+                    <span class="pointer-events-none">İpucu</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== YARDIM MODALI ====== -->
+    <div id="helpModal" class="modal-overlay hidden">
+        <div class="modal-content !max-w-[380px] max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold bg-gradient-to-r from-red-500 to-rose-500 dark:from-red-400 dark:to-rose-400 text-transparent bg-clip-text">Nasıl Oynanır?</h2>
+                <button id="closeHelpBtn" class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors relative z-50 cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-slate-400 pointer-events-none"></i>
+                </button>
+            </div>
+            <div class="text-left text-sm text-gray-600 dark:text-slate-300 space-y-3">
+                <p>Izgarayı 🫐 (Yaban Mersini) ve 🍋 (Limon) ile doldurun. Hücreye tıklayarak meyve döngüsü yapın:</p>
+                <div class="flex items-center justify-center gap-2 py-2 text-base">
+                    <span class="text-gray-400">Boş</span> → <span>🫐</span> → <span>🍋</span> → <span class="text-gray-400">Boş</span>
+                </div>
+                <div class="space-y-2.5 mt-2">
+                    <div class="flex items-start gap-3">
+                        <div class="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0 mt-0.5 text-sm">⚖️</div>
+                        <div>
+                            <div class="font-semibold text-gray-900 dark:text-white mb-0.5">Denge Kuralı</div>
+                            <div class="text-xs">Her satır ve sütunda eşit sayıda 🫐 ve 🍋 olmalıdır.</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0 mt-0.5 text-sm">3️⃣</div>
+                        <div>
+                            <div class="font-semibold text-gray-900 dark:text-white mb-0.5">Üçleme Yasağı</div>
+                            <div class="text-xs">Yan yana veya alt alta en fazla 2 aynı meyve gelebilir. 3 tane üst üste olamaz!</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5 text-sm">=</div>
+                        <div>
+                            <div class="font-semibold text-gray-900 dark:text-white mb-0.5">Eşit İşareti (=)</div>
+                            <div class="text-xs">İki hücre arasındaki <span class="text-blue-500 font-bold">=</span> işareti, o hücrelerin aynı meyve olması gerektiğini gösterir.</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-7 h-7 rounded-lg bg-pink-100 dark:bg-pink-500/20 flex items-center justify-center shrink-0 mt-0.5 text-sm">×</div>
+                        <div>
+                            <div class="font-semibold text-gray-900 dark:text-white mb-0.5">Çarpı İşareti (×)</div>
+                            <div class="text-xs">İki hücre arasındaki <span class="text-pink-500 font-bold">×</span> işareti, o hücrelerin farklı meyve olması gerektiğini gösterir.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200/60 dark:border-white/5">
+                    <div class="flex items-center gap-2 mb-2 text-red-500 dark:text-red-400 font-semibold text-xs">
+                        <i data-lucide="calendar" class="w-3.5 h-3.5 pointer-events-none"></i> Günlük Mod
+                    </div>
+                    <p class="text-xs">Her gün herkes için aynı olan tek bir bulmaca üretilir.</p>
+                </div>
+                <div class="p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200/60 dark:border-white/5">
+                    <div class="flex items-center gap-2 mb-2 text-emerald-500 dark:text-emerald-400 font-semibold text-xs">
+                        <i data-lucide="eye" class="w-3.5 h-3.5 pointer-events-none"></i> Canlı / Cansız
+                    </div>
+                    <p class="text-xs">Canlı modda hatalı hamle yaptığınızda hemen uyarı alırsınız ve can kaybedersiniz. Cansız modda kontrol yapılmaz.</p>
+                </div>
+            </div>
+            <button id="helpOkBtn" class="mt-5 w-full py-2.5 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white font-semibold rounded-xl relative z-50 cursor-pointer shadow-md transition-colors">Anladım</button>
+        </div>
+    </div>
+
+    <!-- ====== GÜNLÜK HAK DOLDU MODALI ====== -->
+    <div id="dailyPlayedModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="text-5xl mb-3">🕒</div>
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Günlük Hak Doldu</h2>
+            <p class="text-sm text-gray-600 dark:text-slate-300 mb-5">Bugünkü Meyve Izgarası bulmacasını zaten oynadınız. Yarın tekrar gelin veya Sınırsız Mod'da oynamaya devam edin!</p>
+            <button id="switchUnlimitedBtn" class="w-full py-3 bg-gradient-to-r from-red-500 to-rose-500 dark:from-red-600 dark:to-rose-600 text-white font-semibold rounded-xl shadow-lg relative z-50 cursor-pointer hover:opacity-90 transition-opacity">
+                Sınırsız Moda Geç
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== SONUÇ MODALI ====== -->
+    <div id="resultModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div id="resultIcon" class="text-6xl mb-3">🎉</div>
+            <h2 id="resultTitle" class="text-2xl font-bold mb-1">Tebrikler!</h2>
+            <p id="resultDesc" class="text-sm text-gray-500 dark:text-slate-400 mb-5">Bulmacayı başarıyla çözdünüz.</p>
+
+            <div class="bg-gray-50 dark:bg-white/5 rounded-xl p-4 mb-5 border border-gray-200/60 dark:border-white/5">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-500 dark:text-slate-400 text-sm">Mod</span>
+                    <span id="statMode" class="font-semibold text-gray-900 dark:text-white">Günlük</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-500 dark:text-slate-400 text-sm">Zorluk</span>
+                    <span id="statDiff" class="font-semibold text-gray-900 dark:text-white">Kolay 6×6</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-500 dark:text-slate-400 text-sm">Süre</span>
+                    <span id="statTime" class="font-semibold text-gray-900 dark:text-white font-mono">00:00</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 dark:text-slate-400 text-sm">Kalan Can</span>
+                    <span id="statHearts" class="font-semibold text-red-500 dark:text-red-400">❤️❤️❤️</span>
+                </div>
+            </div>
+
+            <button id="shareResultBtn" class="w-full py-3 mb-2 bg-green-500 dark:bg-green-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2 relative z-50 cursor-pointer shadow-md hover:bg-green-600 dark:hover:bg-green-700 transition-colors">
+                <i data-lucide="share-2" class="w-5 h-5 pointer-events-none"></i> Sonucu Paylaş
+            </button>
+
+            <button id="nextActionBtn" class="w-full py-3 bg-gray-200 dark:bg-white/10 text-gray-800 dark:text-white font-semibold rounded-xl relative z-50 cursor-pointer hover:bg-gray-300 dark:hover:bg-white/20 transition-colors">
+                Yeni Oyun
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== GAME OVER MODALI ====== -->
+    <div id="gameOverModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="text-6xl mb-3">💔</div>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Oyun Bitti!</h2>
+            <p class="text-sm text-gray-600 dark:text-slate-300 mb-5">Tüm canlarınız bitti. Tekrar deneyin!</p>
+            <button id="gameOverRetryBtn" class="w-full py-3 mb-2 bg-gradient-to-r from-red-500 to-rose-500 text-white font-semibold rounded-xl shadow-lg relative z-50 cursor-pointer hover:opacity-90 transition-opacity">
+                Tekrar Dene
+            </button>
+            <button id="gameOverUnlimitedBtn" class="w-full py-3 bg-gray-200 dark:bg-white/10 text-gray-800 dark:text-white font-semibold rounded-xl relative z-50 cursor-pointer hover:bg-gray-300 dark:hover:bg-white/20 transition-colors hidden">
+                Sınırsız Moda Geç
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== GAME LOGIC ====== -->
+    <script>
+    (function() {
+        'use strict';
+
+        // ==================== CONSTANTS ====================
+        const EMPTY = -1;
+        const BLUEBERRY = 0; // 🫐
+        const LEMON = 1;     // 🍋
+        const FRUIT_EMOJI = { [BLUEBERRY]: '🫐', [LEMON]: '🍋' };
+
+        const DIFFICULTY_MAP = {
+            easy:   { size: 6,  givenRatio: 0.30, signRatio: 0.22 },
+            medium: { size: 8,  givenRatio: 0.25, signRatio: 0.18 },
+            hard:   { size: 10, givenRatio: 0.22, signRatio: 0.15 }
+        };
+        const DIFF_NAMES = { easy: 'Kolay 6×6', medium: 'Orta 8×8', hard: 'Zor 10×10' };
+
+        // ==================== STATE ====================
+        let currentMode = 'daily';
+        let isLiveMode = true;
+        let hasMadeFirstMove = false;
+        let difficulty = 'easy';
+        let gridSize = 6;
+
+        let solution = [];
+        let board = [];
+        let givenCells = [];
+        let signs = [];
+        let selectedRow = -1;
+        let selectedCol = -1;
+        let lives = 3;
+        let timerSeconds = 0;
+        let timerInterval = null;
+        let gameActive = true;
+        let gameWon = false;
+        let undoStack = [];
+        let currentSeed = 0;
+
+        // ==================== DOM REFS ====================
+        const gridEl = document.getElementById('fruitGrid');
+        const wrapperEl = document.getElementById('gameWrapper');
+        const timerDisplayEl = document.getElementById('timerDisplay');
+
+        // ==================== SEEDED RANDOM ====================
+        function getTodayString() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+
+        function getSeedForDate(dateStr, diff) {
+            let seed = 0;
+            for (let i = 0; i < dateStr.length; i++) {
+                seed += dateStr.charCodeAt(i) * (i + 1);
+            }
+            const diffMul = { easy: 11111, medium: 22222, hard: 33333 };
+            return seed + (diffMul[diff] || 0) + 54321;
+        }
+
+        function makeRng(seed) {
+            let s = seed;
+            return function() {
+                var x = Math.sin(s++) * 10000;
+                return x - Math.floor(x);
+            };
+        }
+
+        let rng = Math.random;
+
+        // ==================== TAKUZU SOLUTION GENERATOR ====================
+        function generateSolution(size) {
+            const grid = Array.from({ length: size }, () => Array(size).fill(EMPTY));
+            const half = size / 2;
+
+            function canPlace(r, c, val) {
+                // No 3 in a row horizontally (check left)
+                if (c >= 2 && grid[r][c-1] === val && grid[r][c-2] === val) return false;
+                // No 3 in a row vertically (check up)
+                if (r >= 2 && grid[r-1][c] === val && grid[r-2][c] === val) return false;
+                // Row count
+                let rowCount = 0;
+                for (let j = 0; j < size; j++) { if (grid[r][j] === val) rowCount++; }
+                if (rowCount >= half) return false;
+                // Column count
+                let colCount = 0;
+                for (let i = 0; i < size; i++) { if (grid[i][c] === val) colCount++; }
+                if (colCount >= half) return false;
+                return true;
+            }
+
+            function solve(pos) {
+                if (pos === size * size) return true;
+                const r = Math.floor(pos / size);
+                const c = pos % size;
+                const vals = rng() < 0.5 ? [BLUEBERRY, LEMON] : [LEMON, BLUEBERRY];
+                for (const val of vals) {
+                    if (canPlace(r, c, val)) {
+                        grid[r][c] = val;
+                        if (solve(pos + 1)) return true;
+                        grid[r][c] = EMPTY;
+                    }
+                }
+                return false;
+            }
+
+            solve(0);
+            return grid;
+        }
+
+        // ==================== PUZZLE CREATOR ====================
+        function shuffleArray(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function createPuzzle(sol, size, diff) {
+            const cfg = DIFFICULTY_MAP[diff];
+            const totalCells = size * size;
+
+            // Collect all adjacent pairs
+            const allPairs = [];
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (c + 1 < size) allPairs.push({ r1: r, c1: c, r2: r, c2: c + 1, dir: 'h' });
+                    if (r + 1 < size) allPairs.push({ r1: r, c1: c, r2: r + 1, c2: c, dir: 'v' });
+                }
+            }
+
+            // Select signs
+            const shuffledPairs = shuffleArray(allPairs);
+            const numSigns = Math.max(4, Math.round(allPairs.length * cfg.signRatio));
+            const selectedSigns = shuffledPairs.slice(0, numSigns).map(p => ({
+                ...p,
+                type: sol[p.r1][p.c1] === sol[p.r2][p.c2] ? '=' : '×'
+            }));
+
+            // Select given cells
+            const allCells = [];
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    allCells.push({ r, c });
+                }
+            }
+            const shuffledCells = shuffleArray(allCells);
+            const numGiven = Math.max(4, Math.round(totalCells * cfg.givenRatio));
+
+            const given = Array.from({ length: size }, () => Array(size).fill(false));
+            const puzzle = Array.from({ length: size }, () => Array(size).fill(EMPTY));
+
+            for (let i = 0; i < numGiven; i++) {
+                const { r, c } = shuffledCells[i];
+                given[r][c] = true;
+                puzzle[r][c] = sol[r][c];
+            }
+
+            return { puzzle, signs: selectedSigns, given };
+        }
+
+        // ==================== TIMER ====================
+        function startTimer() {
+            if (timerInterval) return;
+            timerInterval = setInterval(() => {
+                timerSeconds++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timerSeconds = 0;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+            const s = String(timerSeconds % 60).padStart(2, '0');
+            timerDisplayEl.textContent = `${m}:${s}`;
+        }
+
+        // ==================== GRID RENDERING ====================
+        function renderGrid() {
+            gridEl.innerHTML = '';
+            gridEl.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            gridEl.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+
+            // Compute max grid size based on viewport
+            const vh = window.innerHeight;
+            const availableH = vh - 280; // Rough space for header, controls, bars
+            const maxW = Math.min(400, window.innerWidth - 32, availableH);
+            wrapperEl.style.maxWidth = maxW + 'px';
+
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'fruit-cell';
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+
+                    // Corner rounding
+                    if (r === 0 && c === 0) cell.style.borderTopLeftRadius = '10px';
+                    if (r === 0 && c === gridSize - 1) cell.style.borderTopRightRadius = '10px';
+                    if (r === gridSize - 1 && c === 0) cell.style.borderBottomLeftRadius = '10px';
+                    if (r === gridSize - 1 && c === gridSize - 1) cell.style.borderBottomRightRadius = '10px';
+
+                    if (givenCells[r][c]) {
+                        cell.classList.add('given');
+                    }
+
+                    cell.addEventListener('click', () => onCellClick(r, c));
+
+                    gridEl.appendChild(cell);
+                }
+            }
+
+            updateAllCells();
+            renderSigns();
+        }
+
+        function updateAllCells() {
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    updateCell(r, c);
+                }
+            }
+        }
+
+        function updateCell(r, c) {
+            const cell = gridEl.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+            if (!cell) return;
+
+            const val = board[r][c];
+
+            // Clear content
+            cell.innerHTML = '';
+
+            if (val !== EMPTY) {
+                const emoji = document.createElement('span');
+                emoji.className = 'cell-emoji';
+                emoji.textContent = FRUIT_EMOJI[val];
+                cell.appendChild(emoji);
+            }
+
+            if (givenCells[r][c]) {
+                const lock = document.createElement('span');
+                lock.className = 'given-lock';
+                lock.textContent = '🔒';
+                cell.appendChild(lock);
+            }
+
+            // Selected state
+            cell.classList.toggle('selected', r === selectedRow && c === selectedCol);
+        }
+
+        // ==================== SIGN RENDERING ====================
+        function renderSigns() {
+            // Remove existing signs
+            wrapperEl.querySelectorAll('.sign-marker').forEach(el => el.remove());
+
+            // Wait for layout
+            requestAnimationFrame(() => {
+                const wrapperRect = wrapperEl.getBoundingClientRect();
+
+                signs.forEach(sign => {
+                    const cell1 = gridEl.querySelector(`[data-r="${sign.r1}"][data-c="${sign.c1}"]`);
+                    const cell2 = gridEl.querySelector(`[data-r="${sign.r2}"][data-c="${sign.c2}"]`);
+                    if (!cell1 || !cell2) return;
+
+                    const rect1 = cell1.getBoundingClientRect();
+                    const rect2 = cell2.getBoundingClientRect();
+
+                    const midX = ((rect1.left + rect1.right) / 2 + (rect2.left + rect2.right) / 2) / 2 - wrapperRect.left;
+                    const midY = ((rect1.top + rect1.bottom) / 2 + (rect2.top + rect2.bottom) / 2) / 2 - wrapperRect.top;
+
+                    const signEl = document.createElement('div');
+                    signEl.className = `sign-marker ${sign.type === '=' ? 'sign-eq' : 'sign-neq'}`;
+                    signEl.textContent = sign.type;
+                    signEl.style.left = `${midX}px`;
+                    signEl.style.top = `${midY}px`;
+                    signEl.style.transform = 'translate(-50%, -50%)';
+
+                    wrapperEl.appendChild(signEl);
+                });
+            });
+        }
+
+        // ==================== CELL CLICK ====================
+        function onCellClick(r, c) {
+            if (!gameActive || gameWon) return;
+            if (givenCells[r][c]) {
+                // Just select, don't change
+                selectedRow = r;
+                selectedCol = c;
+                updateAllCells();
+                return;
+            }
+
+            // Start timer on first move
+            if (!hasMadeFirstMove) {
+                hasMadeFirstMove = true;
+                startTimer();
+                lockLiveModeToggle();
+            }
+
+            selectedRow = r;
+            selectedCol = c;
+
+            const currentVal = board[r][c];
+            let newVal;
+
+            // Cycle: Empty -> Blueberry -> Lemon -> Empty
+            if (currentVal === EMPTY) newVal = BLUEBERRY;
+            else if (currentVal === BLUEBERRY) newVal = LEMON;
+            else newVal = EMPTY;
+
+            // Save undo state
+            undoStack.push({ r, c, oldVal: currentVal });
+
+            // Try placing
+            if (newVal !== EMPTY && isLiveMode) {
+                // Check violations in live mode
+                board[r][c] = newVal;
+                const violation = checkViolation(r, c, newVal);
+                if (violation) {
+                    board[r][c] = EMPTY;
+                    undoStack.pop(); // Remove the undo entry
+                    // Flash error
+                    triggerErrorFlash(r, c);
+                    loseLife();
+                    updateAllCells();
+                    return;
+                }
+            } else {
+                board[r][c] = newVal;
+            }
+
+            updateAllCells();
+
+            // Check win
+            if (isBoardFull()) {
+                if (isBoardCorrect()) {
+                    handleWin();
+                }
+            }
+        }
+
+        // ==================== VIOLATION CHECK ====================
+        function checkViolation(r, c, val) {
+            if (val === EMPTY) return false;
+            const size = gridSize;
+            const half = size / 2;
+
+            // 1. No three in a row - horizontal
+            // Check all windows of 3 that include (r, c)
+            for (let start = Math.max(0, c - 2); start <= Math.min(size - 3, c); start++) {
+                if (board[r][start] !== EMPTY && board[r][start+1] !== EMPTY && board[r][start+2] !== EMPTY) {
+                    if (board[r][start] === board[r][start+1] && board[r][start+1] === board[r][start+2]) {
+                        return true;
+                    }
+                }
+            }
+
+            // 2. No three in a row - vertical
+            for (let start = Math.max(0, r - 2); start <= Math.min(size - 3, r); start++) {
+                if (board[start][c] !== EMPTY && board[start+1][c] !== EMPTY && board[start+2][c] !== EMPTY) {
+                    if (board[start][c] === board[start+1][c] && board[start+1][c] === board[start+2][c]) {
+                        return true;
+                    }
+                }
+            }
+
+            // 3. Row count exceeds half
+            let rowCount = 0;
+            for (let j = 0; j < size; j++) { if (board[r][j] === val) rowCount++; }
+            if (rowCount > half) return true;
+
+            // 4. Column count exceeds half
+            let colCount = 0;
+            for (let i = 0; i < size; i++) { if (board[i][c] === val) colCount++; }
+            if (colCount > half) return true;
+
+            // 5. Sign constraints involving (r, c)
+            for (const sign of signs) {
+                let otherR, otherC;
+                if (sign.r1 === r && sign.c1 === c) {
+                    otherR = sign.r2; otherC = sign.c2;
+                } else if (sign.r2 === r && sign.c2 === c) {
+                    otherR = sign.r1; otherC = sign.c1;
+                } else {
+                    continue;
+                }
+
+                const otherVal = board[otherR][otherC];
+                if (otherVal === EMPTY) continue;
+
+                if (sign.type === '=' && val !== otherVal) return true;
+                if (sign.type === '×' && val === otherVal) return true;
+            }
+
+            return false;
+        }
+
+        // ==================== ERROR HANDLING ====================
+        function triggerErrorFlash(r, c) {
+            const cell = gridEl.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+            if (!cell) return;
+            cell.classList.remove('error-cell');
+            void cell.offsetWidth; // Force reflow
+            cell.classList.add('error-cell');
+            setTimeout(() => cell.classList.remove('error-cell'), 1500);
+
+            // Shake the grid
+            gridEl.classList.add('animate-shake');
+            setTimeout(() => gridEl.classList.remove('animate-shake'), 500);
+        }
+
+        function loseLife() {
+            lives--;
+            updateHeartsDisplay();
+
+            if (lives <= 0) {
+                handleGameOver();
+            }
+        }
+
+        function updateHeartsDisplay() {
+            for (let i = 1; i <= 3; i++) {
+                const heartEl = document.getElementById(`heart${i}`);
+                if (i > lives) {
+                    if (!heartEl.classList.contains('lost')) {
+                        heartEl.classList.add('animate-heart-break');
+                        setTimeout(() => {
+                            heartEl.classList.add('lost');
+                            heartEl.classList.remove('animate-heart-break');
+                        }, 500);
+                    }
+                } else {
+                    heartEl.classList.remove('lost', 'animate-heart-break');
+                }
+            }
+        }
+
+        // ==================== BOARD CHECKS ====================
+        function isBoardFull() {
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    if (board[r][c] === EMPTY) return false;
+                }
+            }
+            return true;
+        }
+
+        function isBoardCorrect() {
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    if (board[r][c] !== solution[r][c]) return false;
+                }
+            }
+            return true;
+        }
+
+        // ==================== WIN / GAME OVER ====================
+        function handleWin() {
+            gameWon = true;
+            gameActive = false;
+            stopTimer();
+
+            // Add win styling to cells
+            gridEl.querySelectorAll('.fruit-cell').forEach(cell => {
+                cell.classList.add('win-cell');
+            });
+            wrapperEl.classList.add('animate-success-pulse');
+
+            // Save daily completion
+            if (currentMode === 'daily') {
+                const key = `fruitgrid_daily_${getTodayString()}_${difficulty}`;
+                localStorage.setItem(key, JSON.stringify({
+                    completed: true,
+                    time: timerSeconds,
+                    lives: lives
+                }));
+            }
+
+            // XP & Başarım sistemi
+            if (window.KaUser) {
+                window.KaUser.addGameResult('fruit_grids', 'logic', true, timerSeconds);
+            }
+
+            // Show confetti and result modal
+            launchConfetti();
+            setTimeout(() => showResultModal(true), 800);
+        }
+
+        function handleGameOver() {
+            gameActive = false;
+            stopTimer();
+
+            // Save daily as failed
+            if (currentMode === 'daily') {
+                const key = `fruitgrid_daily_${getTodayString()}_${difficulty}`;
+                localStorage.setItem(key, JSON.stringify({
+                    completed: false,
+                    failed: true,
+                    time: timerSeconds
+                }));
+            }
+
+            // XP & Başarım sistemi
+            if (window.KaUser) {
+                window.KaUser.addGameResult('fruit_grids', 'logic', false, timerSeconds);
+            }
+
+            setTimeout(() => {
+                const modal = document.getElementById('gameOverModal');
+                modal.classList.remove('hidden');
+
+                // Show "switch to unlimited" if in daily mode
+                const unlimitedBtn = document.getElementById('gameOverUnlimitedBtn');
+                unlimitedBtn.classList.toggle('hidden', currentMode !== 'daily');
+            }, 500);
+        }
+
+        function showResultModal(isWin) {
+            const modal = document.getElementById('resultModal');
+            const icon = document.getElementById('resultIcon');
+            const title = document.getElementById('resultTitle');
+            const desc = document.getElementById('resultDesc');
+
+            if (isWin) {
+                icon.textContent = '🎉';
+                title.textContent = 'Tebrikler!';
+                desc.textContent = 'Meyve ızgarasını başarıyla çözdünüz!';
+            }
+
+            document.getElementById('statMode').textContent = currentMode === 'daily' ? 'Günlük' : 'Sınırsız';
+            document.getElementById('statDiff').textContent = DIFF_NAMES[difficulty];
+            document.getElementById('statTime').textContent = timerDisplayEl.textContent;
+            document.getElementById('statHearts').textContent = '❤️'.repeat(lives) + '🖤'.repeat(3 - lives);
+
+            modal.classList.remove('hidden');
+        }
+
+        // ==================== ACTIONS ====================
+        function undoAction() {
+            if (!gameActive || undoStack.length === 0) return;
+            const action = undoStack.pop();
+            board[action.r][action.c] = action.oldVal;
+            updateCell(action.r, action.c);
+        }
+
+        function eraseCell() {
+            if (!gameActive || selectedRow < 0 || selectedCol < 0) return;
+            if (givenCells[selectedRow][selectedCol]) return;
+            if (board[selectedRow][selectedCol] === EMPTY) return;
+
+            undoStack.push({ r: selectedRow, c: selectedCol, oldVal: board[selectedRow][selectedCol] });
+            board[selectedRow][selectedCol] = EMPTY;
+            updateCell(selectedRow, selectedCol);
+        }
+
+        function useHint() {
+            if (!gameActive) return;
+
+            // Find an empty non-given cell
+            const emptyCells = [];
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    if (!givenCells[r][c] && board[r][c] === EMPTY) {
+                        emptyCells.push({ r, c });
+                    }
+                }
+            }
+
+            // Also consider wrongly filled cells
+            if (emptyCells.length === 0) {
+                for (let r = 0; r < gridSize; r++) {
+                    for (let c = 0; c < gridSize; c++) {
+                        if (!givenCells[r][c] && board[r][c] !== solution[r][c]) {
+                            emptyCells.push({ r, c });
+                        }
+                    }
+                }
+            }
+
+            if (emptyCells.length === 0) return;
+
+            if (!hasMadeFirstMove) {
+                hasMadeFirstMove = true;
+                startTimer();
+                lockLiveModeToggle();
+            }
+
+            const target = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            undoStack.push({ r: target.r, c: target.c, oldVal: board[target.r][target.c] });
+            board[target.r][target.c] = solution[target.r][target.c];
+
+            selectedRow = target.r;
+            selectedCol = target.c;
+            updateAllCells();
+
+            // Animate the hint cell
+            const cell = gridEl.querySelector(`[data-r="${target.r}"][data-c="${target.c}"]`);
+            if (cell) {
+                const emoji = cell.querySelector('.cell-emoji');
+                if (emoji) emoji.classList.add('animate-fruit-enter');
+            }
+
+            // Check win
+            if (isBoardFull() && isBoardCorrect()) {
+                handleWin();
+            }
+        }
+
+        // ==================== MODE MANAGEMENT ====================
+        function switchMode(mode) {
+            if (mode === currentMode) return;
+            currentMode = mode;
+            updateModeUI();
+            initGame();
+        }
+
+        function switchLiveMode(live) {
+            if (hasMadeFirstMove) return;
+            isLiveMode = live;
+            updateLiveModeUI();
+        }
+
+        function changeDifficulty(diff) {
+            if (diff === difficulty) return;
+            difficulty = diff;
+            updateDifficultyUI();
+            initGame();
+        }
+
+        function lockLiveModeToggle() {
+            hasMadeFirstMove = true;
+            const container = document.getElementById('liveToggleContainer');
+            if (container) {
+                container.classList.add('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        function unlockLiveModeToggle() {
+            hasMadeFirstMove = false;
+            const container = document.getElementById('liveToggleContainer');
+            if (container) {
+                container.classList.remove('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        // ==================== UI UPDATES ====================
+        function updateModeUI() {
+            const dailyBtn = document.getElementById('modeDailyBtn');
+            const unlimitedBtn = document.getElementById('modeUnlimitedBtn');
+            dailyBtn.classList.toggle('active', currentMode === 'daily');
+            unlimitedBtn.classList.toggle('active', currentMode === 'unlimited');
+        }
+
+        function updateLiveModeUI() {
+            const liveBtn = document.getElementById('liveModeBtn');
+            const deadBtn = document.getElementById('deadModeBtn');
+            liveBtn.classList.toggle('active', isLiveMode);
+            deadBtn.classList.toggle('active', !isLiveMode);
+
+            // Show/hide hearts based on live mode
+            document.getElementById('errorDisplay').style.visibility = isLiveMode ? 'visible' : 'hidden';
+        }
+
+        function updateDifficultyUI() {
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.classList.toggle('active-diff', btn.dataset.diff === difficulty);
+            });
+        }
+
+        // ==================== CONFETTI ====================
+        function launchConfetti() {
+            const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899', '#f43f5e'];
+            const shapes = ['circle', 'rect'];
+
+            for (let i = 0; i < 80; i++) {
+                const el = document.createElement('div');
+                el.className = 'confetti-piece';
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const shape = shapes[Math.floor(Math.random() * shapes.length)];
+
+                el.style.left = Math.random() * 100 + 'vw';
+                el.style.backgroundColor = color;
+                el.style.animationDuration = (2 + Math.random() * 2) + 's';
+                el.style.animationDelay = Math.random() * 0.8 + 's';
+
+                if (shape === 'circle') {
+                    el.style.borderRadius = '50%';
+                } else {
+                    el.style.width = (6 + Math.random() * 8) + 'px';
+                    el.style.height = (4 + Math.random() * 6) + 'px';
+                    el.style.borderRadius = '2px';
+                }
+
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 4000);
+            }
+        }
+
+        // ==================== SHARE ====================
+        function shareResult() {
+            const modeStr = currentMode === 'daily' ? '📅 Günlük' : '♾️ Sınırsız';
+            const diffStr = DIFF_NAMES[difficulty];
+            const timeStr = timerDisplayEl.textContent;
+            const heartsStr = '❤️'.repeat(lives) + '🖤'.repeat(3 - lives);
+            const dateStr = getTodayString();
+
+            let text = `🍋🫐 Meyve Izgarası - ${dateStr}\n`;
+            text += `${modeStr} | ${diffStr}\n`;
+            text += `⏱️ ${timeStr} | ${heartsStr}\n`;
+            text += `kelimearasi.com`;
+
+            if (navigator.share) {
+                navigator.share({ text }).catch(() => {});
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    const btn = document.getElementById('shareResultBtn');
+                    const origHTML = btn.innerHTML;
+                    btn.innerHTML = '<span>✅ Kopyalandı!</span>';
+                    setTimeout(() => { btn.innerHTML = origHTML; lucide.createIcons(); }, 2000);
+                });
+            }
+        }
+
+        // ==================== DAILY CHECK ====================
+        function checkDailyPlayed() {
+            if (currentMode !== 'daily') return false;
+            const key = `fruitgrid_daily_${getTodayString()}_${difficulty}`;
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                const data = JSON.parse(saved);
+                if (data.completed || data.failed) return true;
+            }
+            return false;
+        }
+
+        // ==================== GAME INIT ====================
+        function initGame() {
+            // Reset state
+            stopTimer();
+            resetTimer();
+            gameActive = true;
+            gameWon = false;
+            lives = 3;
+            undoStack = [];
+            selectedRow = -1;
+            selectedCol = -1;
+            hasMadeFirstMove = false;
+            unlockLiveModeToggle();
+            updateHeartsDisplay();
+            updateLiveModeUI();
+
+            // Close any open modals
+            document.getElementById('resultModal').classList.add('hidden');
+            document.getElementById('gameOverModal').classList.add('hidden');
+            document.getElementById('dailyPlayedModal').classList.add('hidden');
+            wrapperEl.classList.remove('animate-success-pulse');
+
+            // Check if daily already played
+            if (checkDailyPlayed()) {
+                document.getElementById('dailyPlayedModal').classList.remove('hidden');
+                return;
+            }
+
+            // Set grid size
+            gridSize = DIFFICULTY_MAP[difficulty].size;
+
+            // Set RNG
+            if (currentMode === 'daily') {
+                currentSeed = getSeedForDate(getTodayString(), difficulty);
+                rng = makeRng(currentSeed);
+            } else {
+                // Use Math.random for unlimited
+                rng = Math.random;
+            }
+
+            // Generate puzzle
+            solution = generateSolution(gridSize);
+            const puzzleData = createPuzzle(solution, gridSize, difficulty);
+            board = puzzleData.puzzle;
+            signs = puzzleData.signs;
+            givenCells = puzzleData.given;
+
+            // Render
+            renderGrid();
+        }
+
+        // ==================== EVENT BINDINGS ====================
+        function bindEvents() {
+            // Mode toggles
+            document.getElementById('modeDailyBtn').addEventListener('click', () => switchMode('daily'));
+            document.getElementById('modeUnlimitedBtn').addEventListener('click', () => switchMode('unlimited'));
+
+            // Live/Dead toggles
+            document.getElementById('liveModeBtn').addEventListener('click', () => switchLiveMode(true));
+            document.getElementById('deadModeBtn').addEventListener('click', () => switchLiveMode(false));
+
+            // Difficulty buttons
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.addEventListener('click', () => changeDifficulty(btn.dataset.diff));
+            });
+
+            // Action buttons
+            document.getElementById('undoBtn').addEventListener('click', undoAction);
+            document.getElementById('eraseBtn').addEventListener('click', eraseCell);
+            document.getElementById('hintBtn').addEventListener('click', useHint);
+
+            // Help modal
+            document.getElementById('helpBtn').addEventListener('click', () => {
+                document.getElementById('helpModal').classList.remove('hidden');
+            });
+            document.getElementById('closeHelpBtn').addEventListener('click', () => {
+                document.getElementById('helpModal').classList.add('hidden');
+            });
+            document.getElementById('helpOkBtn').addEventListener('click', () => {
+                document.getElementById('helpModal').classList.add('hidden');
+            });
+            document.getElementById('helpModal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) document.getElementById('helpModal').classList.add('hidden');
+            });
+
+            // Result modal
+            document.getElementById('shareResultBtn').addEventListener('click', shareResult);
+            document.getElementById('nextActionBtn').addEventListener('click', () => {
+                document.getElementById('resultModal').classList.add('hidden');
+                if (currentMode === 'daily') {
+                    switchMode('unlimited');
+                } else {
+                    initGame();
+                }
+            });
+
+            // Game over modal
+            document.getElementById('gameOverRetryBtn').addEventListener('click', () => {
+                document.getElementById('gameOverModal').classList.add('hidden');
+                if (currentMode === 'daily') {
+                    // Can't retry daily, switch to unlimited
+                    switchMode('unlimited');
+                } else {
+                    initGame();
+                }
+            });
+            document.getElementById('gameOverUnlimitedBtn').addEventListener('click', () => {
+                document.getElementById('gameOverModal').classList.add('hidden');
+                switchMode('unlimited');
+            });
+
+            // Daily played modal
+            document.getElementById('switchUnlimitedBtn').addEventListener('click', () => {
+                document.getElementById('dailyPlayedModal').classList.add('hidden');
+                switchMode('unlimited');
+            });
+            document.getElementById('dailyPlayedModal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    document.getElementById('dailyPlayedModal').classList.add('hidden');
+                }
+            });
+
+            // Keyboard support
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    undoAction();
+                }
+                if (e.key === 'Delete' || e.key === 'Backspace') {
+                    eraseCell();
+                }
+            });
+
+            // Resize handler
+            window.addEventListener('resize', () => {
+                if (gridSize > 0) {
+                    const vh = window.innerHeight;
+                    const availableH = vh - 280;
+                    const maxW = Math.min(400, window.innerWidth - 32, availableH);
+                    wrapperEl.style.maxWidth = maxW + 'px';
+                    renderSigns();
+                }
+            });
+        }
+
+        // ==================== INIT ====================
+        function init() {
+            bindEvents();
+            lucide.createIcons();
+            initGame();
+
+            // Show help on first visit
+            if (!localStorage.getItem('fruitgrid_helpSeen')) {
+                document.getElementById('helpModal').classList.remove('hidden');
+                localStorage.setItem('fruitgrid_helpSeen', 'true');
+            }
+        }
+
+        // Wait for DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+    </script>
+</body>
+</html>

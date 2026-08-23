@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DOMINO - Kelime Arası</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            overflow: hidden;
+            touch-action: none;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* ===== LOGO TITLE ===== */
+        .logo-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            font-size: 1.7rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+        }
+        .dark .logo-title {
+            background-image: linear-gradient(to right, #4adea9, #3dd4eb);
+            text-shadow:
+                0 0 8px rgba(61, 212, 235, 0.6),
+                0 0 18px rgba(61, 212, 235, 0.35),
+                0 0 35px rgba(61, 212, 235, 0.2);
+        }
+        :not(.dark) .logo-title {
+            background-image: linear-gradient(to right, #0d9488, #0891b2);
+        }
+
+        /* ===== PIP FACE (3x3 grid) ===== */
+        .pip-face {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            padding: 14%;
+            box-sizing: border-box;
+            gap: 1px;
+        }
+
+        .pip-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pip-dot {
+            border-radius: 50%;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);
+        }
+        .dark .pip-dot { background: #2d2d44; }
+        :not(.dark) .pip-dot { background: #374151; }
+
+        /* ===== DOMINO TILE ===== */
+        .domino-tile-bg {
+            background: linear-gradient(145deg, #ffffff, #f3f4f6);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,1);
+        }
+        .dark .domino-tile-bg {
+            background: linear-gradient(145deg, #f5f0e8, #ebe5d8);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.5);
+        }
+
+        /* ===== SLOT OVERLAY (REMOVED) ===== */
+
+        /* ===== TRAY DOMINO ===== */
+        .tray-domino {
+            transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+        }
+
+        .tray-domino:active {
+            transform: scale(0.95) !important;
+        }
+
+        .tray-domino-selected {
+            box-shadow: 0 0 14px rgba(100, 200, 255, 0.8), 0 0 28px rgba(100, 200, 255, 0.35) !important;
+            border: 2px solid rgba(100, 200, 255, 0.9) !important;
+            filter: brightness(1.1);
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes placeAnim {
+            0% { transform: scale(0.6); opacity: 0.3; }
+            70% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .place-anim {
+            animation: placeAnim 0.3s ease-out;
+        }
+
+        @keyframes errorFlash {
+            0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
+            25% { box-shadow: inset 0 0 25px rgba(255, 50, 50, 0.55); }
+            50% { box-shadow: inset 0 0 35px rgba(255, 50, 50, 0.7); }
+            75% { box-shadow: inset 0 0 25px rgba(255, 50, 50, 0.55); }
+        }
+        .error-flash {
+            animation: errorFlash 0.7s ease-in-out 2 !important;
+            z-index: 5 !important;
+        }
+
+        @keyframes successPulse {
+            0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
+            50% { box-shadow: inset 0 0 20px rgba(80, 220, 100, 0.4); }
+        }
+        .success-pulse {
+            animation: successPulse 0.6s ease-in-out !important;
+        }
+
+        @keyframes modalFadeIn {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .modal-anim {
+            animation: modalFadeIn 0.35s ease-out;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(60px) rotate(720deg); opacity: 0; }
+        }
+
+        /* ===== MODE/DIFFICULTY BUTTONS ===== */
+        .mode-btn-active {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+        }
+        .mode-btn-inactive {
+            background: transparent;
+        }
+        .dark .mode-btn-inactive { color: #9ca3af; }
+        :not(.dark) .mode-btn-inactive { color: #6b7280; }
+
+        .diff-btn-active {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
+        }
+        .diff-btn-inactive {
+            background: transparent;
+        }
+        .dark .diff-btn-inactive { color: #9ca3af; }
+        :not(.dark) .diff-btn-inactive { color: #6b7280; }
+
+        /* ===== BOARD CELL ===== */
+        .board-cell {
+            box-sizing: border-box;
+            transition: box-shadow 0.2s ease;
+        }
+
+        /* ===== SCROLLBAR HIDE ===== */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ===== BADGE DIAMOND ===== */
+        .badge-diamond {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(45deg);
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+        }
+        .badge-text {
+            transform: rotate(-45deg);
+            color: white;
+            font-weight: 800;
+            font-family: 'Inter', sans-serif;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        /* ===== MODAL OVERLAY ===== */
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+    </style>
+    <script src="../js/user-system.js"></script>
+</head>
+<body class="bg-gray-50 dark:bg-[#0c0c1d] text-gray-900 dark:text-gray-100">
+    <!-- ===== MAIN APP CONTAINER ===== -->
+    <div id="app" style="height:100vh; height:100dvh;" class="flex flex-col items-center overflow-hidden">
+
+        <!-- ===== HEADER ===== -->
+        <header class="px-4 py-3 w-full flex items-center justify-between sticky top-0 z-50 border-b border-gray-200/60 dark:border-white/5 backdrop-blur-xl bg-white/80 dark:bg-[#12122b]/80 flex-shrink-0">
+            <a href="../index.html" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Ana Sayfa">🏠</a>
+            <h1 class="logo-title">DOMINO</h1>
+            <button id="helpBtn" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Nasıl Oynanır">❓</button>
+        </header>
+
+        <!-- ===== CONTROLS ===== -->
+        <div class="w-full flex flex-col items-center py-2 px-4 gap-1.5 flex-shrink-0">
+            <!-- Mode Toggle -->
+            <div class="flex bg-gray-100 dark:bg-gray-800/50 rounded-full p-0.5 border border-gray-300 dark:border-gray-700/30">
+                <button id="dailyBtn" class="px-5 py-1.5 rounded-full text-xs font-bold transition-all duration-200">Günlük</button>
+                <button id="unlimitedBtn" class="px-5 py-1.5 rounded-full text-xs font-bold transition-all duration-200">Sınırsız</button>
+            </div>
+            <!-- Difficulty Selector -->
+            <div id="difficultyContainer" class="flex gap-1.5 transition-opacity duration-200">
+                <button data-diff="easy" class="diff-btn px-4 py-1 rounded-full text-xs font-bold transition-all duration-200 border border-transparent">Kolay</button>
+                <button data-diff="medium" class="diff-btn px-4 py-1 rounded-full text-xs font-bold transition-all duration-200 border border-transparent">Orta</button>
+                <button data-diff="hard" class="diff-btn px-4 py-1 rounded-full text-xs font-bold transition-all duration-200 border border-transparent">Zor</button>
+            </div>
+        </div>
+
+        <!-- ===== BOARD CONTAINER ===== -->
+        <div id="boardContainer" class="flex-1 flex items-center justify-center overflow-hidden w-full px-4 min-h-0">
+            <div id="board" class="relative"></div>
+        </div>
+
+        <!-- ===== DIVIDER ===== -->
+        <div class="w-full px-8 flex-shrink-0">
+            <div class="border-t border-gray-200/60 dark:border-white/5"></div>
+        </div>
+
+        <!-- ===== TRAY ===== -->
+        <div class="w-full px-3 flex-shrink-0" style="min-height: 56px;">
+            <div id="tray" class="flex flex-wrap justify-center items-center gap-2 py-2 no-scrollbar"></div>
+        </div>
+
+        <!-- ===== ACTION BUTTONS ===== -->
+        <div class="w-full flex justify-center gap-3 pb-3 px-4 pt-2 flex-shrink-0">
+            <button id="clearBtn" class="px-5 py-2 bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs font-bold rounded-xl transition-all duration-200 border border-gray-300 dark:border-gray-700/30 active:scale-95">
+                🗑️ Temizle
+            </button>
+            <button id="newGameBtn" class="px-5 py-2 bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs font-bold rounded-xl transition-all duration-200 border border-gray-300 dark:border-gray-700/30 active:scale-95">
+                🔄 Yeni Bulmaca
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== HELP MODAL ===== -->
+    <div id="helpModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay">
+        <div class="bg-white dark:bg-[#12122b] border border-gray-200 dark:border-gray-700/60 rounded-2xl max-w-sm w-full mx-4 p-5 modal-anim shadow-2xl max-h-[85vh] overflow-y-auto">
+            <h2 class="text-lg font-extrabold mb-3 text-center tracking-wide text-gray-900 dark:text-white">DOMINO Nasıl Oynanır?</h2>
+
+            <div class="space-y-3 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                <div>
+                    <div class="font-bold text-gray-900 dark:text-white mb-1">🎯 Amaç</div>
+                    <p>Tüm domino taşlarını doğru yuvalara yerleştirerek her bölgenin şartını sağla!</p>
+                </div>
+
+                <div>
+                    <div class="font-bold text-white mb-1">📌 Nasıl Oynanır</div>
+                    <ul class="space-y-1 list-disc list-inside text-xs">
+                        <li>Tepside bir taşa dokun → Taş seçilir (parlak olur)</li>
+                        <li>Tahtada boş bir yuvaya dokun → Seçili taş oraya yerleşir</li>
+                        <li>Dolu bir yuvaya dokun (taş seçili değilken) → Taş döner (sayılar yer değiştirir)</li>
+                        <li>Tepside taş seçiliyken dolu yuvaya dokun → Taşlar yer değiştirir</li>
+                        <li>Seçili taşa tekrar dokun → Seçim iptal olur</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="font-bold text-white mb-1">📋 Bölge Şartları</div>
+                    <div class="grid grid-cols-2 gap-1.5 text-xs">
+                        <div class="bg-gray-800/50 rounded-lg p-2 flex items-center gap-2">
+                            <span class="inline-flex items-center justify-center w-6 h-6 bg-pink-600 text-white font-extrabold text-[10px] rounded" style="transform:rotate(45deg)"><span style="transform:rotate(-45deg)">5</span></span>
+                            <span>Toplam tam 5 olmalı</span>
+                        </div>
+                        <div class="bg-gray-800/50 rounded-lg p-2 flex items-center gap-2">
+                            <span class="inline-flex items-center justify-center w-6 h-6 bg-purple-600 text-white font-extrabold text-[10px] rounded" style="transform:rotate(45deg)"><span style="transform:rotate(-45deg)">=</span></span>
+                            <span>Hepsi aynı olmalı</span>
+                        </div>
+                        <div class="bg-gray-800/50 rounded-lg p-2 flex items-center gap-2">
+                            <span class="inline-flex items-center justify-center w-6 h-6 bg-teal-600 text-white font-extrabold text-[10px] rounded" style="transform:rotate(45deg)"><span style="transform:rotate(-45deg)">&lt;7</span></span>
+                            <span>Toplam 7'den küçük</span>
+                        </div>
+                        <div class="bg-gray-800/50 rounded-lg p-2 flex items-center gap-2">
+                            <span class="inline-flex items-center justify-center w-6 h-6 bg-orange-600 text-white font-extrabold text-[10px] rounded" style="transform:rotate(45deg)"><span style="transform:rotate(-45deg)">&gt;3</span></span>
+                            <span>Toplam 3'ten büyük</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="font-bold text-white mb-1">💡 İpuçları</div>
+                    <ul class="space-y-1 list-disc list-inside text-xs">
+                        <li><strong>Temizle</strong> butonu tüm taşları tepsiye geri alır.</li>
+                        <li>Tüm yuvalar dolduğunda otomatik kontrol yapılır.</li>
+                        <li>Hatalı bölgeler kırmızı yanıp söner.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <button onclick="hideHelpModal()" class="mt-4 w-full py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-xl font-bold text-sm transition-all duration-200 active:scale-[0.98]">
+                Anladım!
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== WIN MODAL ===== -->
+    <div id="winModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay backdrop-blur-md">
+        <div class="relative bg-white dark:bg-[#12122b] rounded-3xl max-w-sm w-full mx-4 p-1 modal-anim shadow-xl dark:shadow-[0_0_50px_rgba(37,99,235,0.2)]">
+            <!-- Animated Gradient Border Wrapper -->
+            <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 opacity-30" style="z-index: -1;"></div>
+            
+            <!-- Card Content -->
+            <div class="bg-white dark:bg-[#181836] border border-gray-200 dark:border-white/10 rounded-[22px] p-8 text-center relative overflow-hidden h-full">
+                <!-- Background Glow -->
+                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-blue-500/20 blur-3xl rounded-full pointer-events-none"></div>
+                
+                <div class="text-6xl mb-3 mt-2 inline-block drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">🏆</div>
+                <h2 class="text-3xl font-black mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent tracking-wide">TEBRİKLER!</h2>
+                <p class="text-gray-600 dark:text-gray-300 font-medium mb-8 text-sm">Bulmacayı başarıyla çözdün ve muhteşem bir iş çıkardın!</p>
+                
+                <div id="winConfetti" class="flex justify-center gap-2 mb-6 text-2xl">
+                    <span style="animation: confettiFall 1.2s ease-out 0s forwards">🟡</span>
+                    <span style="animation: confettiFall 1.2s ease-out 0.1s forwards">🔴</span>
+                    <span style="animation: confettiFall 1.2s ease-out 0.2s forwards">🔵</span>
+                    <span style="animation: confettiFall 1.2s ease-out 0.3s forwards">🟢</span>
+                    <span style="animation: confettiFall 1.2s ease-out 0.15s forwards">🟣</span>
+                </div>
+                
+                <button onclick="hideWinModal(); loadNewLevel();" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-xl font-bold text-sm transition-all duration-200 active:scale-[0.97] shadow-lg shadow-blue-900/50 border border-gray-200 dark:border-white/10 text-white">
+                    Sıradaki Bulmaca
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ALREADY PLAYED MODAL ===== -->
+    <div id="alreadyPlayedModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay">
+        <div class="bg-white dark:bg-[#12122b] border border-gray-200 dark:border-gray-700/60 rounded-2xl max-w-sm w-full mx-4 p-6 text-center modal-anim shadow-2xl">
+            <h2 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Bugün Zaten Oynadın!</h2>
+            <p class="text-gray-600 dark:text-gray-300 text-sm mb-6">Günlük DOMINO bulmacasını zaten başarıyla çözdün. Sınırsız modda oynamaya devam etmek ister misin?</p>
+            <button onclick="hideAlreadyPlayedModal(); setMode('unlimited');" class="w-full py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-xl font-bold text-sm transition-all duration-200 active:scale-[0.98] text-white">
+                Sınırsız Moda Geç
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== MAIN SCRIPT ===== -->
+    <script>
+    // ============================================================
+    // SECTION 1: CONSTANTS & CONFIGURATION
+    // ============================================================
+
+    const REGION_STYLES = [
+        { bg: 'rgba(168, 143, 214, 0.28)', border: '#8B6FB0', badge: '#7B5DAF' },   // 0: purple
+        { bg: 'rgba(244, 143, 160, 0.28)', border: '#E06080', badge: '#E6467A' },   // 1: pink
+        { bg: 'rgba(120, 210, 210, 0.28)', border: '#40A8A8', badge: '#2B9BAF' },   // 2: teal
+        { bg: 'rgba(248, 186, 110, 0.28)', border: '#D4900E', badge: '#D4822E' },   // 3: orange
+        { bg: 'rgba(130, 170, 220, 0.28)', border: '#5585B5', badge: '#3D6FA0' },   // 4: blue
+        { bg: 'rgba(160, 200, 120, 0.28)', border: '#70A838', badge: '#558B20' },   // 5: green
+        { bg: 'rgba(180, 175, 110, 0.28)', border: '#9A8E48', badge: '#7A7030' },   // 6: olive
+        { bg: 'rgba(210, 190, 180, 0.28)', border: '#B09888', badge: '#907060' },   // 7: beige
+        { bg: 'rgba(80, 100, 150, 0.28)', border: '#3D5280', badge: '#2A3F6B' },    // 8: navy
+    ];
+
+    const SLOT_DASH_COLORS = [
+        '#5585B5',  // blue
+        '#E06080',  // pink
+        '#40A8A8',  // teal
+        '#8B6FB0',  // purple
+        '#D4900E',  // orange
+        '#70A838',  // green
+        '#3D5280',  // navy
+        '#B09888',  // beige
+    ];
+
+    // Dot positions in 3x3 grid (0=TL, 1=TC, 2=TR, 3=ML, 4=MC, 5=MR, 6=BL, 7=BC, 8=BR)
+    const PIP_PATTERNS = {
+        1: [4],
+        2: [2, 6],
+        3: [2, 4, 6],
+        4: [0, 2, 6, 8],
+        5: [0, 2, 4, 6, 8],
+        6: [0, 2, 3, 5, 6, 8]
+    };
+
+    // ============================================================
+    // SECTION 2: LEVEL DATA (6 HARDCODED SOLVABLE PUZZLES)
+    // ============================================================
+    // SECTION 3: PROCEDURAL LEVEL GENERATION
+    // ============================================================
+
+    function mulberry32(a) {
+        return function() {
+            var t = a += 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        }
+    }
+
+    function generateLevel(difficulty, randomFunc) {
+        if (!randomFunc) randomFunc = () => Math.random();
+        
+        let rows, cols, numDominoes;
+        if (difficulty === 'easy') { rows = 5; cols = 5; numDominoes = 6; }
+        else if (difficulty === 'medium') { rows = 6; cols = 6; numDominoes = 9; }
+        else { rows = 7; cols = 7; numDominoes = 13; }
+
+        // ========== PHASE 1: BUILD IRREGULAR SHAPE ==========
+        let grid = Array.from({length: rows}, () => Array(cols).fill(-1)); 
+        let placedDominoes = []; 
+        
+        let startR = Math.floor(rows/2), startC = Math.floor(cols/2);
+        let orientation = randomFunc() < 0.5 ? 0 : 90;
+        if (orientation === 0 && startC + 1 >= cols) startC--;
+        if (orientation === 90 && startR + 1 >= rows) startR--;
+        
+        grid[startR][startC] = 0;
+        if (orientation === 0) grid[startR][startC+1] = 0;
+        else grid[startR+1][startC] = 0;
+        
+        placedDominoes.push({ id: 0, r: startR, c: startC, orientation });
+        
+        let cellList = [];
+        cellList.push([startR, startC]);
+        if (orientation === 0) cellList.push([startR, startC+1]);
+        else cellList.push([startR+1, startC]);
+
+        let idCounter = 1;
+        let attempts = 0;
+        
+        while (idCounter < numDominoes && attempts < 2000) {
+            attempts++;
+            let anchor = cellList[Math.floor(randomFunc() * cellList.length)];
+            let ar = anchor[0], ac = anchor[1];
+            
+            let dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+            let dir = dirs[Math.floor(randomFunc() * dirs.length)];
+            let nr = ar + dir[0], nc = ac + dir[1];
+            
+            if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+            if (grid[nr][nc] !== -1) continue; 
+            
+            let newOrientation = randomFunc() < 0.5 ? 0 : 90;
+            let r1 = nr, c1 = nc;
+            let r2 = newOrientation === 0 ? nr : nr + 1;
+            let c2 = newOrientation === 0 ? nc + 1 : nc;
+            
+            if (r2 >= rows || c2 >= cols) continue;
+            if (grid[r1][c1] !== -1 || grid[r2][c2] !== -1) continue;
+            
+            grid[r1][c1] = idCounter;
+            grid[r2][c2] = idCounter;
+            placedDominoes.push({ id: idCounter, r: r1, c: c1, orientation: newOrientation });
+            cellList.push([r1, c1]);
+            cellList.push([r2, c2]);
+            idCounter++;
+        }
+        
+        if (idCounter < numDominoes) {
+            return generateLevel(difficulty, randomFunc);
+        }
+
+        // ========== PHASE 2: BUILD REGIONS (cell-level) ==========
+        // Start: 1 region per domino
+        let regions = placedDominoes.map(pd => {
+            let r2 = pd.orientation === 0 ? pd.r : pd.r + 1;
+            let c2 = pd.orientation === 0 ? pd.c + 1 : pd.c;
+            return { cells: [[pd.r, pd.c], [r2, c2]] };
+        });
+
+        let targetRegions = Math.max(2, Math.floor(numDominoes * 0.7)); 
+        let maxRegionSize = difficulty === 'hard' ? 5 : 4;
+        
+        while (regions.length > targetRegions) {
+            let merged = false;
+            let indices = [...Array(regions.length).keys()].sort(() => randomFunc() - 0.5);
+            
+            for (let i of indices) {
+                for (let j of indices) {
+                    if (i >= j) continue;
+                    
+                    // Limit the maximum size of a region so one color doesn't consume the board
+                    if (regions[i].cells.length + regions[j].cells.length > maxRegionSize) continue;
+                    
+                    let adjacent = false;
+                    for (let c1 of regions[i].cells) {
+                        for (let c2 of regions[j].cells) {
+                            if (Math.abs(c1[0] - c2[0]) + Math.abs(c1[1] - c2[1]) === 1) {
+                                adjacent = true; break;
+                            }
+                        }
+                        if (adjacent) break;
+                    }
+                    if (adjacent) {
+                        regions[i].cells.push(...regions[j].cells);
+                        regions.splice(j, 1);
+                        merged = true;
+                        break;
+                    }
+                }
+                if (merged) break;
+            }
+            if (!merged) break;
+        }
+        
+        regions.forEach((r, idx) => r.color = idx % 7);
+
+        // ========== PHASE 3: ASSIGN CONDITIONS TO REGIONS ==========
+        let numRegions = regions.length;
+        let conditionTypes = Array(numRegions).fill(null);
+        
+        // Equal condition (=) should appear either 0 times, or >= 2 times on the map.
+        // It should also NEVER be placed on a 1-cell region (which is logically meaningless).
+        // Only allow equal on regions of size 2 or 3.
+        let useEqual = randomFunc() < 0.8;
+        if (useEqual) {
+            let equalCandidates = [];
+            regions.forEach((r, idx) => {
+                if (r.cells.length >= 2 && r.cells.length <= 3) equalCandidates.push(idx);
+            });
+            equalCandidates.sort(() => randomFunc() - 0.5);
+            
+            // We want either 0 or at least 2 equal regions
+            if (equalCandidates.length >= 2) {
+                let targetEqual = Math.min(equalCandidates.length, Math.floor(randomFunc() * 2) + 2); // 2 or 3
+                for (let i = 0; i < targetEqual; i++) {
+                    conditionTypes[equalCandidates[i]] = 'equal';
+                }
+            }
+        }
+        
+        // Fill remaining regions
+        for (let i = 0; i < numRegions; i++) {
+            if (conditionTypes[i] !== null) continue;
+            let rnd = randomFunc();
+            if (rnd < 0.4) conditionTypes[i] = 'less';
+            else if (rnd < 0.8) conditionTypes[i] = 'greater';
+            else conditionTypes[i] = 'sum';
+        }
+
+        // ========== PHASE 4: REVERSE-ENGINEER SOLUTION VALUES ==========
+        // Assign pip values to each cell so that the puzzle is ALWAYS solvable.
+        // We use a global tracking system to ensure a perfectly flat distribution of values (0-6).
+        
+        let cellValues = Array.from({length: rows}, () => Array(cols).fill(0));
+        let pipCounts = [0, 0, 0, 0, 0, 0, 0];
+        
+        function getLeastUsedPip() {
+            let minCount = Infinity;
+            let candidates = [];
+            for (let i = 0; i <= 6; i++) {
+                if (pipCounts[i] < minCount) {
+                    minCount = pipCounts[i];
+                    candidates = [i];
+                } else if (pipCounts[i] === minCount) {
+                    candidates.push(i);
+                }
+            }
+            if (candidates.length === 0) return Math.floor(randomFunc() * 7);
+            return candidates[Math.floor(randomFunc() * candidates.length)];
+        }
+        
+        // Assign equal regions first because they consume chunks of identical numbers
+        regions.forEach((region, i) => {
+            if (conditionTypes[i] === 'equal') {
+                let val = getLeastUsedPip();
+                region.cells.forEach(c => {
+                    cellValues[c[0]][c[1]] = val;
+                    pipCounts[val]++;
+                });
+            }
+        });
+        
+        // Assign the rest of the regions
+        regions.forEach((region, i) => {
+            if (conditionTypes[i] !== 'equal') {
+                region.cells.forEach(c => {
+                    let val = getLeastUsedPip();
+                    cellValues[c[0]][c[1]] = val;
+                    pipCounts[val]++;
+                });
+            }
+        });
+
+        // ========== PHASE 5: DERIVE CONDITIONS FROM SOLUTION ==========
+        // Since we picked values first, we derive conditions that are automatically satisfied.
+        
+        regions.forEach((region, i) => {
+            let type = conditionTypes[i];
+            let sum = 0;
+            region.cells.forEach(c => sum += cellValues[c[0]][c[1]]);
+            
+            if (type === 'sum') {
+                region.condition = { type: 'sum', value: sum };
+            } else if (type === 'equal') {
+                region.condition = { type: 'equal' };
+            } else if (type === 'less') {
+                // sum < value must hold, so value must be > sum
+                let offset = Math.floor(randomFunc() * 4) + 1; // 1 to 4
+                region.condition = { type: 'less', value: sum + offset };
+            } else if (type === 'greater') {
+                // sum > value must hold, so value must be < sum
+                if (sum <= 1) {
+                    // Too small for >, switch to less
+                    let offset = Math.floor(randomFunc() * 4) + 1;
+                    region.condition = { type: 'less', value: sum + offset };
+                    conditionTypes[i] = 'less';
+                } else {
+                    let maxOffset = Math.min(sum - 1, 4);
+                    let offset = Math.floor(randomFunc() * maxOffset) + 1;
+                    region.condition = { type: 'greater', value: sum - offset };
+                }
+            }
+        });
+
+        // ========== PHASE 6: EXTRACT DOMINO TILES FROM SOLUTION ==========
+        // Each placed domino gets its two cell values as its pip face values.
+        
+        let dominoes = [];
+        placedDominoes.forEach(pd => {
+            let v1 = cellValues[pd.r][pd.c];
+            let r2 = pd.orientation === 0 ? pd.r : pd.r + 1;
+            let c2 = pd.orientation === 0 ? pd.c + 1 : pd.c;
+            let v2 = cellValues[r2][c2];
+            dominoes.push([v1, v2]);
+        });
+
+        // ========== PHASE 7: VERIFY SOLVABILITY ==========
+        // Double-check: if all dominoes are placed back in their original positions,
+        // every region condition must be satisfied. If not, retry.
+        
+        let verified = true;
+        regions.forEach((region, i) => {
+            let sum = 0;
+            let vals = [];
+            region.cells.forEach(c => {
+                let v = cellValues[c[0]][c[1]];
+                sum += v;
+                vals.push(v);
+            });
+            
+            let cond = region.condition;
+            if (cond.type === 'sum' && sum !== cond.value) verified = false;
+            if (cond.type === 'equal' && !vals.every(v => v === vals[0])) verified = false;
+            if (cond.type === 'less' && !(sum < cond.value)) verified = false;
+            if (cond.type === 'greater' && !(sum > cond.value)) verified = false;
+        });
+        
+        if (!verified) {
+            return generateLevel(difficulty, randomFunc);
+        }
+        
+        // ========== PHASE 8: TRIM & PACKAGE ==========
+        let minR = rows, maxR = -1, minC = cols, maxC = -1;
+        cellList.forEach(c => {
+            if (c[0] < minR) minR = c[0];
+            if (c[0] > maxR) maxR = c[0];
+            if (c[1] < minC) minC = c[1];
+            if (c[1] > maxC) maxC = c[1];
+        });
+        
+        let newRows = maxR - minR + 1;
+        let newCols = maxC - minC + 1;
+        
+        regions.forEach(r => {
+            r.cells = r.cells.map(c => [c[0] - minR, c[1] - minC]);
+        });
+        
+        // Shuffle dominoes for the tray so order isn't a giveaway
+        for (let i = dominoes.length - 1; i > 0; i--) {
+            let j = Math.floor(randomFunc() * (i + 1));
+            [dominoes[i], dominoes[j]] = [dominoes[j], dominoes[i]];
+        }
+        
+        return {
+            id: 'proc_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+            gridSize: [newRows, newCols],
+            regions: regions,
+            dominoes: dominoes
+        };
+    }
+
+    // ============================================================
+    // SECTION 4: STATE & INITIALIZATION
+    // ============================================================
+
+    let gameState = {
+        mode: 'unlimited',
+        difficulty: 'easy',
+        currentLevel: null,
+        placedDominoes: [],
+        trayDominoes: [],
+        selectedDominoId: -1,
+        cellRegionMap: [],
+        cellSize: 0,
+        solved: false,
+        startTime: null
+    };
+
+    function deepCopy(obj) {
+        return JSON.parse(JSON.stringify(obj));
+    }
+
+    function getDailyLevel() {
+        const dateStr = new Date().toISOString().slice(0, 10);
+        const hash = Math.abs(hashCode(dateStr));
+        const rng = mulberry32(hash);
+        // Her güne özel sabit rastgelelikte "medium" harita
+        return generateLevel('medium', rng);
+    }
+
+    function getRandomLevel(difficulty) {
+        return generateLevel(difficulty, () => Math.random());
+    }
+
+    // ============================================================
+    // SECTION 4: UTILITY FUNCTIONS
+    // ============================================================
+
+    function hashCode(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const ch = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + ch;
+            hash = hash & hash;
+        }
+        return hash;
+    }
+
+    function getConditionText(condition) {
+        switch (condition.type) {
+            case 'sum': return String(condition.value);
+            case 'equal': return '=';
+            case 'less': return '<' + condition.value;
+            case 'greater': return '>' + condition.value;
+            case 'none': return '';
+            default: return '';
+        }
+    }
+
+    function getRegionBadgeCell(region) {
+        let bestRow = -1;
+        let bestCol = -1;
+        for (const [r, c] of region.cells) {
+            if (r > bestRow || (r === bestRow && c > bestCol)) {
+                bestRow = r;
+                bestCol = c;
+            }
+        }
+        return [bestRow, bestCol];
+    }
+
+    // ============================================================
+    // SECTION 5: CORE GAME LOGIC
+    // ============================================================
+
+    function computeCellSize() {
+        if (!gameState.currentLevel) return 60;
+        const [rows, cols] = gameState.currentLevel.gridSize;
+        const availableWidth = Math.min(window.innerWidth - 48, 480);
+        const availableHeight = window.innerHeight - 330;
+        const maxCellW = Math.floor(availableWidth / cols);
+        const maxCellH = Math.floor(availableHeight / rows);
+        return Math.min(maxCellW, maxCellH, 80);
+    }
+
+    function buildMaps() {
+        const level = gameState.currentLevel;
+        const [rows, cols] = level.gridSize;
+
+        gameState.cellRegionMap = Array.from({ length: rows }, () => Array(cols).fill(-1));
+        level.regions.forEach((region, rIdx) => {
+            region.cells.forEach(([r, c]) => {
+                gameState.cellRegionMap[r][c] = rIdx;
+            });
+        });
+    }
+
+    function getCellDomino(r, c) {
+        for (const pd of gameState.placedDominoes) {
+            if (pd.r === r && pd.c === c) return pd;
+            if (pd.orientation === 0 || pd.orientation === 180) {
+                if (pd.r === r && pd.c === c - 1) return pd;
+            } else {
+                if (pd.r === r - 1 && pd.c === c) return pd;
+            }
+        }
+        return null;
+    }
+
+    function isValidAndEmpty(r, c) {
+        if (r < 0 || r >= gameState.currentLevel.gridSize[0]) return false;
+        if (c < 0 || c >= gameState.currentLevel.gridSize[1]) return false;
+        if (gameState.cellRegionMap[r][c] === -1) return false;
+        if (getCellDomino(r, c) !== null) return false;
+        return true;
+    }
+
+    function getPlacementAnchor(r, c, orientation) {
+        const isH = (orientation === 0 || orientation === 180);
+        if (isH) {
+            if (isValidAndEmpty(r, c) && isValidAndEmpty(r, c + 1)) return {r, c};
+            if (isValidAndEmpty(r, c - 1) && isValidAndEmpty(r, c)) return {r, c: c - 1};
+        } else {
+            if (isValidAndEmpty(r, c) && isValidAndEmpty(r + 1, c)) return {r, c};
+            if (isValidAndEmpty(r - 1, c) && isValidAndEmpty(r, c)) return {r: r - 1, c};
+        }
+        return null;
+    }
+
+    function getCellValue(r, c) {
+        const pd = getCellDomino(r, c);
+        if (!pd) return null;
+        const domino = gameState.trayDominoes.find(d => d.id === pd.id);
+        const v1 = domino.values[0];
+        const v2 = domino.values[1];
+        
+        if (pd.orientation === 0) {
+            return (pd.c === c) ? v1 : v2;
+        } else if (pd.orientation === 180) {
+            return (pd.c === c) ? v2 : v1;
+        } else if (pd.orientation === 90) {
+            return (pd.r === r) ? v1 : v2;
+        } else if (pd.orientation === 270) {
+            return (pd.r === r) ? v2 : v1;
+        }
+    }
+
+    function loadNewLevel() {
+        gameState.solved = false;
+        gameState.selectedDominoId = -1;
+
+        let level;
+        if (gameState.mode === 'daily') {
+            const dateStr = new Date().toISOString().slice(0, 10);
+            if (localStorage.getItem('pips_daily_' + dateStr)) {
+                showAlreadyPlayedModal();
+                return;
+            }
+            level = getDailyLevel();
+        } else {
+            level = getRandomLevel(gameState.difficulty);
+        }
+
+        gameState.currentLevel = level;
+
+        gameState.placedDominoes = [];
+
+        gameState.trayDominoes = level.dominoes.map((vals, idx) => ({
+            id: idx,
+            values: [...vals],
+            inTray: true,
+            orientation: 0
+        }));
+
+        buildMaps();
+        gameState.cellSize = computeCellSize();
+        gameState.startTime = Date.now();
+        render();
+    }
+
+
+    function clearBoard() {
+        if (gameState.solved) return;
+        gameState.placedDominoes = [];
+        gameState.trayDominoes.forEach(d => {
+            d.inTray = true;
+        });
+        gameState.selectedDominoId = -1;
+        render();
+    }
+
+    // ============================================================
+    // SECTION 6: PIP FACE & DOMINO RENDERING
+    // ============================================================
+
+    function createPipFaceElement(value, dotSizePx) {
+        const face = document.createElement('div');
+        face.className = 'pip-face';
+
+        const positions = PIP_PATTERNS[value] || [];
+
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'pip-cell';
+
+            if (positions.includes(i)) {
+                const dot = document.createElement('div');
+                dot.className = 'pip-dot';
+                dot.style.width = dotSizePx + 'px';
+                dot.style.height = dotSizePx + 'px';
+                cell.appendChild(dot);
+            }
+
+            face.appendChild(cell);
+        }
+
+        return face;
+    }
+
+    function createDominoElement(val1, val2, orientation, faceMinDim, dotSize) {
+        const dominoEl = document.createElement('div');
+        dominoEl.className = 'domino-tile-bg';
+        dominoEl.style.display = 'flex';
+        dominoEl.style.width = '100%';
+        dominoEl.style.height = '100%';
+        dominoEl.style.borderRadius = '8px';
+        dominoEl.style.overflow = 'hidden';
+
+        const isH = (orientation === 0 || orientation === 180);
+        dominoEl.style.flexDirection = isH ? 'row' : 'column';
+
+        let topLVal = (orientation === 0 || orientation === 90) ? val1 : val2;
+        let botRVal = (orientation === 0 || orientation === 90) ? val2 : val1;
+
+        const face1 = createPipFaceElement(topLVal, dotSize);
+        face1.style.flex = '1';
+        face1.style.transform = `rotate(${orientation}deg)`;
+
+        const divider = document.createElement('div');
+        if (isH) {
+            divider.style.width = '1.5px';
+            divider.style.height = '100%';
+        } else {
+            divider.style.height = '1.5px';
+            divider.style.width = '100%';
+        }
+        divider.style.backgroundColor = '#c8bfb0';
+        divider.style.flexShrink = '0';
+
+        const face2 = createPipFaceElement(botRVal, dotSize);
+        face2.style.flex = '1';
+        face2.style.transform = `rotate(${orientation}deg)`;
+
+        dominoEl.appendChild(face1);
+        dominoEl.appendChild(divider);
+        dominoEl.appendChild(face2);
+
+        return dominoEl;
+    }
+
+    // ============================================================
+    // SECTION 7: BOARD RENDERING
+    // ============================================================
+
+    function renderBoard() {
+        const board = document.getElementById('board');
+        board.innerHTML = '';
+
+        const level = gameState.currentLevel;
+        if (!level) return;
+
+        const { gridSize, regions } = level;
+        const [rows, cols] = gridSize;
+        const cs = gameState.cellSize;
+        const crMap = gameState.cellRegionMap;
+
+        board.style.width = (cols * cs) + 'px';
+        board.style.height = (rows * cs) + 'px';
+        board.style.position = 'relative';
+
+        // ---- RENDER CELLS (region backgrounds + dashed borders) ----
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const regionIdx = crMap[r][c];
+                if (regionIdx === -1) continue;
+
+                const cell = document.createElement('div');
+                cell.className = 'board-cell';
+                cell.dataset.row = r;
+                cell.dataset.col = c;
+                cell.dataset.region = regionIdx;
+
+                cell.style.position = 'absolute';
+                cell.style.left = (c * cs) + 'px';
+                cell.style.top = (r * cs) + 'px';
+                cell.style.width = cs + 'px';
+                cell.style.height = cs + 'px';
+                cell.style.cursor = 'pointer';
+
+                const region = regions[regionIdx];
+                const colorStyle = REGION_STYLES[region.color];
+                cell.style.backgroundColor = colorStyle.bg;
+
+                const bw = 2.5;
+                const bc = colorStyle.border;
+
+                const hasTop = (r > 0 && crMap[r - 1][c] === regionIdx);
+                const hasBottom = (r < rows - 1 && crMap[r + 1][c] === regionIdx);
+                const hasLeft = (c > 0 && crMap[r][c - 1] === regionIdx);
+                const hasRight = (c < cols - 1 && crMap[r][c + 1] === regionIdx);
+
+                cell.style.borderTop = hasTop ? 'none' : bw + 'px dashed ' + bc;
+                cell.style.borderBottom = hasBottom ? 'none' : bw + 'px dashed ' + bc;
+                cell.style.borderLeft = hasLeft ? 'none' : bw + 'px dashed ' + bc;
+                cell.style.borderRight = hasRight ? 'none' : bw + 'px dashed ' + bc;
+
+                const rad = 7;
+                const tlr = (!hasTop && !hasLeft) ? rad + 'px' : '0';
+                const trr = (!hasTop && !hasRight) ? rad + 'px' : '0';
+                const brr = (!hasBottom && !hasRight) ? rad + 'px' : '0';
+                const blr = (!hasBottom && !hasLeft) ? rad + 'px' : '0';
+                cell.style.borderRadius = tlr + ' ' + trr + ' ' + brr + ' ' + blr;
+                
+                cell.addEventListener('click', function(e) {
+                    handleBoardClick(r, c);
+                });
+
+                board.appendChild(cell);
+            }
+        }
+
+        // ---- RENDER PLACED DOMINOES ----
+        const inset = Math.max(Math.round(cs * 0.06), 3);
+
+        gameState.placedDominoes.forEach((pd) => {
+            const isH = (pd.orientation === 0 || pd.orientation === 180);
+            const domino = gameState.trayDominoes.find(d => d.id === pd.id);
+            
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'absolute';
+            wrapper.style.left = (pd.c * cs + inset) + 'px';
+            wrapper.style.top = (pd.r * cs + inset) + 'px';
+            wrapper.style.width = ((isH ? 2 : 1) * cs - 2 * inset) + 'px';
+            wrapper.style.height = ((isH ? 1 : 2) * cs - 2 * inset) + 'px';
+            wrapper.style.cursor = 'pointer';
+            wrapper.style.zIndex = '15';
+            
+            const faceMinDim = isH ? (cs - 2 * inset) : (cs - 2 * inset);
+            const dotSize = Math.max(Math.round(faceMinDim * 0.14), 3);
+            
+            const tile = createDominoElement(domino.values[0], domino.values[1], pd.orientation, faceMinDim, dotSize);
+            
+            wrapper.appendChild(tile);
+            
+            wrapper.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handlePlacedDominoClick(pd.id);
+            });
+            
+            board.appendChild(wrapper);
+        });
+
+        // ---- RENDER CONDITION BADGES ----
+        regions.forEach((region, rIdx) => {
+            if (region.condition.type === 'none') return;
+
+            const [badgeRow, badgeCol] = getRegionBadgeCell(region);
+            const colorStyle = REGION_STYLES[region.color];
+
+            const badge = document.createElement('div');
+            badge.style.position = 'absolute';
+            badge.style.left = ((badgeCol + 1) * cs) + 'px';
+            badge.style.top = ((badgeRow + 1) * cs) + 'px';
+            badge.style.transform = 'translate(-50%, -50%)';
+            badge.style.zIndex = '25';
+            badge.style.pointerEvents = 'none';
+
+            const condText = getConditionText(region.condition);
+            const diamondSize = Math.max(Math.round(cs * 0.38), 22);
+            const fontSize = condText.length > 2 ? Math.max(Math.round(cs * 0.13), 8) : Math.max(Math.round(cs * 0.16), 10);
+
+            const diamond = document.createElement('div');
+            diamond.className = 'badge-diamond';
+            diamond.style.width = diamondSize + 'px';
+            diamond.style.height = diamondSize + 'px';
+            diamond.style.backgroundColor = colorStyle.badge;
+
+            const text = document.createElement('span');
+            text.className = 'badge-text';
+            text.style.fontSize = fontSize + 'px';
+            text.textContent = condText;
+
+            diamond.appendChild(text);
+            badge.appendChild(diamond);
+            board.appendChild(badge);
+        });
+    }
+
+    // ============================================================
+    // SECTION 8: TRAY RENDERING
+    // ============================================================
+
+    function renderTray() {
+        const tray = document.getElementById('tray');
+        tray.innerHTML = '';
+
+        const visibleDominoes = gameState.trayDominoes.filter(d => d.inTray);
+
+        if (visibleDominoes.length === 0 && !gameState.solved) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.className = 'text-gray-600 text-xs font-medium';
+            emptyMsg.textContent = 'Tüm taşlar yerleştirildi';
+            tray.appendChild(emptyMsg);
+            return;
+        }
+
+        if (gameState.solved) {
+            const solvedMsg = document.createElement('div');
+            solvedMsg.className = 'text-green-400 text-xs font-bold';
+            solvedMsg.textContent = '✓ Çözüldü!';
+            tray.appendChild(solvedMsg);
+            return;
+        }
+
+        const containerWidth = Math.min(window.innerWidth - 32, 500);
+        const maxPerRow = Math.min(visibleDominoes.length, 5);
+        const trayScale = Math.max(Math.min(Math.floor((containerWidth - maxPerRow * 16) / maxPerRow / 2), 34), 20); 
+
+        visibleDominoes.forEach((domino) => {
+            const wrapper = document.createElement('div');
+            wrapper.style.width = (trayScale * 2.5) + 'px';
+            wrapper.style.height = (trayScale * 2.5) + 'px';
+            wrapper.style.display = 'flex';
+            wrapper.style.alignItems = 'center';
+            wrapper.style.justifyContent = 'center';
+            wrapper.style.flexShrink = '0';
+
+            const isH = (domino.orientation === 0 || domino.orientation === 180);
+            const tileW = isH ? trayScale * 2 : trayScale;
+            const tileH = isH ? trayScale : trayScale * 2;
+            const faceMinDim = trayScale;
+            const dotSize = Math.max(Math.round(faceMinDim * 0.14), 3);
+            
+            const tile = createDominoElement(domino.values[0], domino.values[1], domino.orientation, faceMinDim, dotSize);
+            tile.className = 'tray-domino';
+            tile.style.width = tileW + 'px';
+            tile.style.height = tileH + 'px';
+            tile.style.cursor = 'pointer';
+            
+            const isSelected = (gameState.selectedDominoId === domino.id);
+            if (isSelected) {
+                tile.classList.add('tray-domino-selected');
+                tile.style.transform = 'scale(1.05)';
+            } else {
+                tile.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+                tile.style.border = '1px solid rgba(200, 190, 170, 0.2)';
+            }
+
+            tile.addEventListener('click', function(e) {
+                e.stopPropagation();
+                handleTrayClick(domino.id);
+            });
+
+            wrapper.appendChild(tile);
+            tray.appendChild(wrapper);
+        });
+    }
+
+    // ============================================================
+    // SECTION 9: COMBINED RENDER
+    // ============================================================
+
+    function render() {
+        renderBoard();
+        renderTray();
+    }
+
+    // ============================================================
+    // SECTION 10: INTERACTION HANDLERS
+    // ============================================================
+
+    function handleTrayClick(dominoId) {
+        if (gameState.solved) return;
+
+        if (gameState.selectedDominoId === dominoId) {
+            const domino = gameState.trayDominoes.find(d => d.id === dominoId);
+            if (domino) domino.orientation = (domino.orientation + 90) % 360;
+        } else {
+            gameState.selectedDominoId = dominoId;
+        }
+        renderTray();
+    }
+
+    function handleBoardClick(r, c) {
+        if (gameState.solved) return;
+        if (gameState.selectedDominoId === -1) return;
+
+        const domino = gameState.trayDominoes.find(d => d.id === gameState.selectedDominoId);
+        if (!domino) return;
+
+        const anchor = getPlacementAnchor(r, c, domino.orientation);
+        if (anchor) {
+            domino.inTray = false;
+            gameState.placedDominoes.push({
+                id: domino.id,
+                r: anchor.r,
+                c: anchor.c,
+                orientation: domino.orientation
+            });
+            gameState.selectedDominoId = -1;
+            render();
+            checkAllSlotsFilled();
+        } else {
+            const cellEl = document.querySelector('.board-cell[data-row="' + r + '"][data-col="' + c + '"]');
+            if (cellEl) {
+                cellEl.classList.add('error-flash');
+                setTimeout(() => cellEl.classList.remove('error-flash'), 1500);
+            }
+        }
+    }
+
+    function handlePlacedDominoClick(dominoId) {
+        if (gameState.solved) return;
+        
+        gameState.placedDominoes = gameState.placedDominoes.filter(d => d.id !== dominoId);
+        const domino = gameState.trayDominoes.find(d => d.id === dominoId);
+        if (domino) {
+            domino.inTray = true;
+            gameState.selectedDominoId = domino.id;
+        }
+        render();
+    }
+
+    // ============================================================
+    // SECTION 11: WIN CHECKING
+    // ============================================================
+
+    function checkAllSlotsFilled() {
+        if (gameState.solved) return;
+        
+        let requiredCells = 0;
+        gameState.currentLevel.regions.forEach(r => requiredCells += r.cells.length);
+        
+        if (gameState.placedDominoes.length * 2 === requiredCells) {
+            setTimeout(function() { checkWin(); }, 450);
+        }
+    }
+
+    function checkWin() {
+        if (gameState.solved) return;
+
+        const level = gameState.currentLevel;
+        let allSatisfied = true;
+        const failedRegions = [];
+
+        for (let i = 0; i < level.regions.length; i++) {
+            const region = level.regions[i];
+            const values = region.cells.map(function(cell) {
+                return getCellValue(cell[0], cell[1]);
+            });
+
+            // Skip if any cell is unfilled (shouldn't happen if all slots are filled, but safety check)
+            if (values.some(function(v) { return v === null; })) {
+                allSatisfied = false;
+                continue;
+            }
+
+            let satisfied = true;
+            const condType = region.condition.type;
+            const condValue = region.condition.value;
+
+            switch (condType) {
+                case 'sum': {
+                    const total = values.reduce(function(a, b) { return a + b; }, 0);
+                    satisfied = (total === condValue);
+                    break;
+                }
+                case 'equal': {
+                    const first = values[0];
+                    satisfied = values.every(function(v) { return v === first; });
+                    break;
+                }
+                case 'less': {
+                    const total = values.reduce(function(a, b) { return a + b; }, 0);
+                    satisfied = (total < condValue);
+                    break;
+                }
+                case 'greater': {
+                    const total = values.reduce(function(a, b) { return a + b; }, 0);
+                    satisfied = (total > condValue);
+                    break;
+                }
+                case 'none': {
+                    satisfied = true;
+                    break;
+                }
+            }
+
+            if (!satisfied) {
+                allSatisfied = false;
+                failedRegions.push(i);
+            }
+        }
+
+        if (allSatisfied) {
+            gameState.solved = true;
+
+            let gecenSureSaniye = 0;
+            if (gameState.startTime) {
+                gecenSureSaniye = Math.floor((Date.now() - gameState.startTime) / 1000);
+            }
+
+            // Save daily progress
+            if (gameState.mode === 'daily') {
+                const dateStr = new Date().toISOString().slice(0, 10);
+                localStorage.setItem('pips_daily_' + dateStr, 'true');
+            }
+
+            // Success animation on all cells
+            document.querySelectorAll('.board-cell').forEach(function(cell) {
+                cell.classList.add('success-pulse');
+                setTimeout(function() { cell.classList.remove('success-pulse'); }, 700);
+            });
+
+            // Show win modal after animation
+            setTimeout(function() {
+                if (window.KaUser) {
+                    window.KaUser.addGameResult('pips', 'number', true, gecenSureSaniye);
+                }
+                renderTray();
+                showWinModal();
+            }, 800);
+        } else {
+            // Error animation on failed regions
+            failedRegions.forEach(function(rIdx) {
+                showRegionError(rIdx);
+            });
+        }
+    }
+
+    function showRegionError(regionIndex) {
+        const region = gameState.currentLevel.regions[regionIndex];
+        region.cells.forEach(function(cell) {
+            const r = cell[0];
+            const c = cell[1];
+            const cellEl = document.querySelector('.board-cell[data-row="' + r + '"][data-col="' + c + '"]');
+            if (cellEl) {
+                cellEl.classList.add('error-flash');
+                setTimeout(function() { cellEl.classList.remove('error-flash'); }, 1500);
+            }
+        });
+    }
+
+    // ============================================================
+    // SECTION 12: MODE & UI MANAGEMENT
+    // ============================================================
+
+    function setMode(newMode) {
+        gameState.mode = newMode;
+        updateModeUI();
+        updateDifficultyUI();
+        loadNewLevel();
+    }
+
+    function setDifficulty(newDiff) {
+        gameState.difficulty = newDiff;
+        updateDifficultyUI();
+        if (gameState.mode === 'unlimited') {
+            loadNewLevel();
+        }
+    }
+
+    function updateModeUI() {
+        const dailyBtn = document.getElementById('dailyBtn');
+        const unlimitedBtn = document.getElementById('unlimitedBtn');
+
+        if (gameState.mode === 'daily') {
+            dailyBtn.className = 'px-5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 mode-btn-active';
+            unlimitedBtn.className = 'px-5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 mode-btn-inactive';
+        } else {
+            unlimitedBtn.className = 'px-5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 mode-btn-active';
+            dailyBtn.className = 'px-5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 mode-btn-inactive';
+        }
+
+        // Difficulty buttons: disabled in daily mode
+        const diffContainer = document.getElementById('difficultyContainer');
+        if (gameState.mode === 'daily') {
+            diffContainer.style.opacity = '0.35';
+            diffContainer.style.pointerEvents = 'none';
+        } else {
+            diffContainer.style.opacity = '1';
+            diffContainer.style.pointerEvents = 'auto';
+        }
+    }
+
+    function updateDifficultyUI() {
+        document.querySelectorAll('.diff-btn').forEach(function(btn) {
+            if (btn.dataset.diff === gameState.difficulty) {
+                btn.className = 'diff-btn px-4 py-1 rounded-full text-xs font-bold transition-all duration-200 diff-btn-active';
+            } else {
+                btn.className = 'diff-btn px-4 py-1 rounded-full text-xs font-bold transition-all duration-200 diff-btn-inactive';
+            }
+        });
+    }
+
+    // ============================================================
+    // SECTION 13: MODAL MANAGEMENT
+    // ============================================================
+
+    function showHelpModal() {
+        const modal = document.getElementById('helpModal');
+        modal.style.display = 'flex';
+    }
+
+    function hideHelpModal() {
+        const modal = document.getElementById('helpModal');
+        modal.style.display = 'none';
+    }
+
+    function showWinModal() {
+        const modal = document.getElementById('winModal');
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+    }
+
+    function hideWinModal() {
+        const modal = document.getElementById('winModal');
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+
+    function showAlreadyPlayedModal() {
+        const modal = document.getElementById('alreadyPlayedModal');
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+    }
+
+    function hideAlreadyPlayedModal() {
+        const modal = document.getElementById('alreadyPlayedModal');
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+
+    // ============================================================
+    // SECTION 14: EVENT LISTENERS SETUP
+    // ============================================================
+
+    function setupEventListeners() {
+        // Help button
+        document.getElementById('helpBtn').addEventListener('click', function() {
+            showHelpModal();
+        });
+
+        // Mode buttons
+        document.getElementById('dailyBtn').addEventListener('click', function() {
+            setMode('daily');
+        });
+
+        document.getElementById('unlimitedBtn').addEventListener('click', function() {
+            setMode('unlimited');
+        });
+
+        // Difficulty buttons
+        document.querySelectorAll('.diff-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                setDifficulty(btn.dataset.diff);
+            });
+        });
+
+        // Clear button
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            clearBoard();
+        });
+
+        // New game button
+        document.getElementById('newGameBtn').addEventListener('click', function() {
+            if (gameState.mode === 'daily') {
+                const dateStr = new Date().toISOString().slice(0, 10);
+                if (localStorage.getItem('pips_daily_' + dateStr)) {
+                    showAlreadyPlayedModal();
+                    return;
+                }
+            }
+            loadNewLevel();
+        });
+
+        // Deselect on board container click (if no slot was clicked)
+        document.getElementById('boardContainer').addEventListener('click', function(e) {
+            if (!e.target.closest('.slot-overlay') && !e.target.closest('.tray-domino')) {
+                if (gameState.selectedDominoId !== -1) {
+                    gameState.selectedDominoId = -1;
+                    renderTray();
+                }
+            }
+        });
+
+        // Close modals on backdrop click
+        document.getElementById('helpModal').addEventListener('click', function(e) {
+            if (e.target === this) hideHelpModal();
+        });
+
+        document.getElementById('winModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideWinModal();
+                loadNewLevel();
+            }
+        });
+
+        document.getElementById('alreadyPlayedModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideAlreadyPlayedModal();
+                setMode('unlimited');
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (gameState.currentLevel) {
+                gameState.cellSize = computeCellSize();
+                render();
+            }
+        });
+
+        // Prevent context menu on long press (mobile)
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // Prevent double-tap zoom on mobile
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (now - lastTouchEnd < 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        // Prevent pull-to-refresh
+        document.addEventListener('touchmove', function(e) {
+            if (e.touches.length === 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+
+    // ============================================================
+    // SECTION 15: INITIALIZATION
+    // ============================================================
+
+    function init() {
+        gameState.mode = 'unlimited';
+        gameState.difficulty = 'easy';
+
+        updateModeUI();
+        updateDifficultyUI();
+        setupEventListeners();
+        loadNewLevel();
+    }
+
+    // Start the game when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    </script>
+</body>
+</html>

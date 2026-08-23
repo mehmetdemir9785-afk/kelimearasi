@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="TicTac Kelime - Kelimearası">
+    <title>TicTac Kelime | Kelimearası</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Valid words listesi -->
+    <script src="../wordle kelime listeleri/valid_5_harfli.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ====== ANIMATIONS ====== */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+            20%, 40%, 60%, 80% { transform: translateX(6px); }
+        }
+
+        @keyframes flip {
+            0% { transform: rotateX(0deg); }
+            45% { transform: rotateX(90deg); }
+            55% { transform: rotateX(90deg); }
+            100% { transform: rotateX(0deg); }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.12); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes slideUp {
+            0% { transform: translateY(30px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .animate-shake { animation: shake 0.5s ease-in-out; }
+        .animate-flip { animation: flip 0.5s ease-in-out; }
+        .animate-pop { animation: pop 0.15s ease-in-out; }
+        .animate-slideUp { animation: slideUp 0.3s ease-out forwards; }
+        .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
+
+        /* ====== TOGGLE STYLES ====== */
+        .mode-btn {
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+            color: white;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* ====== TILE STYLES ====== */
+        .tile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.6rem;
+            text-transform: uppercase;
+            border: 2px solid #e5e7eb;
+            background-color: #f9fafb;
+            color: #111827;
+            transition: border-color 0.1s, background-color 0.1s;
+            user-select: none;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 4px;
+        }
+        .dark .tile {
+            border-color: rgba(51, 65, 85, 0.5);
+            background-color: rgba(30, 41, 59, 0.2);
+            color: inherit;
+        }
+
+        @media (max-width: 380px) {
+            .tile { width: 3rem; height: 3rem; font-size: 1.4rem; }
+        }
+
+        .tile.filled { border-color: #9ca3af; }
+        .dark .tile.filled { border-color: #64748b; }
+        .tile.correct { background-color: #538d4e !important; border-color: #538d4e !important; color: white !important; }
+        .tile.present { background-color: #b59f3b !important; border-color: #b59f3b !important; color: white !important; }
+        
+        .tile.absent { background-color: #e5e7eb !important; border-color: #e5e7eb !important; color: #4b5563 !important; }
+        .dark .tile.absent { background-color: #15152b !important; border-color: #1a1a35 !important; color: white !important; }
+
+        /* ====== KEYBOARD STYLES ====== */
+        .key-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.35rem;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            background-color: #e5e7eb;
+            color: #374151;
+            height: 3.2rem;
+            font-size: 1.1rem;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .dark .key-btn {
+            background-color: #1E2536;
+            color: #e2e8f0;
+        }
+
+        .key-btn:active { transform: scale(0.92); }
+        .key-btn.correct { background-color: #538d4e !important; color: white !important; }
+        .key-btn.present { background-color: #b59f3b !important; color: white !important; }
+        
+        .key-btn.absent { background-color: #d1d5db !important; color: #4b5563 !important; }
+        .dark .key-btn.absent { background-color: #15152b !important; border-color: #1a1a35 !important; color: white !important; }
+
+        /* ====== MACRO CELL ====== */
+        .macro-cell {
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 0.75rem; 
+            background-color: #ffffff; 
+            border: 2px solid rgba(229, 231, 235, 0.6);
+            cursor: pointer; transition: all 0.2s;
+            position: relative;
+            aspect-ratio: 1 / 1;
+            user-select: none;
+            -webkit-user-select: none;
+            outline: none;
+        }
+        .dark .macro-cell {
+            background-color: #181836; 
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+        .macro-cell:hover:not(.locked) { border-color: #3b82f6; background-color: #f8fafc; }
+        .dark .macro-cell:hover:not(.locked) { border-color: #3b82f6; background-color: #1e293b; }
+        
+        .macro-cell.won { background-color: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #10b981; pointer-events: none; }
+        .macro-cell.lost { background-color: rgba(239, 68, 68, 0.15); border-color: #ef4444; color: #ef4444; pointer-events: none; }
+        .macro-cell.locked { pointer-events: none; opacity: 0.8; }
+        
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <script src="../js/user-system.js"></script>
+</head>
+<body class="bg-gray-50 dark:bg-[#0c0c1d] text-gray-900 dark:text-gray-100 font-sans h-full w-full relative">
+
+    <!-- Loading Screen -->
+    <div id="loading" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-50 dark:bg-[#0c0c1d]">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mb-4"></div>
+        <div class="text-gray-400 font-medium">Kelimeler Yükleniyor...</div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center gap-2 pointer-events-none"></div>
+
+    <!-- ==================== MACRO GAME (MAIN MENU) ==================== -->
+    <div id="view-macro" class="flex flex-col h-full w-full">
+        <!-- Header -->
+        <header class="px-4 py-3 sticky top-0 z-50 flex items-center justify-between border-b backdrop-blur-xl bg-white/80 dark:bg-[#12122b]/80 border-gray-200/60 dark:border-white/5 shrink-0">
+            <a href="../index.html" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Ana Sayfa">🏠</a>
+            <h1 class="tracking-[0.15em] bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 text-transparent bg-clip-text font-black text-xl uppercase drop-shadow-[0_0_10px_rgba(52,211,153,0.3)]">
+                TicTac Kelime
+            </h1>
+            <button onclick="showHowToPlay()" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Nasıl Oynanır">❓</button>
+        </header>
+
+        <!-- Control Panel -->
+        <div class="flex flex-row items-center justify-center w-full max-w-md mx-auto px-2 py-3 shrink-0">
+            <div class="flex items-center gap-0.5 bg-white dark:bg-[#181836] rounded-lg p-1 border border-gray-200/60 dark:border-slate-800 shadow-sm dark:shadow-none">
+                <button id="btn-daily" class="mode-btn active px-4 py-1.5 rounded-md text-sm font-semibold flex items-center gap-1.5" onclick="setMode('daily')">
+                    <i data-lucide="calendar" class="w-4 h-4"></i> Günlük
+                </button>
+                <button id="btn-unlimited" class="mode-btn px-4 py-1.5 rounded-md text-sm font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-1.5" onclick="setMode('unlimited')">
+                    <i data-lucide="infinity" class="w-4 h-4"></i> Sınırsız
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Board -->
+        <main class="flex-1 flex flex-col items-center justify-center min-h-0 relative p-4">
+            <div id="macro-container" class="relative w-full max-w-[320px] aspect-square">
+                <!-- Win Line -->
+                <div id="win-line" class="absolute hidden transition-all duration-500" style="background: linear-gradient(90deg, #10b981, #06b6d4); z-index: 10; box-shadow: 0 0 10px rgba(16, 185, 129, 0.6); border-radius: 4px;"></div>
+                
+                <!-- 3x3 Grid -->
+                <div id="macro-grid" class="grid grid-cols-3 gap-2 w-full h-full relative z-0">
+                    <!-- Cells dynamically generated -->
+                </div>
+            </div>
+            
+            <div id="game-status-text" class="mt-8 text-xl font-black h-8 text-center uppercase tracking-wider drop-shadow-lg"></div>
+            
+            <button id="btn-restart" class="mt-4 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 font-bold hidden shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all active:scale-95 text-white" onclick="initGame(true)">
+                Tekrar Oyna
+            </button>
+        </main>
+    </div>
+
+    <!-- ==================== MICRO GAME (MINI WORDLE) ==================== -->
+    <div id="view-micro" class="fixed inset-0 z-40 bg-gray-50 dark:bg-[#0c0c1d] flex flex-col h-full w-full hidden transform translate-y-full transition-transform duration-300 ease-in-out">
+        <!-- Header -->
+        <header class="px-4 py-3 flex items-center justify-between border-b border-gray-200/60 dark:border-white/5 shrink-0 bg-white/80 dark:bg-[#12122b]/80 backdrop-blur-xl">
+            <button onclick="closeMicroGame()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all flex items-center gap-1 text-gray-700 dark:text-gray-300 font-medium">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i> Geri
+            </button>
+            <div class="font-bold text-gray-800 dark:text-gray-400 tracking-wider" id="micro-title">Hücre</div>
+            <div class="w-[72px]"></div> <!-- Spacer to balance flex header -->
+        </header>
+
+        <!-- Wordle Grid -->
+        <main class="flex-1 flex flex-col items-center justify-center min-h-0 p-2">
+            <div id="micro-grid" class="grid grid-rows-4 gap-1.5">
+                <!-- 4x5 Grid dynamically generated -->
+            </div>
+        </main>
+
+        <!-- Virtual Keyboard -->
+        <div id="keyboard" class="shrink-0 px-1.5 pb-3 pt-1 select-none">
+            <div class="flex justify-center gap-1 mb-1" id="kb-row-1"></div>
+            <div class="flex justify-center gap-1 mb-1" id="kb-row-2"></div>
+            <div class="flex justify-center gap-1" id="kb-row-3"></div>
+        </div>
+    </div>
+
+    <!-- HELP MODAL -->
+    <div id="help-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto no-scrollbar hidden">
+        <div class="relative w-full max-w-md bg-white dark:bg-[#181836] border border-gray-200 dark:border-emerald-500/30 rounded-3xl p-6 shadow-xl dark:shadow-[0_0_30px_rgba(16,185,129,0.15)] text-gray-800 dark:text-slate-100 my-auto animate-fadeIn">
+            <button onclick="closeHelpModal()" class="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i>
+            </button>
+            <h2 class="text-center text-lg font-bold text-gray-900 dark:text-gray-200 tracking-wider uppercase mb-4">Nasıl Oynanır?</h2>
+
+            <div class="space-y-4 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                <p><strong>Tic-Tac-Toe</strong> ve <strong>Wordle</strong> oyunlarının eşsiz birleşimi!</p>
+                
+                <p>Oyun alanı 3x3'lük bir tahtadan oluşur. Amacınız yatay, dikey veya çapraz eksende <span class="text-emerald-500 font-bold">3 hücreyi</span> peş peşe kazanmaktır.</p>
+                
+                <div class="bg-gray-50 dark:bg-slate-800/50 p-3 rounded-lg border border-gray-200 dark:border-slate-700">
+                    <p class="font-bold text-gray-900 dark:text-white mb-1">Nasıl Oynanır?</p>
+                    <p class="mb-2">Her hücrenin arkasında gizli 5 harfli bir kelime bulunur. Boş bir hücreye tıkladığınızda mini bir Wordle oyunu açılır:</p>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>Kelimeyi tahmin etmek için sadece <strong>4 hakkınız</strong> vardır.</li>
+                        <li>Doğru bilirseniz o hücre sizin olur (Yeşil ve ✓ işareti).</li>
+                        <li>4 hakta bilemezseniz hücreyi kaybedersiniz (Kırmızı ve ✕ işareti) ve hücre kilitlenir.</li>
+                    </ul>
+                </div>
+
+                <div class="border-t border-gray-200 dark:border-slate-700 pt-3">
+                    <p class="font-bold text-gray-900 dark:text-white mb-1">Modlar:</p>
+                    <p>📅 <strong>Günlük:</strong> Her gün herkesle aynı 9 kelime! Durumun kaydedilir.</p>
+                    <p>♾️ <strong>Sınırsız:</strong> Her oynamada tamamen rastgele kelimeler!</p>
+                </div>
+                
+                <p>Eğer tahtada 3'lü yapma ihtimaliniz tamamen ortadan kalkarsa, oyunu <span class="text-red-400 font-bold">kaybedersiniz</span>.</p>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ====== JAVASCRIPT ====== -->
+    <script>
+        // Data
+        let TARGET_WORDS = [];
+        let VALID_WORDS = [];
+        let macroBoard = [];
+        let currentCellIndex = -1;
+        let gameStartTime = Date.now();
+        let isMacroGameOver = false;
+            gameStartTime = Date.now();
+        let isAnimating = false;
+        let gameMode = 'daily'; // 'daily' or 'unlimited'
+
+        const WIN_LINES = [
+            [0,1,2], [3,4,5], [6,7,8], // rows
+            [0,3,6], [1,4,7], [2,5,8], // cols
+            [0,4,8], [2,4,6]           // diags
+        ];
+
+        const KEYBOARD_LAYOUT = [
+            ['E','R','T','Y','U','I','O','P','Ğ','Ü'],
+            ['A','S','D','F','G','H','J','K','L','Ş','İ'],
+            ['Enter','Z','C','V','B','N','M','Ö','Ç','Backspace']
+        ];
+
+        // Utils
+        function turkishUpper(str) {
+            return str.replace(/i/g, 'İ').replace(/ı/g, 'I').toLocaleUpperCase('tr-TR');
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-white/95 dark:bg-gray-800/95 backdrop-blur text-gray-900 dark:text-white px-5 py-2.5 rounded-xl font-bold shadow-lg animate-slideUp border border-gray-200 dark:border-gray-700';
+            toast.textContent = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+
+        // RNG for daily seeds
+        function mulberry32(a) {
+            return function() {
+              var t = a += 0x6D2B79F5;
+              t = Math.imul(t ^ t >>> 15, t | 1);
+              t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+              return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            }
+        }
+
+        function getDailySeed() {
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+            let hash = 0;
+            for (let i = 0; i < dateStr.length; i++) {
+                hash = (hash << 5) - hash + dateStr.charCodeAt(i);
+                hash |= 0;
+            }
+            return hash;
+        }
+
+        function getShuffledWords() {
+            let words = [...TARGET_WORDS];
+            let result = [];
+            
+            if (gameMode === 'daily') {
+                const seed = getDailySeed();
+                const rand = mulberry32(seed);
+                for (let i = 0; i < 9; i++) {
+                    let idx = Math.floor(rand() * words.length);
+                    result.push(words[idx]);
+                    words.splice(idx, 1);
+                }
+            } else {
+                words.sort(() => 0.5 - Math.random());
+                result = words.slice(0, 9);
+            }
+            
+            return result;
+        }
+
+        // Local Storage
+        function saveGameState() {
+            if (gameMode !== 'daily') return;
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+            const state = {
+                date: dateStr,
+                board: macroBoard,
+                isMacroGameOver: isMacroGameOver
+            };
+            localStorage.setItem('tictacword_daily', JSON.stringify(state));
+        }
+
+        function loadGameState() {
+            if (gameMode !== 'daily') return false;
+            const stored = localStorage.getItem('tictacword_daily');
+            if (!stored) return false;
+            
+            try {
+                const state = JSON.parse(stored);
+                const now = new Date();
+                const dateStr = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+                if (state.date === dateStr) {
+                    macroBoard = state.board;
+                    isMacroGameOver = state.isMacroGameOver;
+                    return true;
+                }
+            } catch(e) {}
+            return false;
+        }
+
+        // Init
+        async function loadData() {
+            try {
+                if (typeof ALL_WORDS !== 'undefined') {
+                    VALID_WORDS = ALL_WORDS.map(turkishUpper);
+                } else {
+                    console.error("ALL_WORDS bulunamadı! Lütfen valid_5_harfli.js'yi kontrol edin.");
+                }
+                
+                const response = await fetch('../wordle kelime listeleri/target_5_harfli.js');
+                if (!response.ok) throw new Error("HTTP error");
+                const text = await response.text();
+                TARGET_WORDS = text.split(/\r?\n/).map(w => w.trim()).filter(w => w.length === 5).map(turkishUpper);
+                
+                document.getElementById('loading').classList.add('hidden');
+                createKeyboard();
+                initGame();
+            } catch(e) {
+                console.warn("Kelime listesi yüklenemedi (Muhtemelen file:// protokolü). ALL_WORDS yedek olarak kullanılıyor.", e);
+                
+                if (typeof ALL_WORDS !== 'undefined') {
+                    // Fallback to VALID_WORDS as TARGET_WORDS if fetch fails
+                    TARGET_WORDS = [...VALID_WORDS];
+                    
+                    document.getElementById('loading').classList.add('hidden');
+                    createKeyboard();
+                    initGame();
+                } else {
+                    showToast("Kelimeler yüklenirken hata oluştu!");
+                    document.getElementById('loading').innerHTML = '<div class="text-red-500 font-bold text-center">Hata!<br>Kelimeler Yüklenemedi.</div>';
+                }
+            }
+        }
+
+        function setMode(mode) {
+            if (gameMode === mode) return;
+            gameMode = mode;
+            
+            document.getElementById('btn-daily').classList.toggle('active', mode === 'daily');
+            document.getElementById('btn-daily').classList.toggle('text-gray-500', mode !== 'daily');
+            document.getElementById('btn-daily').classList.toggle('dark:text-gray-400', mode !== 'daily');
+            
+            document.getElementById('btn-unlimited').classList.toggle('active', mode === 'unlimited');
+            document.getElementById('btn-unlimited').classList.toggle('text-gray-500', mode !== 'unlimited');
+            document.getElementById('btn-unlimited').classList.toggle('dark:text-gray-400', mode !== 'unlimited');
+            
+            initGame();
+        }
+
+        function initGame(forceNew = false) {
+            document.getElementById('win-line').classList.add('hidden');
+            document.getElementById('win-line').style.transform = 'none';
+            const statusText = document.getElementById('game-status-text');
+            statusText.textContent = '';
+            statusText.className = 'mt-8 text-xl font-black h-8 text-center uppercase tracking-wider drop-shadow-lg';
+            document.getElementById('btn-restart').classList.add('hidden');
+            
+            if (gameMode === 'daily' && !forceNew) {
+                if (loadGameState()) {
+                    renderMacroBoard();
+                    if (isMacroGameOver) checkMacroStatus(true);
+                    return;
+                }
+            }
+
+            const words = getShuffledWords();
+            macroBoard = Array(9).fill(null).map((_, i) => ({
+                targetWord: words[i],
+                status: 'idle',
+                guesses: [],
+                evaluations: [],
+                currentWord: [] 
+            }));
+            
+            isMacroGameOver = false;
+            gameStartTime = Date.now();
+            
+            renderMacroBoard();
+            if (gameMode === 'daily') saveGameState();
+        }
+
+        // UI Renders
+        function renderMacroBoard() {
+            const grid = document.getElementById('macro-grid');
+            grid.innerHTML = '';
+            
+            macroBoard.forEach((cell, i) => {
+                const div = document.createElement('div');
+                div.className = `macro-cell transition-all flex flex-col items-center justify-center`;
+                
+                // Using Solid Path SVGs to prevent ANY stroke rendering bugs
+                if (cell.status === 'won') {
+                    div.classList.add('bg-emerald-500/20', 'border-emerald-500', 'text-emerald-500', 'locked');
+                    div.innerHTML = `<svg class="w-12 h-12" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.172l-3.586-3.586a1 1 0 0 0-1.414 1.414l4.293 4.293a1 1 0 0 0 1.414 0l11-11a1 1 0 0 0-1.414-1.414L9 16.172z"/></svg>`;
+                } else if (cell.status === 'lost') {
+                    div.classList.add('bg-red-500/20', 'border-red-500', 'text-red-500', 'locked');
+                    div.innerHTML = `<svg class="w-12 h-12" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M19.707 5.707a1 1 0 0 0-1.414-1.414L12 10.586 5.707 4.293a1 1 0 0 0-1.414 1.414L10.586 12l-6.293 6.293a1 1 0 1 0 1.414 1.414L12 13.414l6.293 6.293a1 1 0 0 0 1.414-1.414L13.414 12l6.293-6.293z"/></svg>`;
+                } else {
+                    div.classList.add('hover:border-blue-500');
+                    if (cell.guesses.length > 0) {
+                        div.innerHTML = `<span class="text-sm font-bold text-gray-500 dark:text-gray-400">${cell.guesses.length}/4</span>`;
+                    }
+                }
+                
+                div.onclick = () => openCell(i);
+                grid.appendChild(div);
+            });
+            // Still create icons for UI (like header/buttons) safely
+            lucide.createIcons();
+        }
+
+        function renderMicroGrid(cell) {
+            const grid = document.getElementById('micro-grid');
+            grid.innerHTML = '';
+            
+            for (let r = 0; r < 4; r++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'flex gap-1.5 justify-center';
+                for (let c = 0; c < 5; c++) {
+                    const tile = document.createElement('div');
+                    tile.id = `micro-tile-${r}-${c}`;
+                    tile.className = 'tile';
+                    
+                    if (r < cell.guesses.length) {
+                        tile.textContent = cell.guesses[r][c];
+                        tile.classList.add('filled');
+                        if (cell.evaluations[r]) {
+                            tile.classList.add(cell.evaluations[r][c]);
+                            tile.style.borderColor = 'transparent';
+                        }
+                    } else if (r === cell.guesses.length && c < cell.currentWord.length) {
+                        tile.textContent = cell.currentWord[c];
+                        tile.classList.add('filled');
+                    }
+                    rowDiv.appendChild(tile);
+                }
+                grid.appendChild(rowDiv);
+            }
+        }
+
+        function createKeyboard() {
+            const kb = document.getElementById('keyboard');
+            for (let i = 1; i <= 3; i++) {
+                const rowDiv = document.getElementById(`kb-row-${i}`);
+                rowDiv.innerHTML = '';
+                KEYBOARD_LAYOUT[i-1].forEach(key => {
+                    const btn = document.createElement('button');
+                    btn.className = 'key-btn shadow-sm';
+                    btn.dataset.key = key;
+                    
+                    if (key === 'Enter') {
+                        btn.textContent = 'GİR';
+                        btn.style.width = '4rem';
+                        btn.onclick = () => handleEnter();
+                    } else if (key === 'Backspace') {
+                        btn.innerHTML = '<i data-lucide="delete" class="w-6 h-6"></i>';
+                        btn.style.width = '3.5rem';
+                        btn.onclick = () => handleBackspace();
+                    } else {
+                        btn.textContent = key;
+                        btn.style.width = '2.2rem';
+                        btn.onclick = () => handleLetter(key);
+                    }
+                    rowDiv.appendChild(btn);
+                });
+            }
+            lucide.createIcons();
+        }
+
+        function updateKeyboardForCell(cell) {
+            document.querySelectorAll('.key-btn').forEach(btn => {
+                btn.classList.remove('correct', 'present', 'absent');
+            });
+            
+            const keyState = {};
+            for (let r = 0; r < cell.guesses.length; r++) {
+                const guess = cell.guesses[r];
+                const evals = cell.evaluations[r];
+                for (let c = 0; c < 5; c++) {
+                    const letter = guess[c];
+                    const ev = evals[c];
+                    if (keyState[letter] === 'correct') continue;
+                    if (keyState[letter] === 'present' && ev === 'absent') continue;
+                    keyState[letter] = ev;
+                }
+            }
+            
+            Object.keys(keyState).forEach(letter => {
+                const btn = document.querySelector(`.key-btn[data-key="${letter}"]`);
+                if (btn) btn.classList.add(keyState[letter]);
+            });
+        }
+
+        // Micro Game interactions
+        function openCell(index) {
+            if (isMacroGameOver) return;
+            const cell = macroBoard[index];
+            if (cell.status !== 'idle') return;
+            
+            currentCellIndex = index;
+            document.getElementById('micro-title').textContent = `Hücre ${index + 1}`;
+            
+            renderMicroGrid(cell);
+            updateKeyboardForCell(cell);
+            
+            const viewMicro = document.getElementById('view-micro');
+            viewMicro.classList.remove('hidden');
+            setTimeout(() => {
+                viewMicro.classList.remove('translate-y-full');
+                viewMicro.classList.add('translate-y-0');
+            }, 10);
+        }
+
+        function closeMicroGame() {
+            const viewMicro = document.getElementById('view-micro');
+            viewMicro.classList.remove('translate-y-0');
+            viewMicro.classList.add('translate-y-full');
+            
+            if (gameMode === 'daily') saveGameState();
+            
+            setTimeout(() => {
+                viewMicro.classList.add('hidden');
+                currentCellIndex = -1;
+                renderMacroBoard();
+                checkMacroStatus();
+            }, 300);
+        }
+
+        // Typing logic
+        function handleLetter(letter) {
+            if (currentCellIndex === -1 || isAnimating) return;
+            const cell = macroBoard[currentCellIndex];
+            if (cell.status !== 'idle' || cell.guesses.length >= 4) return;
+            
+            if (cell.currentWord.length < 5) {
+                cell.currentWord.push(letter);
+                const col = cell.currentWord.length - 1;
+                const row = cell.guesses.length;
+                const tile = document.getElementById(`micro-tile-${row}-${col}`);
+                tile.textContent = letter;
+                tile.classList.add('filled', 'animate-pop');
+                setTimeout(() => tile.classList.remove('animate-pop'), 150);
+            }
+        }
+
+        function handleBackspace() {
+            if (currentCellIndex === -1 || isAnimating) return;
+            const cell = macroBoard[currentCellIndex];
+            if (cell.status !== 'idle' || cell.guesses.length >= 4) return;
+            
+            if (cell.currentWord.length > 0) {
+                const col = cell.currentWord.length - 1;
+                const row = cell.guesses.length;
+                const tile = document.getElementById(`micro-tile-${row}-${col}`);
+                tile.textContent = '';
+                tile.classList.remove('filled');
+                cell.currentWord.pop();
+            }
+        }
+
+        function handleEnter() {
+            if (currentCellIndex === -1 || isAnimating) return;
+            const cell = macroBoard[currentCellIndex];
+            if (cell.status !== 'idle' || cell.guesses.length >= 4) return;
+            
+            if (cell.currentWord.length !== 5) {
+                showToast("Kelime 5 harfli olmalı!");
+                shakeRow(cell.guesses.length);
+                return;
+            }
+            
+            const wordStr = cell.currentWord.join('');
+            if (!VALID_WORDS.includes(wordStr) && !TARGET_WORDS.includes(wordStr)) {
+                showToast("Kelime listesinde bulunamadı!");
+                shakeRow(cell.guesses.length);
+                return;
+            }
+            
+            isAnimating = true;
+            const evaluation = evaluateGuess(wordStr, cell.targetWord);
+            const row = cell.guesses.length;
+            
+            cell.guesses.push(wordStr);
+            cell.evaluations.push(evaluation);
+            cell.currentWord = [];
+            
+            animateRow(row, evaluation, () => {
+                isAnimating = false;
+                updateKeyboardForCell(cell);
+                
+                if (wordStr === cell.targetWord) {
+                    cell.status = 'won';
+                    setTimeout(() => {
+                        showToast("Harika!");
+                        closeMicroGame();
+                    }, 500);
+                } else if (cell.guesses.length >= 4) {
+                    cell.status = 'lost';
+                    setTimeout(() => {
+                        showToast(`Bilemediniz! Kelime: ${cell.targetWord}`);
+                        closeMicroGame();
+                    }, 1000);
+                }
+            });
+        }
+
+        function evaluateGuess(guess, target) {
+            let targetArr = target.split('');
+            let guessArr = guess.split('');
+            let result = Array(5).fill('absent');
+            
+            for (let i = 0; i < 5; i++) {
+                if (guessArr[i] === targetArr[i]) {
+                    result[i] = 'correct';
+                    targetArr[i] = null;
+                    guessArr[i] = null;
+                }
+            }
+            
+            for (let i = 0; i < 5; i++) {
+                if (guessArr[i] !== null) {
+                    let idx = targetArr.indexOf(guessArr[i]);
+                    if (idx > -1) {
+                        result[i] = 'present';
+                        targetArr[idx] = null;
+                    }
+                }
+            }
+            return result;
+        }
+
+        function animateRow(rowIndex, evaluation, onComplete) {
+            const tiles = [];
+            for (let i = 0; i < 5; i++) {
+                tiles.push(document.getElementById(`micro-tile-${rowIndex}-${i}`));
+            }
+            
+            tiles.forEach((tile, index) => {
+                setTimeout(() => {
+                    tile.classList.add('animate-flip');
+                    setTimeout(() => {
+                        tile.classList.remove('filled');
+                        tile.classList.add(evaluation[index]);
+                        tile.style.borderColor = 'transparent';
+                    }, 250);
+                }, index * 200); 
+            });
+            
+            setTimeout(onComplete, (4 * 200) + 500);
+        }
+
+        function shakeRow(rowIndex) {
+            const row = document.getElementById('micro-grid').children[rowIndex];
+            if (row) {
+                row.classList.add('animate-shake');
+                setTimeout(() => row.classList.remove('animate-shake'), 500);
+            }
+        }
+
+        // Global keydown
+        document.addEventListener('keydown', (e) => {
+            if (currentCellIndex === -1 || isAnimating) return;
+            const key = e.key;
+            if (key === 'Enter') {
+                handleEnter();
+            } else if (key === 'Backspace') {
+                handleBackspace();
+            } else {
+                const match = key.match(/^[a-zA-ZğüşıöçĞÜŞİÖÇ]$/);
+                if (match) {
+                    handleLetter(turkishUpper(key));
+                }
+            }
+        });
+
+        // Macro Game Status
+        function checkMacroStatus(isJustLoaded = false) {
+            if (isMacroGameOver && !isJustLoaded) return;
+            
+            for (let line of WIN_LINES) {
+                if (macroBoard[line[0]].status === 'won' &&
+                    macroBoard[line[1]].status === 'won' &&
+                    macroBoard[line[2]].status === 'won') {
+                    
+                    isMacroGameOver = true;
+                    drawWinLine(line);
+                    if (!isJustLoaded) triggerConfetti();
+                    
+                    const statusText = document.getElementById('game-status-text');
+                    statusText.textContent = 'OYUNU KAZANDINIZ! ??';
+                    statusText.classList.add('text-emerald-400');
+                    
+                    if (gameMode === 'unlimited') {
+                        document.getElementById('btn-restart').classList.remove('hidden');
+                    }
+                    if (gameMode === 'daily') saveGameState();
+                    
+                    if (window.KaUser) {
+                        let gecenSureSaniye = Math.floor((Date.now() - gameStartTime) / 1000);
+                        window.KaUser.addGameResult('tic_tac_word', 'word', true, gecenSureSaniye);
+                    }
+                    
+                    return;
+                }
+            }
+            
+            let possibleWins = 0;
+            for (let line of WIN_LINES) {
+                let hasLost = false;
+                for (let idx of line) {
+                    if (macroBoard[idx].status === 'lost') {
+                        hasLost = true;
+                        break;
+                    }
+                }
+                if (!hasLost) possibleWins++;
+            }
+            
+            if (possibleWins === 0) {
+                isMacroGameOver = true;
+                const statusText = document.getElementById('game-status-text');
+                statusText.textContent = 'OYUNU KAYBETT?N?Z! ??';
+                statusText.classList.add('text-red-400');
+                
+                if (gameMode === 'unlimited') {
+                    document.getElementById('btn-restart').classList.remove('hidden');
+                }
+                if (gameMode === 'daily') saveGameState();
+                
+                if (window.KaUser) {
+                    let gecenSureSaniye = Math.floor((Date.now() - gameStartTime) / 1000);
+                    window.KaUser.addGameResult('tic_tac_word', 'word', false, gecenSureSaniye);
+                }
+            }
+        }
+
+        function drawWinLine(line) {
+            const lineEl = document.getElementById('win-line');
+            lineEl.classList.remove('hidden');
+            
+            const isRow = line[0] === 0 && line[1] === 1 || line[0] === 3 && line[1] === 4 || line[0] === 6 && line[1] === 7;
+            const isCol = line[0] === 0 && line[1] === 3 || line[0] === 1 && line[1] === 4 || line[0] === 2 && line[1] === 5;
+            const isDiag1 = line[0] === 0 && line[1] === 4 && line[2] === 8;
+            const isDiag2 = line[0] === 2 && line[1] === 4 && line[2] === 6;
+            
+            lineEl.style.width = '100%';
+            lineEl.style.height = '6px';
+            lineEl.style.top = '50%';
+            lineEl.style.left = '0';
+            lineEl.style.transformOrigin = 'center';
+            
+            if (isRow) {
+                let rowNum = Math.floor(line[0] / 3);
+                lineEl.style.top = `calc(${16.66 + (rowNum * 33.33)}% - 3px)`;
+                lineEl.style.transform = 'rotate(0deg)';
+            } else if (isCol) {
+                let colNum = line[0] % 3;
+                lineEl.style.width = '6px';
+                lineEl.style.height = '100%';
+                lineEl.style.top = '0';
+                lineEl.style.left = `calc(${16.66 + (colNum * 33.33)}% - 3px)`;
+                lineEl.style.transform = 'none';
+            } else if (isDiag1) {
+                lineEl.style.width = '141%';
+                lineEl.style.left = '-20.5%';
+                lineEl.style.transform = 'rotate(45deg)';
+            } else if (isDiag2) {
+                lineEl.style.width = '141%';
+                lineEl.style.left = '-20.5%';
+                lineEl.style.transform = 'rotate(-45deg)';
+            }
+        }
+
+        function triggerConfetti() {
+            const duration = 3 * 1000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#10b981', '#06b6d4']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#10b981', '#06b6d4']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        // Modal
+        function showHowToPlay() {
+            document.getElementById('help-modal').classList.remove('hidden');
+        }
+        function closeHelpModal() {
+            document.getElementById('help-modal').classList.add('hidden');
+        }
+
+        // Start
+        window.addEventListener('DOMContentLoaded', () => {
+            loadData();
+        });
+    </script>
+</body>
+</html>

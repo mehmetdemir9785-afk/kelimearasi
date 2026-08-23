@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Kelimearası Dikdörtgenler (Shikaku) - Izgara bulmacası. Alanı dikdörtgenlerle tamamen kapla!">
+    <title>Dikdörtgenler (Shikaku) | Kelimearası</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        /* ====== ANIMATIONS ====== */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes errFlash {
+            0%   { background-color: rgba(239, 68, 68, 0.0); }
+            20%  { background-color: rgba(239, 68, 68, 0.45); }
+            40%  { background-color: rgba(239, 68, 68, 0.1); }
+            60%  { background-color: rgba(239, 68, 68, 0.45); }
+            80%  { background-color: rgba(239, 68, 68, 0.1); }
+            100% { background-color: rgba(239, 68, 68, 0.0); }
+        }
+
+        @keyframes hintPulse {
+            0%, 100% { background-color: rgba(132, 204, 22, 0.1); }
+            50%      { background-color: rgba(132, 204, 22, 0.4); }
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            0% { transform: translateY(30px) scale(0.95); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        @keyframes pop {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.25); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes heartBreak {
+            0%   { transform: scale(1); opacity: 1; }
+            50%  { transform: scale(1.3); opacity: 0.5; }
+            100% { transform: scale(0.8); opacity: 0.3; }
+        }
+
+        .animate-shake { animation: shake 0.5s ease-in-out; }
+        .animate-err   { animation: errFlash 0.6s ease; }
+        .animate-hint  { animation: hintPulse 0.4s ease 3; }
+        .animate-fade  { animation: fadeIn 0.3s ease-out forwards; }
+        .animate-slide { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-pop   { animation: pop 0.25s ease-out; }
+        .animate-heart { animation: heartBreak 0.4s ease forwards; }
+
+        /* ====== GRID & CELLS ====== */
+        .game-grid {
+            display: grid;
+            gap: 0;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .cell {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #d1d5db;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: background-color 0.12s ease;
+            aspect-ratio: 1;
+        }
+
+        html.dark .cell {
+            border-color: rgba(255, 255, 255, 0.07);
+        }
+
+        /* Number text */
+        .cell .num {
+            font-weight: 800;
+            color: #1e293b;
+            pointer-events: none;
+            z-index: 2;
+            line-height: 1;
+        }
+        html.dark .cell .num {
+            color: #e2e8f0;
+        }
+
+        /* Covered by a placed rectangle */
+        .cell.covered {
+            background-color: rgba(132, 204, 22, 0.10);
+        }
+        html.dark .cell.covered {
+            background-color: rgba(132, 204, 22, 0.08);
+        }
+
+        /* Rectangle edge borders */
+        .cell.rt { border-top: 3px solid #84cc16 !important; }
+        .cell.rb { border-bottom: 3px solid #84cc16 !important; }
+        .cell.rl { border-left: 3px solid #84cc16 !important; }
+        .cell.rr { border-right: 3px solid #84cc16 !important; }
+
+        /* Selected rectangle */
+        .cell.sel {
+            background-color: rgba(132, 204, 22, 0.22) !important;
+        }
+        html.dark .cell.sel {
+            background-color: rgba(132, 204, 22, 0.18) !important;
+        }
+        .cell.sel.rt { border-top-color: #65a30d !important; }
+        .cell.sel.rb { border-bottom-color: #65a30d !important; }
+        .cell.sel.rl { border-left-color: #65a30d !important; }
+        .cell.sel.rr { border-right-color: #65a30d !important; }
+
+        /* Preview (drag) */
+        .cell.preview {
+            background-color: rgba(132, 204, 22, 0.28) !important;
+        }
+        html.dark .cell.preview {
+            background-color: rgba(132, 204, 22, 0.22) !important;
+        }
+
+        /* Grid container */
+        .grid-wrap {
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.06);
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: white;
+            transition: background-color 0.3s;
+        }
+        html.dark .grid-wrap {
+            box-shadow: 0 0 40px rgba(132, 204, 22, 0.06), 0 0 80px rgba(132, 204, 22, 0.03);
+            background-color: #181836;
+        }
+
+        /* Toggle pill */
+        .tgl {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            transition: all 0.2s;
+            color: #64748b;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            white-space: nowrap;
+        }
+        .tgl.on {
+            background: #84cc16;
+            color: white;
+            box-shadow: 0 2px 8px rgba(132, 204, 22, 0.35);
+        }
+        html.dark .tgl {
+            color: #64748b;
+        }
+
+        /* Control button */
+        .ctrl-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #475569;
+            transition: all 0.2s;
+        }
+        .ctrl-btn:hover { background: #f1f5f9; }
+        .ctrl-btn:active { transform: scale(0.95); }
+        html.dark .ctrl-btn {
+            background: rgba(255,255,255,0.04);
+            color: #94a3b8;
+            border-color: rgba(255,255,255,0.07);
+        }
+        html.dark .ctrl-btn:hover { background: rgba(255,255,255,0.08); }
+
+        .ctrl-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        .ctrl-btn:disabled:hover {
+            background: inherit;
+            transform: none;
+        }
+
+        /* Scrollbar hiding */
+        ::-webkit-scrollbar { display: none; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Modal backdrop */
+        .modal-bg {
+            position: fixed; inset: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+    </style>
+    <script src="../js/user-system.js"></script>
+</head>
+<body class="bg-gray-50 dark:bg-[#0c0c1d] text-gray-900 dark:text-gray-100 font-sans h-full flex flex-col transition-colors duration-300">
+
+    <!-- ====== HEADER ====== -->
+    <header class="px-4 py-3 sticky top-0 z-50 w-full flex items-center justify-between border-b border-gray-200/60 dark:border-white/5 backdrop-blur-xl bg-white/80 dark:bg-[#12122b]/80 flex-shrink-0 transition-colors duration-300">
+        <a href="../index.html" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Ana Sayfa">🏠</a>
+        <h1 class="text-xl md:text-2xl font-extrabold tracking-widest bg-gradient-to-r from-lime-500 via-green-500 to-lime-400 text-transparent bg-clip-text drop-shadow-sm dark:drop-shadow-[0_0_12px_rgba(132,204,22,0.5)]">
+            DİKDÖRTGENLER
+        </h1>
+        <button id="helpBtn" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Yardım">❓</button>
+    </header>
+
+    <!-- ====== MAIN CONTENT ====== -->
+    <main class="flex-1 flex flex-col items-center px-3 pt-2 pb-3 gap-1.5 max-w-lg mx-auto w-full overflow-y-auto">
+
+        <!-- Mode Toggles Row 1: Günlük/Sınırsız + Canlı/Cansız -->
+        <div class="flex items-center justify-center gap-2 w-full flex-wrap">
+            <!-- Günlük / Sınırsız -->
+            <div class="flex items-center bg-gray-100 dark:bg-white/5 rounded-xl p-0.5">
+                <button class="tgl on" data-mode="daily" onclick="setMode('daily')">Günlük</button>
+                <button class="tgl" data-mode="unlimited" onclick="setMode('unlimited')">Sınırsız</button>
+            </div>
+            <!-- Canlı / Cansız -->
+            <div class="flex items-center bg-gray-100 dark:bg-white/5 rounded-xl p-0.5">
+                <button class="tgl on" data-live="true" onclick="setLive(true)">Canlı</button>
+                <button class="tgl" data-live="false" onclick="setLive(false)">Cansız</button>
+            </div>
+        </div>
+
+        <!-- Mode Toggles Row 2: Difficulty -->
+        <div class="flex items-center justify-center">
+            <div class="flex items-center bg-gray-100 dark:bg-white/5 rounded-xl p-0.5">
+                <button class="tgl on" data-diff="easy" onclick="setDifficulty('easy')">Kolay 5×5</button>
+                <button class="tgl" data-diff="medium" onclick="setDifficulty('medium')">Orta 7×7</button>
+                <button class="tgl" data-diff="hard" onclick="setDifficulty('hard')">Zor 10×10</button>
+            </div>
+        </div>
+
+        <!-- Info Bar: Lives + Timer -->
+        <div class="flex items-center justify-between w-full px-1">
+            <div id="livesDisplay" class="text-lg tracking-wide select-none transition-all">❤️❤️❤️</div>
+            <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 shadow-sm">
+                <span class="text-gray-400 dark:text-slate-400 text-sm">⏱️</span>
+                <span id="timerDisplay" class="text-gray-700 dark:text-slate-300 text-sm font-bold tracking-wider font-mono">00:00</span>
+            </div>
+        </div>
+
+        <!-- Grid Area -->
+        <div class="grid-wrap w-full" style="max-width: min(85vw, 420px); margin: 0 auto;">
+            <div id="gameGrid" class="game-grid w-full"></div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="flex items-center justify-center gap-3 w-full pt-1">
+            <button id="undoBtn" class="ctrl-btn" onclick="undo()" disabled>
+                <i data-lucide="undo-2" class="w-5 h-5"></i>
+                <span>Geri Al</span>
+            </button>
+            <button id="deleteBtn" class="ctrl-btn" onclick="deleteSelected()" disabled>
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                <span>Sil</span>
+            </button>
+            <button id="hintBtn" class="ctrl-btn" onclick="giveHint()">
+                <i data-lucide="lightbulb" class="w-5 h-5"></i>
+                <span>İpucu</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- ====== HELP MODAL ====== -->
+    <div id="helpModal" class="modal-bg hidden" onclick="if(event.target===this)closeHelp()">
+        <div class="bg-white dark:bg-[#181836] rounded-2xl p-5 max-w-sm w-[90%] shadow-2xl animate-slide">
+            <h2 class="text-lg font-extrabold mb-3 text-center bg-gradient-to-r from-lime-500 to-green-500 text-transparent bg-clip-text">Nasıl Oynanır?</h2>
+            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                <li>📐 <strong>Amaç:</strong> Izgarayı tamamen dikdörtgenlerle kaplayın.</li>
+                <li>👆 <strong>Çizim:</strong> Bir hücreye basılı tutup sürükleyerek dikdörtgen çizin.</li>
+                <li>🔢 <strong>Sayı Kuralı:</strong> Her dikdörtgen tam olarak <strong>bir sayı</strong> içermelidir.</li>
+                <li>✅ <strong>Alan Kuralı:</strong> Sayının değeri, dikdörtgenin hücre sayısına eşit olmalıdır.</li>
+                <li>🚫 <strong>Kesişim:</strong> Dikdörtgenler üst üste gelemez.</li>
+                <li>❤️ <strong>Canlı Mod:</strong> Hatalı çizimlerde can kaybedersiniz.</li>
+                <li>💡 <strong>İpucu:</strong> Bir çözüm dikdörtgenini otomatik yerleştirir.</li>
+            </ul>
+            <button onclick="closeHelp()" class="mt-4 w-full py-2.5 bg-lime-500 hover:bg-lime-600 text-white font-bold rounded-xl transition-colors text-sm">
+                Anladım!
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== WIN MODAL ====== -->
+    <div id="winModal" class="modal-bg hidden" onclick="if(event.target===this)closeWin()">
+        <div class="bg-white dark:bg-[#181836] rounded-2xl p-6 max-w-sm w-[90%] text-center shadow-2xl animate-slide">
+            <div class="text-5xl mb-3">🎉</div>
+            <h2 class="text-2xl font-extrabold mb-1 bg-gradient-to-r from-lime-500 to-green-500 text-transparent bg-clip-text">TEBRİKLER!</h2>
+            <p class="text-gray-500 dark:text-gray-400 text-sm mb-3">Bulmacayı başarıyla tamamladınız!</p>
+            <div class="flex items-center justify-center gap-4 mb-4">
+                <div class="text-center">
+                    <div class="text-xs text-gray-400 dark:text-gray-500">Süre</div>
+                    <div id="winTime" class="text-lg font-bold text-gray-700 dark:text-gray-200 font-mono">00:00</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xs text-gray-400 dark:text-gray-500">İpucu</div>
+                    <div id="winHints" class="text-lg font-bold text-gray-700 dark:text-gray-200">0</div>
+                </div>
+            </div>
+            <button onclick="closeWin(); newGame()" class="w-full py-2.5 bg-lime-500 hover:bg-lime-600 text-white font-bold rounded-xl transition-colors text-sm">
+                Yeni Oyun
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== GAME OVER MODAL ====== -->
+    <div id="gameOverModal" class="modal-bg hidden" onclick="if(event.target===this)closeGameOver()">
+        <div class="bg-white dark:bg-[#181836] rounded-2xl p-6 max-w-sm w-[90%] text-center shadow-2xl animate-slide">
+            <div class="text-5xl mb-3">😢</div>
+            <h2 class="text-2xl font-extrabold mb-1 text-red-500">OYUN BİTTİ!</h2>
+            <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">Tüm canlarınızı kaybettiniz.</p>
+            <button onclick="closeGameOver(); newGame()" class="w-full py-2.5 bg-lime-500 hover:bg-lime-600 text-white font-bold rounded-xl transition-colors text-sm">
+                Tekrar Dene
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== CONFETTI CANVAS ====== -->
+    <canvas id="confettiCanvas" class="fixed inset-0 w-full h-full pointer-events-none z-[99] hidden"></canvas>
+
+<script>
+// =====================================================================
+// STATE
+// =====================================================================
+let rows = 5, cols = 5;
+let puzzle = [];          // 2D: 0 or number
+let solution = [];        // [{r, c, w, h}, ...]
+let placedRects = [];     // [{r1, c1, r2, c2}, ...]
+let coveredBy = [];       // 2D: -1 or index into placedRects
+let lives = 3;
+const MAX_LIVES = 3;
+let timerSec = 0;
+let timerInterval = null;
+let isDragging = false;
+let dragStart = null;     // {row, col}
+let dragCurrent = null;   // {row, col}
+let selectedIdx = -1;
+let isDaily = true;
+let isLive = true;
+let difficulty = 'easy';
+let gameOver = false;
+let gameWon = false;
+let hintsUsed = 0;
+let cellEls = [];         // 2D array of cell DOM elements
+
+const gridEl = document.getElementById('gameGrid');
+const livesEl = document.getElementById('livesDisplay');
+const timerEl = document.getElementById('timerDisplay');
+
+// =====================================================================
+// SEEDED PRNG (Mulberry32)
+// =====================================================================
+function mulberry32(a) {
+    return function() {
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+}
+
+function getDailySeed() {
+    const d = new Date();
+    const dateNum = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    const diffMul = difficulty === 'easy' ? 1 : difficulty === 'medium' ? 2 : 3;
+    return dateNum * 10 + diffMul;
+}
+
+// =====================================================================
+// PUZZLE GENERATION
+// =====================================================================
+function generatePuzzle(R, C, rng) {
+    // Start with one big rectangle, then randomly split
+    let rects = [{ r: 0, c: 0, w: C, h: R }];
+    const totalCells = R * C;
+    const targetCount = Math.max(4, Math.floor(totalCells / 3.2));
+
+    for (let iter = 0; iter < targetCount * 5 && rects.length < targetCount; iter++) {
+        // Pick splittable rect
+        const cands = rects.filter(rc => rc.w * rc.h >= 4 || (rc.w >= 2 && rc.h >= 2));
+        if (cands.length === 0) break;
+        const rect = cands[Math.floor(rng() * cands.length)];
+        const idx = rects.indexOf(rect);
+
+        const canH = rect.h >= 2;
+        const canV = rect.w >= 2;
+        if (!canH && !canV) continue;
+
+        let splitH;
+        if (canH && canV) splitH = rng() < 0.5;
+        else splitH = canH;
+
+        if (splitH) {
+            const splits = [];
+            for (let s = 1; s < rect.h; s++) {
+                const a1 = rect.w * s, a2 = rect.w * (rect.h - s);
+                if (a1 >= 1 && a2 >= 1) splits.push(s);
+            }
+            if (splits.length === 0) continue;
+            const s = splits[Math.floor(rng() * splits.length)];
+            rects.splice(idx, 1,
+                { r: rect.r, c: rect.c, w: rect.w, h: s },
+                { r: rect.r + s, c: rect.c, w: rect.w, h: rect.h - s }
+            );
+        } else {
+            const splits = [];
+            for (let s = 1; s < rect.w; s++) {
+                const a1 = rect.h * s, a2 = rect.h * (rect.w - s);
+                if (a1 >= 1 && a2 >= 1) splits.push(s);
+            }
+            if (splits.length === 0) continue;
+            const s = splits[Math.floor(rng() * splits.length)];
+            rects.splice(idx, 1,
+                { r: rect.r, c: rect.c, w: s, h: rect.h },
+                { r: rect.r, c: rect.c + s, w: rect.w - s, h: rect.h }
+            );
+        }
+    }
+
+    // Build grid with numbers
+    const grid = Array.from({ length: R }, () => Array(C).fill(0));
+    for (const rc of rects) {
+        const area = rc.w * rc.h;
+        const nr = rc.r + Math.floor(rng() * rc.h);
+        const nc = rc.c + Math.floor(rng() * rc.w);
+        grid[nr][nc] = area;
+    }
+
+    return { grid, solution: rects };
+}
+
+// =====================================================================
+// GRID CREATION & RENDERING
+// =====================================================================
+function createGrid() {
+    gridEl.innerHTML = '';
+    gridEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    gridEl.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+    cellEls = [];
+
+    const fontSize = rows <= 5 ? 'text-lg md:text-xl' : rows <= 7 ? 'text-base md:text-lg' : 'text-xs md:text-sm';
+
+    for (let r = 0; r < rows; r++) {
+        cellEls[r] = [];
+        for (let c = 0; c < cols; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+
+            if (puzzle[r][c] > 0) {
+                const span = document.createElement('span');
+                span.className = `num ${fontSize}`;
+                span.textContent = puzzle[r][c];
+                cell.appendChild(span);
+            }
+
+            gridEl.appendChild(cell);
+            cellEls[r][c] = cell;
+        }
+    }
+}
+
+function updateVisuals() {
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const cell = cellEls[r][c];
+            cell.classList.remove('covered', 'rt', 'rb', 'rl', 'rr', 'sel', 'preview');
+
+            const idx = coveredBy[r][c];
+            if (idx >= 0) {
+                const rect = placedRects[idx];
+                cell.classList.add('covered');
+                if (r === rect.r1) cell.classList.add('rt');
+                if (r === rect.r2) cell.classList.add('rb');
+                if (c === rect.c1) cell.classList.add('rl');
+                if (c === rect.c2) cell.classList.add('rr');
+                if (idx === selectedIdx) cell.classList.add('sel');
+            }
+        }
+    }
+    updateBtnStates();
+}
+
+function updatePreview() {
+    if (!isDragging || !dragStart || !dragCurrent) {
+        // Clear all previews
+        for (let r = 0; r < rows; r++)
+            for (let c = 0; c < cols; c++)
+                cellEls[r][c].classList.remove('preview');
+        return;
+    }
+
+    const r1 = Math.min(dragStart.row, dragCurrent.row);
+    const c1 = Math.min(dragStart.col, dragCurrent.col);
+    const r2 = Math.max(dragStart.row, dragCurrent.row);
+    const c2 = Math.max(dragStart.col, dragCurrent.col);
+
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            if (r >= r1 && r <= r2 && c >= c1 && c <= c2) {
+                cellEls[r][c].classList.add('preview');
+            } else {
+                cellEls[r][c].classList.remove('preview');
+            }
+        }
+    }
+}
+
+function renderLives() {
+    if (!isLive) {
+        livesEl.textContent = '♾️';
+        livesEl.classList.remove('animate-heart');
+        return;
+    }
+    let html = '';
+    for (let i = 0; i < MAX_LIVES; i++) {
+        html += i < lives ? '❤️' : '🖤';
+    }
+    livesEl.textContent = html;
+}
+
+function updateBtnStates() {
+    document.getElementById('undoBtn').disabled = placedRects.length === 0 || gameOver || gameWon;
+    document.getElementById('deleteBtn').disabled = selectedIdx < 0 || gameOver || gameWon;
+    document.getElementById('hintBtn').disabled = gameOver || gameWon;
+}
+
+// =====================================================================
+// DRAG / DRAW LOGIC
+// =====================================================================
+function handleDragStart(r, c) {
+    if (gameOver || gameWon) return;
+    isDragging = true;
+    dragStart = { row: r, col: c };
+    dragCurrent = { row: r, col: c };
+    selectedIdx = -1;
+    updateVisuals();
+    updatePreview();
+}
+
+function handleDragMove(r, c) {
+    if (!isDragging) return;
+    if (dragCurrent && dragCurrent.row === r && dragCurrent.col === c) return;
+    dragCurrent = { row: r, col: c };
+    updatePreview();
+}
+
+function handleDragEnd() {
+    if (!isDragging) {
+        return;
+    }
+    isDragging = false;
+    updatePreview(); // clear preview
+
+    if (!dragStart || !dragCurrent) return;
+
+    const r1 = Math.min(dragStart.row, dragCurrent.row);
+    const c1 = Math.min(dragStart.col, dragCurrent.col);
+    const r2 = Math.max(dragStart.row, dragCurrent.row);
+    const c2 = Math.max(dragStart.col, dragCurrent.col);
+
+    // Same cell click → toggle selection
+    if (r1 === r2 && c1 === c2 && coveredBy[r1][c1] >= 0) {
+        selectedIdx = selectedIdx === coveredBy[r1][c1] ? -1 : coveredBy[r1][c1];
+        updateVisuals();
+        dragStart = null;
+        dragCurrent = null;
+        return;
+    }
+
+    // Try to place rectangle
+    tryPlaceRect(r1, c1, r2, c2);
+    dragStart = null;
+    dragCurrent = null;
+}
+
+// =====================================================================
+// PLACEMENT & VALIDATION
+// =====================================================================
+function tryPlaceRect(r1, c1, r2, c2) {
+    if (gameOver || gameWon) return;
+
+    // Check overlap
+    for (let r = r1; r <= r2; r++) {
+        for (let c = c1; c <= c2; c++) {
+            if (coveredBy[r][c] >= 0) {
+                showErrorFlash(r1, c1, r2, c2);
+                return;
+            }
+        }
+    }
+
+    // Validate in live mode
+    if (isLive) {
+        const v = validateRect(r1, c1, r2, c2);
+        if (!v.valid) {
+            showErrorFlash(r1, c1, r2, c2);
+            loseLife();
+            return;
+        }
+    }
+
+    // Place it
+    const rect = { r1, c1, r2, c2 };
+    placedRects.push(rect);
+    const idx = placedRects.length - 1;
+    for (let r = r1; r <= r2; r++)
+        for (let c = c1; c <= c2; c++)
+            coveredBy[r][c] = idx;
+
+    selectedIdx = -1;
+    updateVisuals();
+    checkWin();
+}
+
+function validateRect(r1, c1, r2, c2) {
+    const area = (r2 - r1 + 1) * (c2 - c1 + 1);
+    let numCount = 0, numVal = 0;
+    for (let r = r1; r <= r2; r++) {
+        for (let c = c1; c <= c2; c++) {
+            if (puzzle[r][c] > 0) {
+                numCount++;
+                numVal = puzzle[r][c];
+            }
+        }
+    }
+    if (numCount === 0) return { valid: false };
+    if (numCount > 1) return { valid: false };
+    if (numVal !== area) return { valid: false };
+    return { valid: true };
+}
+
+function showErrorFlash(r1, c1, r2, c2) {
+    for (let r = r1; r <= r2; r++) {
+        for (let c = c1; c <= c2; c++) {
+            const cell = cellEls[r][c];
+            cell.classList.remove('animate-err');
+            void cell.offsetWidth; // reflow
+            cell.classList.add('animate-err');
+        }
+    }
+    // Also shake the grid
+    gridEl.classList.remove('animate-shake');
+    void gridEl.offsetWidth;
+    gridEl.classList.add('animate-shake');
+
+    setTimeout(() => {
+        for (let r = r1; r <= r2; r++)
+            for (let c = c1; c <= c2; c++)
+                cellEls[r][c].classList.remove('animate-err');
+        gridEl.classList.remove('animate-shake');
+    }, 650);
+}
+
+function loseLife() {
+    lives--;
+    renderLives();
+    livesEl.classList.remove('animate-shake');
+    void livesEl.offsetWidth;
+    livesEl.classList.add('animate-shake');
+
+    if (lives <= 0) {
+        gameOver = true;
+        stopTimer();
+        setTimeout(() => {
+            document.getElementById('gameOverModal').classList.remove('hidden');
+        }, 400);
+    }
+}
+
+// =====================================================================
+// WIN CHECK
+// =====================================================================
+function checkWin() {
+    for (let r = 0; r < rows; r++)
+        for (let c = 0; c < cols; c++)
+            if (coveredBy[r][c] < 0) return;
+
+    // All covered — validate all rects
+    let allValid = true;
+    for (let i = 0; i < placedRects.length; i++) {
+        const rc = placedRects[i];
+        if (!validateRect(rc.r1, rc.c1, rc.r2, rc.c2).valid) {
+            allValid = false;
+            showErrorFlash(rc.r1, rc.c1, rc.r2, rc.c2);
+        }
+    }
+
+    if (!allValid) return;
+
+    // WIN!
+    gameWon = true;
+    stopTimer();
+    updateBtnStates();
+
+    // XP & Başarım sistemi
+    if (window.KaUser) {
+        window.KaUser.addGameResult('shihaku', 'logic', true, timerSec);
+    }
+
+    // Show confetti then modal
+    showConfetti();
+    setTimeout(() => {
+        document.getElementById('winTime').textContent = formatTime(timerSec);
+        document.getElementById('winHints').textContent = hintsUsed;
+        document.getElementById('winModal').classList.remove('hidden');
+    }, 600);
+}
+
+// =====================================================================
+// UNDO / DELETE / HINT
+// =====================================================================
+function undo() {
+    if (placedRects.length === 0 || gameOver || gameWon) return;
+    placedRects.pop();
+    rebuildCoverage();
+    selectedIdx = -1;
+    updateVisuals();
+}
+
+function deleteSelected() {
+    if (selectedIdx < 0 || gameOver || gameWon) return;
+    placedRects.splice(selectedIdx, 1);
+    rebuildCoverage();
+    selectedIdx = -1;
+    updateVisuals();
+}
+
+function giveHint() {
+    if (gameOver || gameWon) return;
+
+    // Find a solution rect whose area is completely uncovered
+    for (const sr of solution) {
+        const r1 = sr.r, c1 = sr.c;
+        const r2 = sr.r + sr.h - 1, c2 = sr.c + sr.w - 1;
+
+        let allFree = true;
+        for (let r = r1; r <= r2 && allFree; r++)
+            for (let c = c1; c <= c2 && allFree; c++)
+                if (coveredBy[r][c] >= 0) allFree = false;
+
+        if (allFree) {
+            // Flash hint
+            for (let r = r1; r <= r2; r++) {
+                for (let c = c1; c <= c2; c++) {
+                    cellEls[r][c].classList.add('animate-hint');
+                }
+            }
+            setTimeout(() => {
+                for (let r = r1; r <= r2; r++)
+                    for (let c = c1; c <= c2; c++)
+                        cellEls[r][c].classList.remove('animate-hint');
+                // Auto-place
+                tryPlaceRect(r1, c1, r2, c2);
+            }, 500);
+
+            hintsUsed++;
+            return;
+        }
+    }
+    // No fully free solution rect — remove last placed rect as help
+    if (placedRects.length > 0) {
+        undo();
+    }
+}
+
+function rebuildCoverage() {
+    coveredBy = Array.from({ length: rows }, () => Array(cols).fill(-1));
+    for (let i = 0; i < placedRects.length; i++) {
+        const rc = placedRects[i];
+        for (let r = rc.r1; r <= rc.r2; r++)
+            for (let c = rc.c1; c <= rc.c2; c++)
+                coveredBy[r][c] = i;
+    }
+}
+
+// =====================================================================
+// TIMER
+// =====================================================================
+function startTimer() {
+    stopTimer();
+    timerSec = 0;
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+        timerSec++;
+        updateTimerDisplay();
+    }, 1000);
+}
+
+function stopTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
+function updateTimerDisplay() {
+    timerEl.textContent = formatTime(timerSec);
+}
+
+function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+// =====================================================================
+// MODALS
+// =====================================================================
+function closeHelp() { document.getElementById('helpModal').classList.add('hidden'); }
+function closeWin() { document.getElementById('winModal').classList.add('hidden'); }
+function closeGameOver() { document.getElementById('gameOverModal').classList.add('hidden'); }
+
+document.getElementById('helpBtn').addEventListener('click', () => {
+    document.getElementById('helpModal').classList.remove('hidden');
+});
+
+// =====================================================================
+// MODE / DIFFICULTY
+// =====================================================================
+function setMode(mode) {
+    isDaily = mode === 'daily';
+    document.querySelectorAll('[data-mode]').forEach(b => {
+        b.classList.toggle('on', b.dataset.mode === mode);
+    });
+    newGame();
+}
+
+function setLive(live) {
+    isLive = live;
+    document.querySelectorAll('[data-live]').forEach(b => {
+        b.classList.toggle('on', (b.dataset.live === 'true') === live);
+    });
+    lives = MAX_LIVES;
+    renderLives();
+    // Don't reset game, just toggle mode
+    updateBtnStates();
+}
+
+function setDifficulty(diff) {
+    difficulty = diff;
+    document.querySelectorAll('[data-diff]').forEach(b => {
+        b.classList.toggle('on', b.dataset.diff === diff);
+    });
+    newGame();
+}
+
+// =====================================================================
+// CONFETTI
+// =====================================================================
+function showConfetti() {
+    const canvas = document.getElementById('confettiCanvas');
+    canvas.classList.remove('hidden');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+
+    const colors = ['#84cc16', '#22c55e', '#eab308', '#ef4444', '#3b82f6', '#a855f7', '#ec4899', '#f97316'];
+    const particles = [];
+
+    for (let i = 0; i < 180; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: -10 - Math.random() * canvas.height * 0.6,
+            w: Math.random() * 10 + 4,
+            h: Math.random() * 6 + 2,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            speed: Math.random() * 3 + 1.5,
+            angle: Math.random() * Math.PI * 2,
+            spin: (Math.random() - 0.5) * 0.15,
+            drift: (Math.random() - 0.5) * 1.5,
+            opacity: 1
+        });
+    }
+
+    let frame = 0;
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let alive = false;
+
+        for (const p of particles) {
+            p.y += p.speed;
+            p.x += p.drift;
+            p.angle += p.spin;
+            if (p.y > canvas.height + 20) {
+                p.opacity -= 0.05;
+            }
+            if (p.opacity > 0) alive = true;
+
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, p.opacity);
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.angle);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+        }
+
+        frame++;
+        if (alive && frame < 350) {
+            requestAnimationFrame(animate);
+        } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvas.classList.add('hidden');
+        }
+    }
+    animate();
+}
+
+// =====================================================================
+// MOUSE EVENTS
+// =====================================================================
+gridEl.addEventListener('mousedown', (e) => {
+    const cell = e.target.closest('[data-row]');
+    if (!cell) return;
+    e.preventDefault();
+    handleDragStart(+cell.dataset.row, +cell.dataset.col);
+});
+
+gridEl.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const cell = e.target.closest('[data-row]');
+    if (!cell) return;
+    handleDragMove(+cell.dataset.row, +cell.dataset.col);
+});
+
+document.addEventListener('mouseup', (e) => {
+    if (isDragging) handleDragEnd();
+});
+
+// =====================================================================
+// TOUCH EVENTS
+// =====================================================================
+gridEl.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cell = el ? el.closest('[data-row]') : null;
+    if (!cell) return;
+    handleDragStart(+cell.dataset.row, +cell.dataset.col);
+}, { passive: false });
+
+gridEl.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cell = el ? el.closest('[data-row]') : null;
+    if (!cell) return;
+    handleDragMove(+cell.dataset.row, +cell.dataset.col);
+}, { passive: false });
+
+gridEl.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    if (isDragging) handleDragEnd();
+}, { passive: false });
+
+gridEl.addEventListener('contextmenu', e => e.preventDefault());
+
+// =====================================================================
+// KEYBOARD SHORTCUTS
+// =====================================================================
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
+    if (e.key === 'Delete' || e.key === 'Backspace') { deleteSelected(); }
+    if (e.key === 'Escape') { selectedIdx = -1; updateVisuals(); }
+});
+
+// =====================================================================
+// NEW GAME
+// =====================================================================
+function newGame() {
+    stopTimer();
+    lives = MAX_LIVES;
+    timerSec = 0;
+    gameOver = false;
+    gameWon = false;
+    placedRects = [];
+    selectedIdx = -1;
+    hintsUsed = 0;
+    isDragging = false;
+    dragStart = null;
+    dragCurrent = null;
+
+    // Grid size
+    if (difficulty === 'easy') { rows = 5; cols = 5; }
+    else if (difficulty === 'medium') { rows = 7; cols = 7; }
+    else { rows = 10; cols = 10; }
+
+    // RNG
+    let rng;
+    if (isDaily) {
+        rng = mulberry32(getDailySeed());
+    } else {
+        rng = mulberry32(Math.floor(Math.random() * 2147483647));
+    }
+
+    const result = generatePuzzle(rows, cols, rng);
+    puzzle = result.grid;
+    solution = result.solution;
+
+    coveredBy = Array.from({ length: rows }, () => Array(cols).fill(-1));
+
+    createGrid();
+    renderLives();
+    updateTimerDisplay();
+    updateBtnStates();
+    startTimer();
+
+    // Close modals
+    closeHelp();
+    closeWin();
+    closeGameOver();
+}
+
+// =====================================================================
+// INIT
+// =====================================================================
+function init() {
+    newGame();
+    // Init Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+init();
+</script>
+</body>
+</html>

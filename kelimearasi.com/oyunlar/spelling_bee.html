@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Petek - Spelling Bee tarzı Türkçe kelime bulmaca oyunu. 7 harfle geçerli kelimeler türet! | kelimearası.com">
+    <title>Petek | Kelimearası</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+                    },
+                    keyframes: {
+                        'shake': {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-5px)' },
+                            '20%, 40%, 60%, 80%': { transform: 'translateX(5px)' },
+                        },
+                        'pop': {
+                            '0%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.25)' },
+                            '100%': { transform: 'scale(1)' },
+                        },
+                        'modalSlideUp': {
+                            '0%': { opacity: '0', transform: 'translateY(40px) scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                        },
+                        'confettiDrop': {
+                            '0%': { transform: 'translateY(-100vh) rotate(0deg)', opacity: '1' },
+                            '100%': { transform: 'translateY(100vh) rotate(720deg)', opacity: '0' },
+                        },
+                        'scorePopUp': {
+                            '0%': { opacity: '1', transform: 'translate(-50%, -50%) scale(1)' },
+                            '100%': { opacity: '0', transform: 'translate(-50%, -100%) scale(1.5)' },
+                        },
+                    },
+                    animation: {
+                        'shake': 'shake 0.5s ease-in-out',
+                        'pop': 'pop 0.2s ease-out',
+                        'modalSlideUp': 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'confettiDrop': 'confettiDrop 2.5s ease-in forwards',
+                        'scorePopUp': 'scorePopUp 1s ease-out forwards',
+                    },
+                },
+            },
+        }
+    </script>
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <!-- Kelime Listesi -->
+    <script src="../spelling bee kelime listesi/spelling_bee_kelimeler.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            height: 100dvh;
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+        }
+
+        /* ====== NEON TITLE ====== */
+        .neon-title {
+            background: linear-gradient(135deg, #f59e0b, #d97706, #ea580c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.4));
+        }
+
+        /* ====== PETEK (HONEYCOMB) ====== */
+        .honeycomb {
+            --cell-size: 64px;
+            --cell-gap: 4px;
+            position: relative;
+            width: calc(var(--cell-size) * 3 + var(--cell-gap) * 4);
+            height: calc(var(--cell-size) * 3.5 + var(--cell-gap) * 2);
+            margin: 0 auto;
+        }
+
+        @media (min-width: 768px) { .honeycomb { --cell-size: 78px; --cell-gap: 5px; } }
+        @media (max-height: 700px) { .honeycomb { --cell-size: 56px; --cell-gap: 3px; } }
+        @media (max-height: 600px) { .honeycomb { --cell-size: 46px; --cell-gap: 3px; } }
+
+        .hex-cell {
+            position: absolute;
+            width: var(--cell-size);
+            height: calc(var(--cell-size) * 1.1547); 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            font-weight: 800;
+            font-size: clamp(1rem, calc(var(--cell-size) * 0.35), 1.6rem);
+            transition: transform 0.1s ease, filter 0.15s ease;
+            z-index: 2;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        }
+
+        .hex-cell:active {
+            transform: scale(0.88) !important;
+        }
+
+        .hex-cell.center-hex {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #1a1a2e;
+            z-index: 3;
+            filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.5));
+        }
+
+        .hex-cell.outer-hex {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
+        .hex-cell.outer-hex:hover {
+            filter: brightness(1.3);
+        }
+
+        /* ====== TOAST ====== */
+        .toast-msg {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            opacity: 0;
+            z-index: 200;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            white-space: nowrap;
+        }
+        .toast-msg.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast-msg.t-error { background: rgba(15, 23, 42, 0.95); color: #FCA5A5; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .toast-msg.t-success { background: rgba(15, 23, 42, 0.95); color: #86EFAC; border: 1px solid rgba(34, 197, 94, 0.4); }
+        .toast-msg.t-pangram { background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(234,88,12,0.2)); color: #FCD34D; border: 1px solid rgba(245, 158, 11, 0.5); }
+        .toast-msg.t-info { background: rgba(15, 23, 42, 0.95); color: #93C5FD; border: 1px solid rgba(59, 130, 246, 0.4); }
+
+        /* ====== MODAL ====== */
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.80);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        /* ====== PROGRESS BAR ====== */
+        .progress-track {
+            position: relative;
+            height: 6px;
+            border-radius: 999px;
+            overflow: visible;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #f59e0b, #ea580c);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .progress-dot {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #475569;
+            border: 2px solid #0c0c1d;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        .progress-dot.reached { background: #f59e0b; }
+        .progress-dot.active-dot { background: #ea580c; width: 14px; height: 14px; box-shadow: 0 0 8px rgba(234, 88, 12, 0.6); }
+
+        /* ====== SCORE POP-UP ====== */
+        .score-popup { position: fixed; top: 50%; left: 50%; font-size: 2rem; font-weight: 900; z-index: 150; pointer-events: none; }
+
+        /* ====== FOUND WORDS ====== */
+        .found-word-chip {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: #1e293b;
+            color: #94a3b8;
+            border: 1px solid #334155;
+        }
+        .found-word-chip.pangram-chip {
+            background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(234,88,12,0.2));
+            color: #fcd34d;
+            border-color: rgba(245, 158, 11, 0.4);
+        }
+
+        /* ====== CONFETTI ====== */
+        .confetti-piece { position: fixed; top: -20px; z-index: 300; pointer-events: none; }
+
+        /* ====== ACTION BUTTONS ====== */
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 10px 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #94a3b8;
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 16px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: all 0.1s ease;
+            min-height: 52px;
+            min-width: 52px;
+        }
+        .action-btn:active { transform: scale(0.92); background: #334155; }
+        .action-btn:hover:not(:disabled) { background: #334155; color: #e2e8f0; }
+        .action-btn.primary { background: linear-gradient(135deg, #f59e0b, #ea580c); color: #fff; border-color: #d97706; }
+        .action-btn.primary:active:not(:disabled) { filter: brightness(0.85); }
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+        /* Scrollbar */
+        .words-scroll::-webkit-scrollbar { width: 4px; }
+        .words-scroll::-webkit-scrollbar-track { background: transparent; }
+        .words-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
+
+        /* =========================================================================
+           LIGHT MODE OVERRIDES 
+           (For hardcoded CSS classes and JS-injected Tailwind utility classes) 
+           ========================================================================= */
+        html:not(.dark) .hex-cell.outer-hex { background: #ffffff; color: #111827; }
+        html:not(.dark) .hex-cell.outer-hex:hover { background: #f3f4f6; filter: brightness(0.95); }
+        
+        html:not(.dark) .progress-dot { background: #d1d5db; border-color: #f9fafb; }
+        
+        html:not(.dark) .found-word-chip { background: #ffffff; color: #4b5563; border-color: rgba(229, 231, 235, 1); }
+        html:not(.dark) .found-word-chip.pangram-chip { color: #d97706; }
+        
+        html:not(.dark) .action-btn { background: #ffffff; color: #4b5563; border-color: rgba(229, 231, 235, 1); }
+        html:not(.dark) .action-btn:hover:not(:disabled) { background: #f3f4f6; color: #111827; }
+        
+        html:not(.dark) .words-scroll::-webkit-scrollbar-thumb { background: #d1d5db; }
+        
+        html:not(.dark) .modal-backdrop { background: rgba(255, 255, 255, 0.4); }
+        
+        /* JS overrides */
+        html:not(.dark) .text-white { color: #111827 !important; } 
+        html:not(.dark) .text-slate-500 { color: #6b7280 !important; }
+        html:not(.dark) .border-slate-700\/40 { border-color: rgba(229, 231, 235, 1) !important; }
+        
+        /* Toast overrides */
+        html:not(.dark) .toast-msg { background: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        html:not(.dark) .toast-msg.t-error { color: #ef4444; border: 1px solid #fca5a5; }
+        html:not(.dark) .toast-msg.t-success { color: #16a34a; border: 1px solid #86efac; }
+        html:not(.dark) .toast-msg.t-pangram { color: #d97706; border: 1px solid #fcd34d; }
+        html:not(.dark) .toast-msg.t-info { color: #2563eb; border: 1px solid #93c5fd; }
+    </style>
+    <script src="../js/user-system.js"></script>
+</head>
+<body class="flex flex-col h-[100dvh] overflow-hidden bg-gray-50 dark:bg-[#0c0c1d] text-gray-900 dark:text-gray-100">
+
+    <!-- Toast -->
+    <div id="toast" class="toast-msg"></div>
+
+    <!-- ====== HEADER ====== -->
+    <header class="flex-none flex items-center justify-between px-4 sm:px-6 py-3 border-b border-gray-200/60 dark:border-white/5 sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-[#12122b]/80">
+        <a href="../index.html" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Ana Sayfa">🏠</a>
+        <h1 class="neon-title text-xl sm:text-2xl font-black tracking-widest select-none">PETEK</h1>
+        <button id="helpBtn" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Nasıl Oynanır">❓</button>
+    </header>
+
+    <!-- ====== MODE TOGGLE ====== -->
+    <div class="w-full bg-white dark:bg-[#12122b] py-2 border-b border-gray-200/60 dark:border-white/5 flex justify-center z-40 relative">
+        <div class="flex bg-gray-100 dark:bg-[#181836] rounded-full p-1 border border-gray-200/60 dark:border-white/5">
+            <a href="?mode=daily" id="modeDailyBtn" class="px-4 py-1.5 text-[11px] uppercase tracking-wider font-bold rounded-full transition-colors text-gray-500 hover:text-gray-900 dark:text-slate-400 dark:hover:text-white">Günlük Mod</a>
+            <a href="?mode=unlimited" id="modeUnlimitedBtn" class="px-4 py-1.5 text-[11px] uppercase tracking-wider font-bold rounded-full transition-colors text-gray-500 hover:text-gray-900 dark:text-slate-400 dark:hover:text-white">Sınırsız Mod</a>
+        </div>
+    </div>
+
+    <!-- ====== MAIN ====== -->
+    <main class="flex-1 flex flex-col items-center min-h-0 w-full max-w-lg mx-auto px-4 pt-2 pb-2">
+
+        <!-- Progress Bar -->
+        <div class="w-full flex-none mb-1 mt-1">
+            <div class="flex items-center justify-between text-xs font-bold mb-1">
+                <span id="currentRankLabel" class="text-amber-400 transition-all duration-300">Başlangıç</span>
+                <span class="text-gray-500 dark:text-slate-400"><span id="currentScore">0</span> / <span id="maxScoreDisplay">0</span></span>
+            </div>
+            <div class="progress-track w-full bg-gray-200 dark:bg-[#181836]" id="progressTrack">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Found Words Accordion -->
+        <div class="w-full flex-none mb-1.5 mt-2">
+            <button class="w-full flex items-center justify-between bg-white dark:bg-[#181836] rounded-xl px-3 py-2 border border-gray-200/60 dark:border-white/5 focus:outline-none" id="foundWordsToggle">
+                <span class="text-xs font-bold text-gray-700 dark:text-slate-300">
+                    Bulunan Kelimeler: <span id="foundCount" class="text-amber-500 dark:text-amber-400">0</span>
+                </span>
+                <svg id="foundChevron" class="w-4 h-4 text-gray-500 dark:text-slate-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div id="foundWordsPanel" class="overflow-hidden transition-all duration-300" style="max-height: 0;">
+                <div class="flex flex-wrap gap-1.5 pt-2 pb-1 px-1 words-scroll max-h-24 overflow-y-auto" id="foundWordsList"></div>
+            </div>
+        </div>
+
+        <!-- Input Display -->
+        <div class="w-full flex-none mb-1.5 mt-1">
+            <div id="inputDisplay" class="w-full text-center text-2xl sm:text-3xl font-black tracking-[0.15em] min-h-[48px] flex items-center justify-center bg-white dark:bg-[#181836] rounded-2xl border-2 border-slate-700/40 px-4 py-2 transition-all duration-200 cursor-text">
+                <span class="text-slate-500 text-sm font-medium" id="inputPlaceholder">Harf seçerek kelime yaz</span>
+            </div>
+        </div>
+
+        <!-- Honeycomb Area -->
+        <div class="flex-1 flex items-center justify-center min-h-0 w-full shrink">
+            <div class="honeycomb" id="honeycomb"></div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex-none flex items-center justify-center gap-3 w-full mt-1.5 mb-1">
+            <button class="action-btn" id="deleteBtn" title="Sil (Backspace)">
+                <i data-lucide="delete" class="w-5 h-5"></i>
+                <span>SİL</span>
+            </button>
+            <button class="action-btn" id="shuffleBtn" title="Karıştır">
+                <i data-lucide="shuffle" class="w-5 h-5"></i>
+                <span>KARIŞTIR</span>
+            </button>
+            <button class="action-btn primary" id="submitBtn" title="Onayla (Enter)">
+                <i data-lucide="check" class="w-5 h-5"></i>
+                <span>ONAYLA</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- ====== HELP MODAL ====== -->
+    <div id="helpModal" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto animate-modalSlideUp">
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="text-xl font-black neon-title">Nasıl Oynanır?</h2>
+                <button id="closeHelpBtn" class="text-gray-400 hover:text-gray-900 dark:text-slate-400 dark:hover:text-white transition-colors p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="space-y-4 text-sm text-gray-700 dark:text-slate-300 leading-relaxed">
+                <p><strong class="text-gray-900 dark:text-white">Hedef:</strong> Petekteki 7 harfi kullanarak mümkün olduğunca çok geçerli Türkçe kelime bul!</p>
+                <div class="flex items-center gap-3 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                    <div class="w-10 h-10 flex items-center justify-center bg-amber-500 rounded-lg text-lg font-black text-white dark:text-slate-900 shrink-0" style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);">A</div>
+                    <p class="text-xs text-amber-600 dark:text-amber-200">Merkezdeki <strong>altın harf</strong> her kelimede <strong>mutlaka</strong> bulunmalıdır.</p>
+                </div>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li>Kelimeler <strong>en az 4, en fazla 7 harf</strong> uzunluğunda olmalıdır.</li>
+                    <li>Harfler bir kelime içinde <strong>birden fazla kez</strong> kullanılabilir.</li>
+                    <li>7 harfin tamamını kullanan kelimelere <strong class="text-amber-500 dark:text-amber-400">PANGRAM</strong> denir ve <strong>ekstra 7 puan</strong> kazandırır! ⭐</li>
+                </ul>
+                <p class="font-bold text-gray-900 dark:text-white mt-3">Puanlama:</p>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>4 harfli kelimeler → <strong>1 puan</strong></li>
+                    <li>5+ harfli kelimeler → <strong>harf sayısı kadar puan</strong></li>
+                    <li>Pangram → <strong>+7 bonus puan</strong></li>
+                </ul>
+                <p class="text-xs text-amber-500 dark:text-amber-400 mt-2 font-bold">Hedef puanın %100'üne ulaştığında DAHİ rütbesini kazanır ve oyunu bitirirsin!</p>
+                <p class="text-xs text-gray-500 dark:text-slate-400 italic mt-3">💡 Fiziksel klavyeni de kullanabilirsin! Enter = Onayla, Backspace = Sil.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== GAME OVER MODAL ====== -->
+    <div id="gameOverModal" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl flex flex-col max-h-[95vh] animate-modalSlideUp">
+            <div class="text-center mb-5 shrink-0">
+                <div class="text-5xl mb-3" id="gameOverEmoji">🏆</div>
+                <h2 class="text-2xl font-black neon-title mb-1">Tebrikler!</h2>
+                <p id="gameOverMessage" class="text-sm text-gray-500 dark:text-slate-400">Harika oynadın!</p>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mb-4 shrink-0">
+                <div class="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3 text-center">
+                    <div id="finalScore" class="text-2xl font-black text-amber-500 dark:text-amber-400">0</div>
+                    <div class="text-[10px] text-amber-600 dark:text-amber-400/80 font-bold uppercase mt-1">Puan</div>
+                </div>
+                <div class="bg-green-500/10 border border-green-500/20 rounded-2xl p-3 text-center">
+                    <div id="finalWords" class="text-2xl font-black text-green-500 dark:text-green-400">0</div>
+                    <div class="text-[10px] text-green-600 dark:text-green-400/80 font-bold uppercase mt-1">Kelime</div>
+                </div>
+                <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-3 text-center">
+                    <div id="finalPangrams" class="text-2xl font-black text-yellow-500 dark:text-yellow-400">0</div>
+                    <div class="text-[10px] text-yellow-600 dark:text-yellow-400/80 font-bold uppercase mt-1">Pangram</div>
+                </div>
+            </div>
+            <div class="text-center mb-4 shrink-0">
+                <span class="text-xs text-gray-500 dark:text-slate-400">Rütbe:</span>
+                <span id="finalRank" class="text-lg font-black text-amber-500 dark:text-amber-400 ml-1">Dahi</span>
+            </div>
+            <div class="flex-1 overflow-y-auto mb-4 rounded-xl bg-gray-50 dark:bg-slate-900/50 p-3 min-h-0">
+                <div id="gameOverWordsList" class="flex flex-wrap gap-1.5"></div>
+            </div>
+            <div class="flex gap-3 shrink-0">
+                <button id="newGameBtn" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-sm hover:opacity-90 flex items-center justify-center gap-2">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Yeni Oyun
+                </button>
+                <button id="shareBtn" class="flex-none px-5 py-3 rounded-xl bg-gray-800 dark:bg-slate-800 text-white font-bold text-sm hover:bg-gray-700 dark:hover:bg-slate-700 flex items-center justify-center gap-2 transition-colors">
+                    <i data-lucide="share-2" class="w-4 h-4"></i> Paylaş
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== JAVASCRIPT ====== -->
+    <script>
+    lucide.createIcons();
+
+    (function() {
+        'use strict';
+
+        /* ==============================
+           TURKISH CHARACTER HELPERS
+           ============================== */
+        const TR_UP = {'a':'A','b':'B','c':'C','ç':'Ç','d':'D','e':'E','f':'F','g':'G','ğ':'Ğ','h':'H','ı':'I','i':'İ','j':'J','k':'K','l':'L','m':'M','n':'N','o':'O','ö':'Ö','p':'P','r':'R','s':'S','ş':'Ş','t':'T','u':'U','ü':'Ü','v':'V','y':'Y','z':'Z'};
+        function trUpper(s) { return s.split('').map(c => TR_UP[c] || c.toUpperCase()).join(''); }
+
+        /* ==============================
+           MODES & RANKS
+           ============================== */
+        const urlParams = new URLSearchParams(window.location.search);
+        const isUnlimited = urlParams.get('mode') === 'unlimited';
+
+        const RANKS = [
+            { name: 'Başlangıç', pct: 0 },
+            { name: 'İyi', pct: 25 },
+            { name: 'Harika', pct: 50 },
+            { name: 'Mükemmel', pct: 75 },
+            { name: 'Dahi', pct: 100 },
+        ];
+
+        /* ==============================
+           STATE
+           ============================== */
+        let centerLetter = '';
+        let outerLetters = [];
+        let allLetters = [];
+        let validWords = [];
+        let pangrams = [];
+        let foundWords = [];
+        let currentInput = '';
+        let score = 0;
+        let targetScore = 0; 
+        let wordsOpen = false;
+        let currentRankName = 'Başlangıç';
+        let isGameOver = false;
+        
+        let totalElapsedSeconds = 0;
+        let sessionStartTime = Date.now();
+
+        /* ==============================
+           DOM
+           ============================== */
+        const $ = id => document.getElementById(id);
+        const honeycombEl   = $('honeycomb');
+        const inputDisplay  = $('inputDisplay');
+        const toastEl       = $('toast');
+        const progressFill  = $('progressFill');
+        const progressTrack = $('progressTrack');
+        const rankLabel     = $('currentRankLabel');
+        const scoreEl       = $('currentScore');
+        const maxScoreEl    = $('maxScoreDisplay');
+        const foundCountEl  = $('foundCount');
+        const wordsList     = $('foundWordsList');
+        const wordsPanel    = $('foundWordsPanel');
+        const chevron       = $('foundChevron');
+        const helpModal     = $('helpModal');
+        const gameOverModal = $('gameOverModal');
+
+        // Setup Mode Toggle UI
+        if (isUnlimited) {
+            $('modeUnlimitedBtn').className = 'px-4 py-1.5 text-[11px] uppercase tracking-wider font-bold rounded-full transition-colors text-slate-900 bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]';
+        } else {
+            $('modeDailyBtn').className = 'px-4 py-1.5 text-[11px] uppercase tracking-wider font-bold rounded-full transition-colors text-slate-900 bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]';
+        }
+
+        /* ==============================
+           PUZZLE GENERATION
+           ============================== */
+        function generatePuzzle() {
+            const words = ALL_WORDS.map(w => trUpper(w)).filter(w => w.length <= 7);
+
+            const d = new Date();
+            let seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+            function rand() {
+                if (isUnlimited) return Math.random();
+                seed = (seed * 16807) % 2147483647;
+                return (seed & 0x7fffffff) / 0x7fffffff;
+            }
+
+            const setMap = new Map();
+            for (const w of words) {
+                if (w.length < 4) continue;
+                const uq = [...new Set(w)].sort().join('');
+                if (uq.length > 7) continue;
+                if (!setMap.has(uq)) setMap.set(uq, []);
+                setMap.get(uq).push(w);
+            }
+
+            const candidates = [];
+            for (const [key] of setMap) {
+                if (key.length !== 7) continue;
+                const letters = key.split('');
+                const matchingWords = [];
+                for (const w of words) {
+                    if (w.length < 4) continue;
+                    if (w.split('').every(c => letters.includes(c))) matchingWords.push(w);
+                }
+                if (matchingWords.length >= 15) candidates.push({ letters, words: matchingWords });
+            }
+
+            const idx = Math.floor(rand() * candidates.length);
+            const chosen = candidates[idx];
+
+            const freq = {};
+            chosen.letters.forEach(l => freq[l] = 0);
+            for (const w of chosen.words) chosen.letters.forEach(l => { if (w.includes(l)) freq[l]++; });
+            const sorted = [...chosen.letters].sort((a, b) => freq[b] - freq[a]);
+            centerLetter = sorted[Math.floor(rand() * Math.min(3, sorted.length))];
+            outerLetters = chosen.letters.filter(l => l !== centerLetter);
+
+            for (let i = outerLetters.length - 1; i > 0; i--) {
+                const j = Math.floor(rand() * (i + 1));
+                [outerLetters[i], outerLetters[j]] = [outerLetters[j], outerLetters[i]];
+            }
+
+            allLetters = [centerLetter, ...outerLetters];
+            rebuildValidWords();
+        }
+
+        function rebuildValidWords() {
+            const words = ALL_WORDS.map(w => trUpper(w)).filter(w => w.length <= 7);
+            validWords = [];
+            for (const w of words) {
+                if (w.length < 4 || !w.includes(centerLetter)) continue;
+                if (w.split('').every(c => allLetters.includes(c))) {
+                    validWords.push(w);
+                }
+            }
+            validWords = [...new Set(validWords)];
+
+            pangrams = validWords.filter(w => {
+                const s = new Set(w);
+                return allLetters.every(l => s.has(l));
+            });
+
+            let absMax = 0;
+            for (const w of validWords) {
+                absMax += w.length === 4 ? 1 : w.length;
+                if (pangrams.includes(w)) absMax += 7;
+            }
+            
+            targetScore = Math.max(1, Math.ceil(absMax * 0.20));
+        }
+
+        /* ==============================
+           HONEYCOMB RENDER
+           ============================== */
+        function renderHoneycomb() {
+            honeycombEl.innerHTML = '';
+            const cs = getComputedStyle(honeycombEl);
+            const cellSize = parseFloat(cs.getPropertyValue('--cell-size'));
+            const gap = parseFloat(cs.getPropertyValue('--cell-gap'));
+            const h = cellSize * 1.1547;
+            const containerW = cellSize * 3 + gap * 4;
+            const containerH = h * 3.5 + gap * 2;
+            const cx = containerW / 2;
+            const cy = containerH / 2;
+            const dist = cellSize + gap;
+
+            const angles = [-90, -30, 30, 90, 150, 210];
+            const positions = [{ x: cx, y: cy }];
+            angles.forEach(deg => {
+                const rad = deg * Math.PI / 180;
+                positions.push({ x: cx + dist * Math.cos(rad), y: cy + dist * Math.sin(rad) });
+            });
+
+            const letters = [centerLetter, ...outerLetters];
+            letters.forEach((letter, i) => {
+                const cell = document.createElement('div');
+                cell.className = `hex-cell ${i === 0 ? 'center-hex' : 'outer-hex'}`;
+                cell.textContent = letter;
+                cell.dataset.letter = letter;
+
+                cell.style.left = `${positions[i].x - cellSize / 2}px`;
+                cell.style.top = `${positions[i].y - h / 2}px`;
+
+                cell.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    if (isGameOver) return;
+                    const prevLen = currentInput.length;
+                    addLetter(letter);
+                    if (currentInput.length > prevLen) {
+                        cell.style.animation = 'none';
+                        cell.offsetHeight;
+                        cell.style.animation = 'pop 0.2s ease-out';
+                    }
+                });
+                honeycombEl.appendChild(cell);
+            });
+        }
+
+        /* ==============================
+           INPUT
+           ============================== */
+        function addLetter(letter) {
+            if (isGameOver) return;
+            if (currentInput.length >= 7) {
+                showToast('En fazla 7 harf!', 'error');
+                inputDisplay.classList.add('animate-shake');
+                setTimeout(() => inputDisplay.classList.remove('animate-shake'), 500);
+                return;
+            }
+            currentInput += letter;
+            renderInput();
+        }
+
+        function deleteLetter() {
+            if (isGameOver) return;
+            if (currentInput.length > 0) {
+                currentInput = currentInput.slice(0, -1);
+                renderInput();
+            }
+        }
+
+        function renderInput() {
+            if (isGameOver) return;
+            if (currentInput.length === 0) {
+                inputDisplay.innerHTML = '<span class="text-slate-500 text-sm font-medium" id="inputPlaceholder">Harf seçerek kelime yaz</span>';
+                inputDisplay.className = inputDisplay.className.replace('border-amber-500/50', 'border-slate-700/40');
+                if (!inputDisplay.className.includes('border-slate-700/40')) inputDisplay.classList.add('border-slate-700/40');
+            } else {
+                let html = '';
+                for (const ch of currentInput) {
+                    html += ch === centerLetter ? `<span class="text-amber-400">${ch}</span>` : `<span class="text-white">${ch}</span>`;
+                }
+                inputDisplay.innerHTML = html;
+                inputDisplay.classList.remove('border-slate-700/40');
+                inputDisplay.classList.add('border-amber-500/50');
+            }
+        }
+
+        /* ==============================
+           SUBMIT WORD
+           ============================== */
+        function submitWord() {
+            if (isGameOver || !currentInput) return;
+            const w = currentInput;
+
+            if (w.length < 4)                return fail('En az 4 harf gerekli');
+            if (w.length > 7)                return fail('En fazla 7 harf gerekli');
+            if (!w.includes(centerLetter))   return fail('Merkez harf kullanılmalı');
+            for (const c of w) { if (!allLetters.includes(c)) return fail('Geçersiz harf!'); }
+            if (foundWords.includes(w))      return fail('Bu kelimeyi zaten buldun', 'info');
+            if (!validWords.includes(w))     return fail('Geçerli bir kelime değil');
+
+            foundWords.push(w);
+            const isPg = pangrams.includes(w);
+            let pts = w.length === 4 ? 1 : w.length;
+            if (isPg) pts += 7;
+            score += pts;
+
+            showScorePopup(pts, isPg);
+            addChip(w, isPg);
+            currentInput = '';
+            renderInput();
+            
+            if (score >= targetScore) {
+                score = targetScore; 
+                isGameOver = true;
+                saveGame();
+                updateUI();
+                
+                // --- XP VE BAŞARIM SISTEMİ ENTEGRASYONU ---
+                const gecenSureSaniye = totalElapsedSeconds + Math.floor((Date.now() - sessionStartTime) / 1000);
+                if (window.KaUser) {
+                    window.KaUser.addGameResult('spelling_bee', 'word', true, gecenSureSaniye);
+                }
+                
+                setTimeout(() => { showGameOver(); launchConfetti(); }, 1000);
+            } else {
+                if (isPg) {
+                    showToast(`🌟 PANGRAM! +${pts} puan`, 'pangram');
+                    launchConfetti();
+                } else {
+                    const m = ['Harika!','Güzel!','Süper!','Bravo!','Aferin!'];
+                    showToast(`${m[Math.floor(Math.random()*m.length)]} +${pts} puan`, 'success');
+                }
+                saveGame();
+                updateUI();
+            }
+        }
+
+        function fail(msg, type = 'error') {
+            showToast(msg, type);
+            inputDisplay.classList.add('animate-shake');
+            inputDisplay.style.borderColor = type === 'info' ? 'rgba(59,130,246,0.5)' : 'rgba(239,68,68,0.5)';
+            setTimeout(() => {
+                inputDisplay.classList.remove('animate-shake');
+                inputDisplay.style.borderColor = '';
+            }, 500);
+            currentInput = '';
+            renderInput();
+        }
+
+        /* ==============================
+           UI UPDATES
+           ============================== */
+        function updateUI() {
+            scoreEl.textContent = score;
+            maxScoreEl.textContent = targetScore;
+            foundCountEl.textContent = foundWords.length;
+
+            const pct = targetScore > 0 ? Math.min((score / targetScore) * 100, 100) : 0;
+            progressFill.style.width = `${pct}%`;
+
+            let rank = RANKS[0];
+            for (let i = RANKS.length - 1; i >= 0; i--) {
+                if (pct >= RANKS[i].pct) { rank = RANKS[i]; break; }
+            }
+            rankLabel.textContent = rank.name;
+
+            if (currentRankName !== rank.name && !isGameOver) {
+                showToast(`Seviye Atladın: ${rank.name}!`, 'info');
+                currentRankName = rank.name;
+            }
+
+            progressTrack.querySelectorAll('.progress-dot').forEach((dot, i) => {
+                dot.classList.toggle('reached', pct >= RANKS[i].pct);
+                dot.classList.toggle('active-dot', RANKS[i].name === rank.name);
+            });
+
+            if (isGameOver) {
+                inputDisplay.innerHTML = '<span class="text-amber-500 text-sm font-bold tracking-normal">Oyun Bitti! Dahi Rütbesindesin 🏆</span>';
+                inputDisplay.className = inputDisplay.className.replace('border-slate-700/40', 'border-amber-500/50');
+                $('submitBtn').disabled = true;
+                $('deleteBtn').disabled = true;
+            }
+        }
+
+        function initProgress() {
+            progressTrack.querySelectorAll('.progress-dot').forEach(d => d.remove());
+            RANKS.forEach((r, i) => {
+                const dot = document.createElement('div');
+                dot.className = 'progress-dot';
+                dot.style.left = `${r.pct}%`;
+                dot.title = r.name;
+                if (i === 0) dot.classList.add('reached', 'active-dot');
+                progressTrack.appendChild(dot);
+            });
+        }
+
+        function addChip(word, isPangram) {
+            const chip = document.createElement('span');
+            chip.className = `found-word-chip${isPangram ? ' pangram-chip' : ''}`;
+            chip.textContent = isPangram ? `⭐ ${word}` : word;
+            wordsList.prepend(chip);
+        }
+
+        function showScorePopup(pts, isPg) {
+            const p = document.createElement('div');
+            p.className = 'score-popup';
+            p.textContent = `+${pts}`;
+            p.style.color = isPg ? '#fbbf24' : '#4ade80';
+            p.style.animation = 'scorePopUp 1s ease-out forwards';
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 1100);
+        }
+
+        /* ==============================
+           TOAST & CONFETTI
+           ============================== */
+        let toastTimer;
+        function showToast(msg, type = 'error') {
+            clearTimeout(toastTimer);
+            toastEl.className = `toast-msg t-${type} show`;
+            toastEl.textContent = msg;
+            toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
+        }
+
+        function launchConfetti() {
+            const colors = ['#f59e0b','#ef4444','#22c55e','#3b82f6','#a855f7','#ec4899','#eab308'];
+            for (let i = 0; i < 50; i++) {
+                const p = document.createElement('div');
+                p.className = 'confetti-piece';
+                p.style.left = `${Math.random()*100}vw`;
+                p.style.backgroundColor = colors[Math.floor(Math.random()*colors.length)];
+                p.style.width = `${Math.random()*8+5}px`;
+                p.style.height = `${Math.random()*8+5}px`;
+                p.style.borderRadius = Math.random()>0.5?'50%':'2px';
+                p.style.animation = `confettiDrop ${Math.random()*1.5+1.5}s ease-in forwards`;
+                p.style.animationDelay = `${Math.random()*0.5}s`;
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 3500);
+            }
+        }
+
+        /* ==============================
+           SHUFFLE
+           ============================== */
+        function shuffleOuter() {
+            for (let i = outerLetters.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [outerLetters[i], outerLetters[j]] = [outerLetters[j], outerLetters[i]];
+            }
+            allLetters = [centerLetter, ...outerLetters];
+            renderHoneycomb();
+        }
+
+        /* ==============================
+           GAME OVER MODAL
+           ============================== */
+        function showGameOver() {
+            $('finalScore').textContent = score;
+            $('finalWords').textContent = foundWords.length;
+            const pgCount = foundWords.filter(w => pangrams.includes(w)).length;
+            $('finalPangrams').textContent = pgCount;
+
+            const msgs = { 'Dahi': 'Harika! Tüm kelimelerin kralısın! 🏆' };
+            $('gameOverMessage').textContent = msgs['Dahi'] || 'Tebrikler!';
+            $('gameOverEmoji').textContent = '🏆';
+            $('finalRank').textContent = 'Dahi';
+
+            const list = $('gameOverWordsList');
+            list.innerHTML = '';
+            [...foundWords].sort().forEach(w => {
+                const isPg = pangrams.includes(w);
+                const chip = document.createElement('span');
+                chip.className = `found-word-chip${isPg ? ' pangram-chip' : ''}`;
+                chip.textContent = isPg ? `⭐ ${w}` : w;
+                list.appendChild(chip);
+            });
+
+            if (!isUnlimited) {
+                $('newGameBtn').innerHTML = '<i data-lucide="infinity" class="w-4 h-4"></i> Sınırsız Oyna';
+                $('newGameBtn').onclick = () => { window.location.href = '?mode=unlimited'; };
+            } else {
+                $('newGameBtn').innerHTML = '<i data-lucide="rotate-ccw" class="w-4 h-4"></i> Yeni Oyun';
+                $('newGameBtn').onclick = () => {
+                    gameOverModal.style.display = 'none';
+                    try { localStorage.removeItem(storageKey()); } catch(e) {}
+                    newGame();
+                };
+            }
+
+            gameOverModal.style.display = 'flex';
+        }
+
+        function shareResults() {
+            const pgCnt = foundWords.filter(w => pangrams.includes(w)).length;
+            const today = new Date().toLocaleDateString('tr-TR');
+            const mode = isUnlimited ? 'Sınırsız' : 'Günlük';
+            const txt = `🐝 Petek (${mode}) - ${today}\n🏅 Rütbe: Dahi 🏆\n📊 ${score} puan | ${foundWords.length} kelime | ${pgCnt} pangram\n🔗 kelimearasi.com`;
+            if (navigator.share) {
+                navigator.share({ text: txt }).catch(() => {});
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(txt).then(() => showToast('Panoya kopyalandı!', 'success'));
+            }
+        }
+
+        /* ==============================
+           STORAGE
+           ============================== */
+        function storageKey() {
+            if (isUnlimited) return 'petek_unlimited_save';
+            const d = new Date();
+            return `petek_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`;
+        }
+
+        function saveGame() {
+            const currentElapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+            const state = { 
+                centerLetter, outerLetters, foundWords, score, isGameOver, 
+                elapsed: totalElapsedSeconds + currentElapsed 
+            };
+            try { localStorage.setItem(storageKey(), JSON.stringify(state)); } catch(e) {}
+        }
+
+        function loadGame() {
+            try {
+                const s = JSON.parse(localStorage.getItem(storageKey()));
+                if (!s) return false;
+                
+                if (isUnlimited) {
+                    centerLetter = s.centerLetter;
+                    outerLetters = s.outerLetters;
+                    allLetters = [centerLetter, ...outerLetters];
+                    rebuildValidWords();
+                } else {
+                    generatePuzzle();
+                    if (s.centerLetter !== centerLetter || s.outerLetters.slice().sort().join('') !== outerLetters.slice().sort().join('')) {
+                        return false;
+                    }
+                }
+                
+                foundWords = s.foundWords || [];
+                score = s.score || 0;
+                isGameOver = s.isGameOver || false;
+                totalElapsedSeconds = s.elapsed || 0;
+                sessionStartTime = Date.now();
+                
+                if (score >= targetScore) isGameOver = true;
+
+                renderHoneycomb();
+                initProgress();
+                renderInput();
+                
+                const pct = targetScore > 0 ? Math.min((score / targetScore) * 100, 100) : 0;
+                for (let i = RANKS.length - 1; i >= 0; i--) {
+                    if (pct >= RANKS[i].pct) { currentRankName = RANKS[i].name; break; }
+                }
+                
+                updateUI();
+                foundWords.forEach(w => addChip(w, pangrams.includes(w)));
+                
+                if (isGameOver) showGameOver();
+                return true;
+            } catch(e) {}
+            return false;
+        }
+
+        /* ==============================
+           NEW GAME
+           ============================== */
+        function newGame() {
+            foundWords = [];
+            currentInput = '';
+            score = 0;
+            currentRankName = 'Başlangıç';
+            isGameOver = false;
+            totalElapsedSeconds = 0;
+            sessionStartTime = Date.now();
+            wordsList.innerHTML = '';
+            $('submitBtn').disabled = false;
+            $('deleteBtn').disabled = false;
+            
+            generatePuzzle();
+            renderHoneycomb();
+            initProgress();
+            renderInput();
+            updateUI();
+            saveGame();
+        }
+
+        /* ==============================
+           KEYBOARD
+           ============================== */
+        document.addEventListener('keydown', e => {
+            if (helpModal.style.display === 'flex' || gameOverModal.style.display === 'flex' || isGameOver) return;
+
+            if (e.key === 'Enter') { e.preventDefault(); submitWord(); }
+            else if (e.key === 'Backspace') { e.preventDefault(); deleteLetter(); }
+            else {
+                const up = trUpper(e.key);
+                if (up.length === 1 && allLetters.includes(up)) {
+                    e.preventDefault();
+                    const prevLen = currentInput.length;
+                    addLetter(up);
+                    if (currentInput.length > prevLen) {
+                        honeycombEl.querySelectorAll('.hex-cell').forEach(c => {
+                            if (c.dataset.letter === up) {
+                                c.style.animation = 'none';
+                                c.offsetHeight;
+                                c.style.animation = 'pop 0.2s ease-out';
+                            }
+                        });
+                    }
+                }
+            }
+        });
+
+        /* ==============================
+           EVENT LISTENERS
+           ============================== */
+        $('deleteBtn').addEventListener('click', deleteLetter);
+        $('shuffleBtn').addEventListener('click', shuffleOuter);
+        $('submitBtn').addEventListener('click', submitWord);
+
+        $('helpBtn').addEventListener('click', () => helpModal.style.display = 'flex');
+        $('closeHelpBtn').addEventListener('click', () => helpModal.style.display = 'none');
+        helpModal.addEventListener('click', e => { if (e.target === helpModal) helpModal.style.display = 'none'; });
+
+        $('foundWordsToggle').addEventListener('click', () => {
+            wordsOpen = !wordsOpen;
+            wordsPanel.style.maxHeight = wordsOpen ? '100px' : '0';
+            chevron.style.transform = wordsOpen ? 'rotate(180deg)' : '';
+        });
+
+        $('shareBtn').addEventListener('click', shareResults);
+        gameOverModal.addEventListener('click', e => { if (e.target === gameOverModal) gameOverModal.style.display = 'none'; });
+
+        document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+        document.body.addEventListener('touchmove', e => {
+            if (e.target.closest('.words-scroll') || e.target.closest('#gameOverWordsList') || e.target.closest('#helpModal > div')) return;
+            e.preventDefault();
+        }, { passive: false });
+
+        /* ==============================
+           INIT
+           ============================== */
+        if (!loadGame()) newGame();
+
+        if (!localStorage.getItem('petek_help_seen')) {
+            setTimeout(() => {
+                helpModal.style.display = 'flex';
+                localStorage.setItem('petek_help_seen', '1');
+            }, 500);
+        }
+    })();
+    </script>
+</body>
+</html>

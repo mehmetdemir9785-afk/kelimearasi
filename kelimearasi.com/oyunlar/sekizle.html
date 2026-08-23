@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Kelimearası Sekizle - 8 kelimeyi aynı anda tahmin et! Türkçe Octordle bulmaca oyunu.">
+    <title>Sekizle | Kelimearası</title>
+
+    <!-- External Word Lists -->
+    <script src="../wordle kelime listeleri/target_5_harfli.js"></script>
+    <script src="../wordle kelime listeleri/valid_5_harfli.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ====== ANIMATIONS ====== */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+            20%, 40%, 60%, 80% { transform: translateX(3px); }
+        }
+
+        @keyframes flip {
+            0% { transform: rotateX(0deg); }
+            45% { transform: rotateX(90deg); }
+            55% { transform: rotateX(90deg); }
+            100% { transform: rotateX(0deg); }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes bounce {
+            0%, 20% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+            50% { transform: translateY(2px); }
+            60% { transform: translateY(-4px); }
+            80% { transform: translateY(1px); }
+            100% { transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            0% { transform: translateY(30px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes modalSlideUp {
+            0% { opacity: 0; transform: translateY(40px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes gridSolvedPulse {
+            0% { box-shadow: 0 0 0 0 rgba(83, 141, 78, 0.5); }
+            50% { box-shadow: 0 0 15px 3px rgba(83, 141, 78, 0.3); }
+            100% { box-shadow: 0 0 0 0 rgba(83, 141, 78, 0); }
+        }
+
+        .animate-shake { animation: shake 0.35s ease-in-out; }
+        .animate-flip { animation: flip 0.3s ease-in-out; }
+        .animate-pop { animation: pop 0.1s ease-in-out; }
+        .animate-bounce-win { animation: bounce 0.5s ease-in-out; }
+        .animate-slideUp { animation: slideUp 0.3s ease-out forwards; }
+        .animate-fadeIn { animation: fadeIn 0.2s ease-out forwards; }
+        .animate-modalSlideUp { animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-gridSolved { animation: gridSolvedPulse 0.8s ease-out; }
+
+        /* ====== MINI TILE STYLES ====== */
+        .mini-tile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 1px solid rgba(156, 163, 175, 0.4);
+            background-color: rgba(243, 244, 246, 0.5);
+            color: #111827;
+            transition: border-color 0.1s, background-color 0.1s;
+            user-select: none;
+            line-height: 1;
+        }
+        .dark .mini-tile {
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            background-color: rgba(30, 41, 59, 0.2);
+            color: #f3f4f6;
+        }
+
+        .mini-tile.filled {
+            border-color: #9ca3af;
+        }
+        .dark .mini-tile.filled {
+            border-color: #475569;
+        }
+
+        .mini-tile.correct {
+            background-color: #538d4e !important;
+            border-color: #538d4e !important;
+            color: white !important;
+        }
+
+        .mini-tile.present {
+            background-color: #b59f3b !important;
+            border-color: #b59f3b !important;
+            color: white !important;
+        }
+
+        .mini-tile.absent {
+            background-color: #e5e7eb !important;
+            border-color: #d1d5db !important;
+            color: #6b7280 !important;
+        }
+        .dark .mini-tile.absent {
+            background-color: #15152b !important;
+            border-color: #1a1a35 !important;
+            color: #64748b !important;
+        }
+
+        .mini-tile.active-input {
+            border-color: #6b7280;
+        }
+        .dark .mini-tile.active-input {
+            border-color: #64748b;
+        }
+
+        /* ====== KEYBOARD STYLES ====== */
+        .key-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease;
+            background-color: #f3f4f6;
+            color: #111827;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+            overflow: visible;
+            gap: 1px;
+        }
+        .dark .key-btn {
+            background-color: #1e1e36;
+            color: #e2e8f0;
+        }
+
+        .key-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* 8-dot indicator for each key */
+        .key-indicators {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 1px;
+            pointer-events: none;
+            width: 18px;
+        }
+
+        .key-indicator-dot {
+            width: 3.5px;
+            height: 3.5px;
+            border-radius: 1px;
+            background-color: rgba(156, 163, 175, 0.5);
+        }
+        .dark .key-indicator-dot {
+            background-color: rgba(71, 85, 105, 0.35);
+        }
+
+        .key-indicator-dot.correct { background-color: #538d4e; }
+        .key-indicator-dot.present { background-color: #b59f3b; }
+        .key-indicator-dot.absent { background-color: #d1d5db; }
+        .dark .key-indicator-dot.absent { background-color: #2a2a3a; }
+
+        .key-btn.dimmed {
+            background-color: #e5e7eb !important;
+            color: #9ca3af !important;
+        }
+        .dark .key-btn.dimmed {
+            background-color: #15152b !important;
+            color: #475569 !important;
+        }
+
+        /* ====== GRID CONTAINER ====== */
+        .grid-container {
+            border: 1.5px solid rgba(209, 213, 219, 0.6);
+            border-radius: 0.5rem;
+            padding: 3px;
+            background: #ffffff;
+            transition: all 0.3s ease;
+            position: relative;
+            min-height: 0;
+            overflow: visible;
+            display: flex;
+            flex-direction: column;
+            margin-top: 8px;
+        }
+        .dark .grid-container {
+            border-color: rgba(255, 255, 255, 0.05);
+            background: #181836;
+        }
+
+        .grid-container.solved {
+            border-color: rgba(83, 141, 78, 0.5);
+            background: rgba(83, 141, 78, 0.05);
+        }
+
+        .grid-container.failed {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.03);
+        }
+
+        .grid-label {
+            position: absolute;
+            top: -7px;
+            left: 6px;
+            font-size: 0.5rem;
+            font-weight: 700;
+            padding: 0 3px;
+            background: #f9fafb;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            z-index: 2;
+        }
+        .dark .grid-label {
+            background: #0c0c1d;
+            color: #64748b;
+        }
+
+        .grid-label.solved { color: #538d4e; }
+        .grid-label.failed { color: #ef4444; }
+
+        /* ====== TOAST ====== */
+        .toast { animation: slideUp 0.3s ease-out forwards; }
+
+        /* ====== MODAL ====== */
+        .modal-overlay { animation: fadeIn 0.2s ease-out forwards; }
+        .modal-content { animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* ====== TOGGLE ====== */
+        .mode-btn { transition: all 0.2s ease; }
+        .mode-btn.active {
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            color: white;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+
+        /* ====== SCROLLBAR ====== */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 3px; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ====== GUESS COUNTER ====== */
+        .guess-counter {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ====== GAME AREA SCROLLABLE ====== */
+        #game-scroll-area {
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+
+        /* ====== RESPONSIVE GRID SIZING ====== */
+        @media (min-width: 768px) {
+            .game-grid-layout {
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(2, 1fr);
+                max-width: 720px;
+            }
+            .mini-tile {
+                font-size: clamp(0.45rem, 1.2vw, 0.7rem);
+            }
+        }
+
+        @media (max-width: 767px) {
+            .game-grid-layout {
+                grid-template-columns: repeat(2, 1fr);
+                max-width: 380px;
+            }
+            .mini-tile {
+                font-size: clamp(0.4rem, 2.8vw, 0.6rem);
+            }
+        }
+    </style>
+    <script src="../js/user-system.js"></script>
+</head>
+<body class="bg-gray-50 dark:bg-[#0c0c1d] text-gray-900 dark:text-gray-100 font-sans h-full flex flex-col">
+
+    <!-- ====== TOAST CONTAINER ====== -->
+    <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none"></div>
+
+    <!-- ====== HEADER ====== -->
+    <header class="px-4 py-3 sticky top-0 z-50 flex items-center justify-between border-b backdrop-blur-xl bg-white/80 dark:bg-[#12122b]/80 border-gray-200/60 dark:border-white/5 shrink-0 z-10">
+        <a href="../index.html" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Ana Sayfa">
+            🏠
+        </a>
+        <div class="relative inline-flex items-center justify-center">
+            <h1 class="tracking-[0.2em] bg-gradient-to-r from-rose-400 via-amber-400 to-violet-400 text-transparent bg-clip-text font-black text-xl md:text-2xl uppercase drop-shadow-[0_0_12px_rgba(251,146,60,0.6)]">
+                Sekizle
+            </h1>
+        </div>
+        <button onclick="showHowToPlay()" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Nasıl Oynanır">
+            ❓
+        </button>
+    </header>
+
+    <!-- ====== CONTROL PANEL ====== -->
+    <div class="flex flex-row items-center justify-center w-full max-w-lg mx-auto px-2 py-1 border-b border-gray-200/60 dark:border-white/5 shrink-0 z-10">
+        <!-- Mode Buttons -->
+        <div class="flex items-center gap-0.5 bg-white dark:bg-[#181836] shadow-sm rounded-lg p-0.5">
+            <button class="mode-btn active px-2 py-1 md:px-3 md:py-1 rounded-md text-[10px] md:text-xs font-semibold" data-mode="daily" onclick="setGameMode('daily')">
+                <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> Günlük</span>
+            </button>
+            <button class="mode-btn px-2 py-1 md:px-3 md:py-1 rounded-md text-[10px] md:text-xs font-semibold text-gray-400" data-mode="unlimited" onclick="setGameMode('unlimited')">
+                <span class="flex items-center gap-1"><i data-lucide="infinity" class="w-3 h-3"></i> Sınırsız</span>
+            </button>
+        </div>
+
+        <!-- Guess Counter -->
+        <div class="ml-3 flex items-center gap-1.5 bg-white dark:bg-[#181836] shadow-sm rounded-lg px-2.5 py-1">
+            <i data-lucide="target" class="w-3 h-3 text-gray-400"></i>
+            <span class="guess-counter text-[10px] md:text-xs font-bold text-gray-700 dark:text-gray-300">
+                <span id="guess-count">0</span><span class="text-gray-500">/13</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- ====== GAME AREA (scrollable) ====== -->
+    <main id="game-scroll-area" class="flex-1 min-h-0 px-1 py-1">
+        <div id="game-area" class="game-grid-layout grid gap-1.5 md:gap-2 mx-auto w-full pb-1">
+            <!-- 8 Grids will be rendered by JS -->
+        </div>
+    </main>
+
+    <!-- ====== VIRTUAL KEYBOARD ====== -->
+    <div id="keyboard" class="shrink-0 px-1 pb-1.5 pt-1 select-none z-10 bg-gray-50 dark:bg-[#0c0c1d]">
+        <div class="flex justify-center gap-[3px] mb-[3px]" id="kb-row-1"></div>
+        <div class="flex justify-center gap-[3px] mb-[3px]" id="kb-row-2"></div>
+        <div class="flex justify-center gap-[3px]" id="kb-row-3"></div>
+    </div>
+
+    <!-- ====== GAME OVER MODAL ====== -->
+    <div id="stats-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto no-scrollbar hidden">
+        <div class="modal-overlay absolute inset-0" onclick="closeStatsModal()"></div>
+        <div class="modal-content relative w-full max-w-md bg-white dark:bg-[#181836] border border-gray-200 dark:border-white/10 rounded-3xl p-5 shadow-[0_0_30px_rgba(168,85,247,0.15)] text-gray-900 dark:text-slate-100 my-auto max-h-[90vh] overflow-y-auto no-scrollbar">
+            <button onclick="closeStatsModal()" class="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-gray-700 transition-colors z-10">
+                <i data-lucide="x" class="w-5 h-5 text-gray-400"></i>
+            </button>
+
+            <div id="stats-modal-content">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== HOW TO PLAY MODAL ====== -->
+    <div id="help-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto no-scrollbar hidden">
+        <div class="modal-overlay absolute inset-0" onclick="closeHelpModal()"></div>
+        <div class="modal-content relative w-full max-w-md bg-white dark:bg-[#181836] border border-gray-200 dark:border-white/10 rounded-3xl p-6 shadow-[0_0_30px_rgba(168,85,247,0.15)] text-gray-900 dark:text-slate-100 my-auto max-h-[90vh] overflow-y-auto no-scrollbar">
+            <button onclick="closeHelpModal()" class="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-gray-700 transition-colors">
+                <i data-lucide="x" class="w-5 h-5 text-gray-400"></i>
+            </button>
+
+            <h2 class="text-center text-lg font-bold text-gray-900 dark:text-gray-200 tracking-wider uppercase mb-4">Nasıl Oynanır?</h2>
+
+            <div class="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                <p>Sekizle'de <strong class="text-gray-900 dark:text-white">8 gizli kelimeyi</strong> aynı anda tahmin etmeye çalışırsın!</p>
+                <p>Toplam <strong class="text-gray-900 dark:text-white">13 tahmin</strong> hakkın var. Her tahminin <strong class="text-gray-900 dark:text-white">5 harfli</strong> geçerli bir Türkçe kelime olmalıdır.</p>
+                <p>Bir tahmini gönderdiğinde, o tahmin henüz <strong class="text-gray-900 dark:text-white">çözülmemiş tüm tablolara</strong> aynı anda girilir. Her tablo, tahmini kendi hedef kelimesine göre bağımsız olarak değerlendirir.</p>
+
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
+                    <p class="font-bold text-gray-900 dark:text-white mb-2">Renkler:</p>
+
+                    <div class="flex gap-1.5 mb-2">
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded bg-green-600 text-white">K</div>
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded border-2 border-gray-600 text-white">A</div>
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded border-2 border-gray-600 text-white">L</div>
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded border-2 border-gray-600 text-white">E</div>
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded border-2 border-gray-600 text-white">M</div>
+                    </div>
+                    <p><strong class="text-green-400">K</strong> harfi kelimede var ve doğru yerde.</p>
+
+                    <div class="flex gap-1.5 mb-2 mt-3">
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded border-2 border-gray-600 text-white">M</div>
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded bg-yellow-600 text-white">A</div>
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded border-2 border-gray-600 text-white">S</div>
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded border-2 border-gray-600 text-white">A</div>
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded border-2 border-gray-600 text-white">L</div>
+                    </div>
+                    <p><strong class="text-yellow-400">A</strong> harfi kelimede var ama yanlış yerde.</p>
+
+                    <div class="flex gap-1.5 mb-2 mt-3">
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded border-2 border-gray-600 text-white">B</div>
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded border-2 border-gray-600 text-white">A</div>
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded border-2 border-gray-600 text-white">L</div>
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded bg-gray-600 text-white">I</div>
+                        <div class="w-8 h-8 flex items-center justify-center text-sm font-bold rounded border-2 border-gray-600 text-white">K</div>
+                    </div>
+                    <p><strong class="text-gray-400">I</strong> harfi kelimede hiç yok.</p>
+                </div>
+
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
+                    <p class="font-bold text-gray-900 dark:text-white mb-1">Sekizle Farkları:</p>
+                    <p>🎯 <strong>8 kelime</strong> aynı anda! Her tahmin tüm çözülmemiş tablolara gider.</p>
+                    <p>1️⃣3️⃣ Standart Wordle'dan çok daha fazla: <strong>13 tahmin</strong> hakkın var.</p>
+                    <p>✅ Bir tabloyu çözdüğünde, sonraki tahminler o tabloya artık girilmez.</p>
+                    <p>⌨️ Klavyedeki her harfin altındaki <strong>8 minik nokta</strong> (2×4), o harfin 8 tablodaki durumunu gösterir.</p>
+                </div>
+
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
+                    <p class="font-bold text-gray-900 dark:text-white mb-1">Modlar:</p>
+                    <p>📅 <strong>Günlük:</strong> Her gün aynı 8 kelime. Herkes aynı bulmacayı çözer.</p>
+                    <p>♾️ <strong>Sınırsız:</strong> Dilediğin kadar oyna. Her seferinde 8 farklı kelime.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== JAVASCRIPT ====== -->
+    <script>
+    (function() {
+        'use strict';
+
+        // =====================================================
+        // CONSTANTS
+        // =====================================================
+        const WORD_LENGTH = 5;
+        const MAX_GUESSES = 13;
+        const NUM_GRIDS = 8;
+        const STORAGE_KEY_STATS = 'sekizle_stats';
+        const STORAGE_KEY_DAILY = 'sekizle_daily_state';
+
+        const TURKISH_LETTERS = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ';
+        const KB_ROW_1 = ['E','R','T','Y','U','I','O','P','Ğ','Ü'];
+        const KB_ROW_2 = ['A','S','D','F','G','H','J','K','L','Ş','İ'];
+        const KB_ROW_3 = ['ENTER','Z','C','V','B','N','M','Ö','Ç','SİL'];
+
+        // =====================================================
+        // WORD LISTS INIT
+        // =====================================================
+        let TARGET_WORDS = [];
+        let VALID_WORDS_SET = new Set();
+
+        async function initWordLists() {
+            // Try to load target words from the raw text file via fetch
+            try {
+                const response = await fetch('../wordle kelime listeleri/target_5_harfli.js');
+                if (response.ok) {
+                    const text = await response.text();
+                    TARGET_WORDS = text
+                        .split('\n')
+                        .map(w => turkishUpper(w.trim()))
+                        .filter(w => w.length === WORD_LENGTH);
+                }
+            } catch(e) {
+                console.warn('Target words fetch failed:', e);
+            }
+
+            // valid_5_harfli.js exports ALL_WORDS via <script> tag
+            if (typeof ALL_WORDS !== 'undefined' && Array.isArray(ALL_WORDS)) {
+                ALL_WORDS.forEach(w => VALID_WORDS_SET.add(turkishUpper(w)));
+
+                // Fallback: if target words couldn't be fetched, use ALL_WORDS as target pool
+                if (TARGET_WORDS.length < NUM_GRIDS) {
+                    TARGET_WORDS = ALL_WORDS
+                        .map(w => turkishUpper(w))
+                        .filter(w => w.length === WORD_LENGTH);
+                }
+            }
+
+            // Also add target words to valid set
+            TARGET_WORDS.forEach(w => VALID_WORDS_SET.add(w));
+        }
+
+        // =====================================================
+        // TURKISH STRING HELPERS
+        // =====================================================
+        function turkishUpper(str) {
+            return str
+                .replace(/i/g, 'İ')
+                .replace(/ı/g, 'I')
+                .replace(/ö/g, 'Ö')
+                .replace(/ü/g, 'Ü')
+                .replace(/ş/g, 'Ş')
+                .replace(/ç/g, 'Ç')
+                .replace(/ğ/g, 'Ğ')
+                .toUpperCase();
+        }
+
+        function turkishLower(str) {
+            return str
+                .replace(/İ/g, 'i')
+                .replace(/I/g, 'ı')
+                .replace(/Ö/g, 'ö')
+                .replace(/Ü/g, 'ü')
+                .replace(/Ş/g, 'ş')
+                .replace(/Ç/g, 'ç')
+                .replace(/Ğ/g, 'ğ')
+                .toLowerCase();
+        }
+
+        // =====================================================
+        // GAME STATE
+        // =====================================================
+        let gameMode = 'daily'; // 'daily' or 'unlimited'
+        let targetWords = new Array(NUM_GRIDS).fill('');
+        let guesses = [];
+        let gridEvaluations = Array.from({length: NUM_GRIDS}, () => []);
+        let gridSolved = new Array(NUM_GRIDS).fill(false);
+        let gridSolvedAtGuess = new Array(NUM_GRIDS).fill(-1);
+        let currentGuess = '';
+        let isGameOver = false;
+        let isRevealing = false;
+        let gameStartTime = Date.now();
+
+        // Keyboard state: for each letter, track status per grid
+        let keyboardStates = {}; // { letter: [grid0status, ..., grid7status] }
+
+        // =====================================================
+        // SEEDED RANDOM (for daily mode)
+        // =====================================================
+        function mulberry32(seed) {
+            return function() {
+                seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+                let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
+        }
+
+        function getDailySeed() {
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            let hash = 0;
+            for (let i = 0; i < dateStr.length; i++) {
+                const ch = dateStr.charCodeAt(i);
+                hash = ((hash << 5) - hash) + ch;
+                hash |= 0;
+            }
+            // Use a different offset from dortle to get different daily words
+            return hash + 88888;
+        }
+
+        function getTodayStr() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+        }
+
+        function pickNWords(n, seed) {
+            const rng = mulberry32(seed);
+            const words = [];
+            const used = new Set();
+            while (words.length < n) {
+                const idx = Math.floor(rng() * TARGET_WORDS.length);
+                const word = TARGET_WORDS[idx];
+                if (!used.has(word)) {
+                    used.add(word);
+                    words.push(word);
+                }
+            }
+            return words;
+        }
+
+        function pickNRandomWords(n) {
+            const words = [];
+            const used = new Set();
+            while (words.length < n) {
+                const idx = Math.floor(Math.random() * TARGET_WORDS.length);
+                const word = TARGET_WORDS[idx];
+                if (!used.has(word)) {
+                    used.add(word);
+                    words.push(word);
+                }
+            }
+            return words;
+        }
+
+        // =====================================================
+        // EVALUATE GUESS AGAINST TARGET
+        // =====================================================
+        function evaluate(guess, target) {
+            const result = new Array(WORD_LENGTH).fill('absent');
+            const targetArr = target.split('');
+            const guessArr = guess.split('');
+            const used = new Array(WORD_LENGTH).fill(false);
+
+            // First pass: correct
+            for (let i = 0; i < WORD_LENGTH; i++) {
+                if (guessArr[i] === targetArr[i]) {
+                    result[i] = 'correct';
+                    used[i] = true;
+                }
+            }
+
+            // Second pass: present
+            for (let i = 0; i < WORD_LENGTH; i++) {
+                if (result[i] === 'correct') continue;
+                for (let j = 0; j < WORD_LENGTH; j++) {
+                    if (!used[j] && guessArr[i] === targetArr[j]) {
+                        result[i] = 'present';
+                        used[j] = true;
+                        break;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        function isValidWord(word) {
+            return VALID_WORDS_SET.has(turkishUpper(word));
+        }
+
+        // =====================================================
+        // RENDER GRIDS
+        // =====================================================
+        function buildGrids() {
+            const area = document.getElementById('game-area');
+            area.innerHTML = '';
+
+            for (let g = 0; g < NUM_GRIDS; g++) {
+                const container = document.createElement('div');
+                container.className = 'grid-container relative';
+                container.id = `grid-container-${g}`;
+
+                // Grid label
+                const label = document.createElement('div');
+                label.className = 'grid-label';
+                label.id = `grid-label-${g}`;
+                label.textContent = `Tablo ${g + 1}`;
+                container.appendChild(label);
+
+                // Grid
+                const grid = document.createElement('div');
+                grid.className = 'grid gap-[1px] w-full';
+                grid.id = `grid-${g}`;
+                grid.style.gridTemplateColumns = `repeat(${WORD_LENGTH}, 1fr)`;
+                grid.style.gridTemplateRows = `repeat(${MAX_GUESSES}, 1fr)`;
+                grid.style.display = 'grid';
+
+                for (let r = 0; r < MAX_GUESSES; r++) {
+                    for (let c = 0; c < WORD_LENGTH; c++) {
+                        const tile = document.createElement('div');
+                        tile.className = 'mini-tile rounded-[2px] aspect-square';
+                        tile.id = `tile-${g}-${r}-${c}`;
+                        grid.appendChild(tile);
+                    }
+                }
+
+                container.appendChild(grid);
+                area.appendChild(container);
+            }
+        }
+
+        // =====================================================
+        // TILE HELPERS
+        // =====================================================
+        function getTile(gridIdx, row, col) {
+            return document.getElementById(`tile-${gridIdx}-${row}-${col}`);
+        }
+
+        function setTileLetter(gridIdx, row, col, letter) {
+            const tile = getTile(gridIdx, row, col);
+            if (!tile) return;
+            tile.textContent = letter;
+            if (letter) {
+                tile.classList.add('filled');
+            } else {
+                tile.classList.remove('filled');
+            }
+        }
+
+        function setTileState(gridIdx, row, col, state) {
+            const tile = getTile(gridIdx, row, col);
+            if (!tile) return;
+            tile.classList.remove('correct', 'present', 'absent');
+            if (state) tile.classList.add(state);
+        }
+
+        // =====================================================
+        // DISPLAY CURRENT INPUT
+        // =====================================================
+        function displayCurrentInput() {
+            for (let g = 0; g < NUM_GRIDS; g++) {
+                if (gridSolved[g]) continue;
+                const gridRow = getGridRow(g);
+                if (gridRow >= MAX_GUESSES) continue;
+
+                for (let c = 0; c < WORD_LENGTH; c++) {
+                    const tile = getTile(g, gridRow, c);
+                    if (!tile) continue;
+
+                    if (c < currentGuess.length) {
+                        tile.textContent = currentGuess[c];
+                        tile.classList.add('filled', 'active-input');
+                    } else {
+                        tile.textContent = '';
+                        tile.classList.remove('filled', 'active-input');
+                    }
+                }
+            }
+        }
+
+        function clearCurrentInputDisplay() {
+            for (let g = 0; g < NUM_GRIDS; g++) {
+                if (gridSolved[g]) continue;
+                const gridRow = getGridRow(g);
+                if (gridRow >= MAX_GUESSES) continue;
+                for (let c = 0; c < WORD_LENGTH; c++) {
+                    const tile = getTile(g, gridRow, c);
+                    if (!tile) continue;
+                    tile.textContent = '';
+                    tile.classList.remove('filled', 'active-input');
+                }
+            }
+        }
+
+        // Get the current row index for a specific grid
+        function getGridRow(gridIdx) {
+            return gridEvaluations[gridIdx].length;
+        }
+
+        // =====================================================
+        // ANIMATIONS
+        // =====================================================
+        function popTile(gridIdx, row, col) {
+            const tile = getTile(gridIdx, row, col);
+            if (!tile) return;
+            tile.classList.remove('animate-pop');
+            void tile.offsetWidth;
+            tile.classList.add('animate-pop');
+        }
+
+        function shakeGridRows() {
+            for (let g = 0; g < NUM_GRIDS; g++) {
+                if (gridSolved[g]) continue;
+                const gridRow = getGridRow(g);
+                for (let c = 0; c < WORD_LENGTH; c++) {
+                    const tile = getTile(g, gridRow, c);
+                    if (tile) {
+                        tile.classList.remove('animate-shake');
+                        void tile.offsetWidth;
+                        tile.classList.add('animate-shake');
+                    }
+                }
+            }
+        }
+
+        function revealAllGrids(guess, callback) {
+            isRevealing = true;
+            let totalAnimations = 0;
+            let completedAnimations = 0;
+
+            for (let g = 0; g < NUM_GRIDS; g++) {
+                if (gridSolved[g]) continue;
+
+                const evalResult = evaluate(guess, targetWords[g]);
+                gridEvaluations[g].push(evalResult);
+                const row = gridEvaluations[g].length - 1;
+
+                totalAnimations++;
+
+                // Write the letters
+                for (let c = 0; c < WORD_LENGTH; c++) {
+                    setTileLetter(g, row, c, guess[c]);
+                }
+
+                // Flip animation (shorter delays for 8 grids)
+                for (let c = 0; c < WORD_LENGTH; c++) {
+                    const tile = getTile(g, row, c);
+                    if (!tile) continue;
+
+                    const delay = c * 50;
+                    const state = evalResult[c];
+
+                    setTimeout(() => {
+                        tile.classList.add('animate-flip');
+                        setTimeout(() => {
+                            setTileState(g, row, c, state);
+                        }, 120);
+                    }, delay);
+                }
+
+                // After all tiles in this grid flipped
+                const gridIdx = g;
+                setTimeout(() => {
+                    // Check if this grid is solved
+                    const evalRes = gridEvaluations[gridIdx][gridEvaluations[gridIdx].length - 1];
+                    if (evalRes.every(e => e === 'correct')) {
+                        gridSolved[gridIdx] = true;
+                        gridSolvedAtGuess[gridIdx] = guesses.length - 1;
+                        markGridSolved(gridIdx);
+                    }
+
+                    // Update keyboard states for this grid
+                    updateKeyboardForGrid(gridIdx, guess, evalRes);
+
+                    completedAnimations++;
+                    if (completedAnimations === totalAnimations) {
+                        renderKeyboard();
+                        isRevealing = false;
+                        if (callback) callback();
+                    }
+                }, WORD_LENGTH * 50 + 250);
+            }
+
+            if (totalAnimations === 0) {
+                isRevealing = false;
+                if (callback) callback();
+            }
+        }
+
+        function markGridSolved(gridIdx) {
+            const container = document.getElementById(`grid-container-${gridIdx}`);
+            const label = document.getElementById(`grid-label-${gridIdx}`);
+            if (container) {
+                container.classList.add('solved', 'animate-gridSolved');
+            }
+            if (label) {
+                label.classList.add('solved');
+                label.textContent = `✓ Tablo ${gridIdx + 1}`;
+            }
+
+            // Bounce the winning row
+            const row = gridEvaluations[gridIdx].length - 1;
+            setTimeout(() => {
+                for (let c = 0; c < WORD_LENGTH; c++) {
+                    const tile = getTile(gridIdx, row, c);
+                    if (tile) {
+                        setTimeout(() => {
+                            tile.classList.add('animate-bounce-win');
+                        }, c * 40);
+                    }
+                }
+            }, 150);
+        }
+
+        function markGridFailed(gridIdx) {
+            const container = document.getElementById(`grid-container-${gridIdx}`);
+            const label = document.getElementById(`grid-label-${gridIdx}`);
+            if (container) container.classList.add('failed');
+            if (label) {
+                label.classList.add('failed');
+                label.textContent = `✗ ${targetWords[gridIdx]}`;
+            }
+        }
+
+        // =====================================================
+        // KEYBOARD
+        // =====================================================
+        function buildKeyboard() {
+            const rows = [
+                { id: 'kb-row-1', keys: KB_ROW_1 },
+                { id: 'kb-row-2', keys: KB_ROW_2 },
+                { id: 'kb-row-3', keys: KB_ROW_3 }
+            ];
+
+            rows.forEach(({ id, keys }) => {
+                const row = document.getElementById(id);
+                row.innerHTML = '';
+
+                keys.forEach(key => {
+                    const btn = document.createElement('button');
+                    btn.className = 'key-btn';
+
+                    if (key === 'ENTER') {
+                        btn.innerHTML = `<i data-lucide="corner-down-left" class="w-4 h-4 md:w-5 md:h-5"></i>`;
+                        btn.style.cssText = 'min-width: 40px; height: 46px; font-size: 0.6rem;';
+                    } else if (key === 'SİL') {
+                        btn.innerHTML = `<i data-lucide="delete" class="w-4 h-4 md:w-5 md:h-5"></i>`;
+                        btn.style.cssText = 'min-width: 40px; height: 46px; font-size: 0.6rem;';
+                    } else {
+                        // Letter key with 8-dot indicator below
+                        const letterSpan = document.createElement('span');
+                        letterSpan.textContent = key;
+                        letterSpan.style.cssText = 'font-size: 0.7rem; line-height: 1;';
+                        btn.appendChild(letterSpan);
+
+                        // Add 8-dot indicator (2 rows × 4 cols)
+                        const dots = document.createElement('div');
+                        dots.className = 'key-indicators';
+                        dots.id = `key-dots-${key}`;
+                        for (let i = 0; i < NUM_GRIDS; i++) {
+                            const dot = document.createElement('div');
+                            dot.className = 'key-indicator-dot';
+                            dot.id = `key-dot-${key}-${i}`;
+                            dots.appendChild(dot);
+                        }
+                        btn.appendChild(dots);
+
+                        btn.style.cssText = 'min-width: 27px; height: 46px; padding: 2px 0;';
+                        btn.id = `key-${key}`;
+                    }
+
+                    btn.setAttribute('data-key', key);
+                    btn.addEventListener('click', () => handleKeyPress(key));
+                    btn.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+                    row.appendChild(btn);
+                });
+            });
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function updateKeyboardForGrid(gridIdx, guess, evalResult) {
+            for (let c = 0; c < WORD_LENGTH; c++) {
+                const letter = guess[c];
+                if (!keyboardStates[letter]) {
+                    keyboardStates[letter] = new Array(NUM_GRIDS).fill('');
+                }
+
+                const currentState = keyboardStates[letter][gridIdx];
+                const newState = evalResult[c];
+
+                // Priority: correct > present > absent
+                const priority = { '': 0, 'absent': 1, 'present': 2, 'correct': 3 };
+                if (priority[newState] > priority[currentState || '']) {
+                    keyboardStates[letter][gridIdx] = newState;
+                }
+            }
+        }
+
+        function renderKeyboard() {
+            TURKISH_LETTERS.split('').forEach(letter => {
+                const states = keyboardStates[letter] || new Array(NUM_GRIDS).fill('');
+
+                // Update indicator dots
+                for (let i = 0; i < NUM_GRIDS; i++) {
+                    const dot = document.getElementById(`key-dot-${letter}-${i}`);
+                    if (dot) {
+                        dot.classList.remove('correct', 'present', 'absent');
+                        if (states[i]) {
+                            dot.classList.add(states[i]);
+                        }
+                    }
+                }
+
+                // Update key background: dim only if all evaluated grids say absent
+                const keyBtn = document.getElementById(`key-${letter}`);
+                if (keyBtn) {
+                    keyBtn.classList.remove('dimmed');
+                    const hasAny = states.some(s => s !== '');
+                    const allAbsent = hasAny && states.every(s => s === '' || s === 'absent');
+
+                    if (allAbsent && hasAny) {
+                        keyBtn.classList.add('dimmed');
+                    }
+                }
+            });
+        }
+
+        // =====================================================
+        // GAME LOGIC
+        // =====================================================
+        function handleKeyPress(key) {
+            if (isGameOver || isRevealing) return;
+
+            if (key === 'ENTER') {
+                submitGuess();
+                return;
+            }
+
+            if (key === 'SİL' || key === 'BACKSPACE') {
+                deleteLetter();
+                return;
+            }
+
+            const upperKey = turkishUpper(key);
+            if (upperKey.length === 1 && TURKISH_LETTERS.includes(upperKey)) {
+                addLetter(upperKey);
+            }
+        }
+
+        function addLetter(letter) {
+            if (currentGuess.length >= WORD_LENGTH) return;
+            currentGuess += letter;
+            displayCurrentInput();
+
+            // Pop animation on the newly added tile
+            for (let g = 0; g < NUM_GRIDS; g++) {
+                if (gridSolved[g]) continue;
+                const row = getGridRow(g);
+                if (row < MAX_GUESSES) {
+                    popTile(g, row, currentGuess.length - 1);
+                }
+            }
+        }
+
+        function deleteLetter() {
+            if (currentGuess.length <= 0) return;
+            currentGuess = currentGuess.slice(0, -1);
+            displayCurrentInput();
+        }
+
+        function submitGuess() {
+            if (currentGuess.length < WORD_LENGTH) {
+                shakeGridRows();
+                showToast('Yeterli harf yok!');
+                return;
+            }
+
+            const guess = turkishUpper(currentGuess);
+
+            if (!isValidWord(guess)) {
+                shakeGridRows();
+                showToast('Geçersiz kelime');
+                return;
+            }
+
+            guesses.push(guess);
+            currentGuess = '';
+            document.getElementById('guess-count').textContent = guesses.length;
+
+            revealAllGrids(guess, () => {
+                // Check if all grids solved
+                const allSolved = gridSolved.every(s => s);
+                if (allSolved) {
+                    isGameOver = true;
+                    showToast('Tebrikler! 🎉', 2000);
+                    updateStats(true);
+                    saveDailyState();
+                    if (window.KaUser) {
+                        const gecenSureSaniye = Math.floor((Date.now() - gameStartTime) / 1000);
+                        window.KaUser.addGameResult('sekizle', 'word', true, gecenSureSaniye);
+                    }
+                    setTimeout(() => showStatsModal(), 1500);
+                    return;
+                }
+
+                // Check if out of guesses
+                if (guesses.length >= MAX_GUESSES) {
+                    isGameOver = true;
+                    // Mark unsolved grids as failed
+                    for (let g = 0; g < NUM_GRIDS; g++) {
+                        if (!gridSolved[g]) {
+                            markGridFailed(g);
+                        }
+                    }
+                    const solvedCount = gridSolved.filter(s => s).length;
+                    showToast(`${solvedCount}/${NUM_GRIDS} kelime bulundu`, 3000);
+                    updateStats(false);
+                    saveDailyState();
+                    if (window.KaUser) {
+                        const gecenSureSaniye = Math.floor((Date.now() - gameStartTime) / 1000);
+                        window.KaUser.addGameResult('sekizle', 'word', false, gecenSureSaniye);
+                    }
+                    setTimeout(() => showStatsModal(), 2000);
+                    return;
+                }
+
+                saveDailyState();
+            });
+        }
+
+        // =====================================================
+        // PHYSICAL KEYBOARD
+        // =====================================================
+        document.addEventListener('keydown', function(e) {
+            if (!document.getElementById('stats-modal').classList.contains('hidden')) return;
+            if (!document.getElementById('help-modal').classList.contains('hidden')) return;
+
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleKeyPress('ENTER');
+                return;
+            }
+
+            if (e.key === 'Backspace') {
+                e.preventDefault();
+                handleKeyPress('SİL');
+                return;
+            }
+
+            const key = e.key;
+            const upper = turkishUpper(key);
+            if (upper.length === 1 && TURKISH_LETTERS.includes(upper)) {
+                e.preventDefault();
+                handleKeyPress(upper);
+            }
+        });
+
+        // =====================================================
+        // TOAST
+        // =====================================================
+        function showToast(message, duration = 2000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast bg-gray-100 text-gray-900 font-bold text-sm px-5 py-2.5 rounded-xl shadow-lg';
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // =====================================================
+        // STATS (localStorage)
+        // =====================================================
+        function loadStats() {
+            const key = `${STORAGE_KEY_STATS}_${gameMode}`;
+            try {
+                const data = JSON.parse(localStorage.getItem(key));
+                if (data) return data;
+            } catch(e) {}
+            return {
+                played: 0,
+                won: 0,
+                currentStreak: 0,
+                maxStreak: 0,
+                // distribution: how many grids solved for each game
+                // index 0 = solved 0 grids, ..., 8 = solved all 8
+                gridDistribution: new Array(NUM_GRIDS + 1).fill(0)
+            };
+        }
+
+        function saveStats(stats) {
+            const key = `${STORAGE_KEY_STATS}_${gameMode}`;
+            localStorage.setItem(key, JSON.stringify(stats));
+        }
+
+        function updateStats(won) {
+            const stats = loadStats();
+            stats.played++;
+            if (won) {
+                stats.won++;
+                stats.currentStreak++;
+                stats.maxStreak = Math.max(stats.maxStreak, stats.currentStreak);
+            } else {
+                stats.currentStreak = 0;
+            }
+
+            const solvedCount = gridSolved.filter(s => s).length;
+            if (!stats.gridDistribution) stats.gridDistribution = new Array(NUM_GRIDS + 1).fill(0);
+            stats.gridDistribution[solvedCount]++;
+
+            saveStats(stats);
+        }
+
+        // =====================================================
+        // DAILY STATE (localStorage)
+        // =====================================================
+        function saveDailyState() {
+            if (gameMode !== 'daily') return;
+            const state = {
+                date: getTodayStr(),
+                guesses,
+                gridEvaluations,
+                gridSolved,
+                gridSolvedAtGuess,
+                isGameOver,
+                targetWords,
+                keyboardStates,
+                gameStartTime
+            };
+            localStorage.setItem(STORAGE_KEY_DAILY, JSON.stringify(state));
+        }
+
+        function loadDailyState() {
+            try {
+                const data = JSON.parse(localStorage.getItem(STORAGE_KEY_DAILY));
+                if (data && data.date === getTodayStr()) {
+                    return data;
+                }
+            } catch(e) {}
+            return null;
+        }
+
+        // =====================================================
+        // STATS MODAL
+        // =====================================================
+        window.showStatsModal = function() {
+            const modal = document.getElementById('stats-modal');
+            modal.classList.remove('hidden');
+
+            const stats = loadStats();
+            const winPct = stats.played > 0 ? Math.round((stats.won / stats.played) * 100) : 0;
+            const solvedCount = gridSolved.filter(s => s).length;
+
+            let resultHtml = '';
+            if (isGameOver) {
+                const won = gridSolved.every(s => s);
+                if (won) {
+                    resultHtml = `
+                        <div class="text-center mb-4">
+                            <div class="text-3xl mb-1">🎉</div>
+                            <p class="text-lg font-bold bg-gradient-to-r from-green-400 to-emerald-400 text-transparent bg-clip-text">Tebrikler!</p>
+                            <p class="text-xs text-gray-400 mt-1">${guesses.length} tahminde 8 kelimeyi de buldun!</p>
+                        </div>
+                    `;
+                } else {
+                    const unsolvedWords = targetWords.filter((_, i) => !gridSolved[i]);
+                    resultHtml = `
+                        <div class="text-center mb-4">
+                            <div class="text-3xl mb-1">😔</div>
+                            <p class="text-lg font-bold text-red-400">Kaybettin</p>
+                            <p class="text-xs text-gray-400 mt-1">${solvedCount}/${NUM_GRIDS} kelime bulundu</p>
+                            <div class="mt-2 flex flex-wrap justify-center gap-1">
+                                ${unsolvedWords.map(w => `<span class="bg-red-900/30 border border-red-500/30 text-red-300 text-xs font-bold px-2 py-0.5 rounded">${w}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Grid results: show each table with solve guess number
+                resultHtml += `
+                    <div class="grid grid-cols-4 gap-1.5 mb-4">
+                        ${targetWords.map((w, i) => {
+                            const solved = gridSolved[i];
+                            const guessNum = solved ? gridSolvedAtGuess[i] + 1 : '✗';
+                            const bgClass = solved ? 'bg-green-900/30 border-green-500/30' : 'bg-red-900/30 border-red-500/30';
+                            const textClass = solved ? 'text-green-400' : 'text-red-400';
+                            return `
+                                <div class="text-center border ${bgClass} rounded-lg p-1.5">
+                                    <div class="text-sm font-black ${textClass}">${guessNum}</div>
+                                    <div class="text-[7px] text-gray-400 mt-0.5 uppercase tracking-wider truncate" title="${w}">${w}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            // Daily lock
+            let dailyLockHtml = '';
+            if (gameMode === 'daily' && isGameOver) {
+                dailyLockHtml = `
+                    <div class="bg-indigo-900/40 border border-indigo-500/30 rounded-lg p-3 mb-4 text-center">
+                        <p class="text-xs text-indigo-200 font-semibold mb-2">Bugünkü Sekizle Hakkını Tamamladın!</p>
+                        <button onclick="setGameMode('unlimited'); closeStatsModal();" class="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors shadow-lg">
+                            Sınırsız Moda Geç
+                        </button>
+                    </div>
+                `;
+            }
+
+            const content = document.getElementById('stats-modal-content');
+            content.innerHTML = `
+                <h2 class="text-center text-lg font-bold text-gray-900 dark:text-gray-200 tracking-wider uppercase mb-4">İstatistikler</h2>
+                ${resultHtml}
+                ${dailyLockHtml}
+                <div class="grid grid-cols-4 gap-2 mb-5">
+                    <div class="text-center">
+                        <div class="text-2xl font-extrabold text-white">${stats.played}</div>
+                        <div class="text-[10px] text-gray-400 mt-0.5">Oynanan</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-extrabold text-white">${winPct}</div>
+                        <div class="text-[10px] text-gray-400 mt-0.5">Kazanma %</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-extrabold text-white">${stats.currentStreak}</div>
+                        <div class="text-[10px] text-gray-400 mt-0.5">Mevcut Seri</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-extrabold text-white">${stats.maxStreak}</div>
+                        <div class="text-[10px] text-gray-400 mt-0.5">Max Seri</div>
+                    </div>
+                </div>
+
+                <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300 tracking-wider uppercase mb-2">Çözülen Tablo Dağılımı</h3>
+                <div class="space-y-1 mb-5" id="dist-container-modal"></div>
+
+                ${isGameOver ? `
+                <button onclick="shareResults()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-bold text-base py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(168,85,247,0.4)]">
+                    <i data-lucide="share-2" class="w-5 h-5"></i>
+                    Paylaş
+                </button>` : ''}
+            `;
+
+            // Fill distribution
+            const distContainer = document.getElementById('dist-container-modal');
+            if (distContainer && stats.gridDistribution) {
+                const maxDist = Math.max(...stats.gridDistribution, 1);
+                for (let i = 0; i <= NUM_GRIDS; i++) {
+                    const count = stats.gridDistribution[i] || 0;
+                    const pct = Math.max((count / maxDist) * 100, 8);
+                    const isCurrent = isGameOver && gridSolved.filter(s => s).length === i;
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center gap-2';
+                    row.innerHTML = `
+                        <div class="text-[10px] font-bold text-gray-400 w-7 text-right">${i}/${NUM_GRIDS}</div>
+                        <div class="flex-1">
+                            <div class="h-4 rounded-sm flex items-center justify-end px-1.5 text-[10px] font-bold text-gray-900 dark:text-white ${isCurrent ? 'bg-green-600' : 'bg-gray-600'}" style="width: ${pct}%; min-width: 18px; transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);">
+                                ${count}
+                            </div>
+                        </div>
+                    `;
+                    distContainer.appendChild(row);
+                }
+            }
+
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeStatsModal = function() {
+            document.getElementById('stats-modal').classList.add('hidden');
+        };
+
+        // =====================================================
+        // HOW TO PLAY MODAL
+        // =====================================================
+        window.showHowToPlay = function() {
+            document.getElementById('help-modal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeHelpModal = function() {
+            document.getElementById('help-modal').classList.add('hidden');
+        };
+
+        // =====================================================
+        // SHARE
+        // =====================================================
+        window.shareResults = function() {
+            let modeLabel = '';
+            if (gameMode === 'daily') {
+                const today = new Date();
+                const dateStr = `${today.getDate()}.${today.getMonth()+1}.${today.getFullYear()}`;
+                modeLabel = `Kelimearası Sekizle ${dateStr}`;
+            } else {
+                modeLabel = `Kelimearası Sekizle (Sınırsız)`;
+            }
+
+            const allSolved = gridSolved.every(s => s);
+            const solvedCount = gridSolved.filter(s => s).length;
+            const score = allSolved ? `${guesses.length}/${MAX_GUESSES}` : `X/${MAX_GUESSES} (${solvedCount}/${NUM_GRIDS})`;
+
+            // Build grid result numbers (2 rows × 4 cols)
+            const gridResults = targetWords.map((_, g) => {
+                if (gridSolved[g]) {
+                    return String(gridSolvedAtGuess[g] + 1);
+                }
+                return '🟥';
+            });
+
+            let header = `${modeLabel}\n${score}\n\n`;
+            // Show 8 grid results in 2 rows of 4
+            header += `${gridResults.slice(0, 4).map(r => r === '🟥' ? r : r + '️⃣').join(' ')}\n`;
+            header += `${gridResults.slice(4, 8).map(r => r === '🟥' ? r : r + '️⃣').join(' ')}\n`;
+
+            // Build emoji blocks for each grid (4 pairs side by side)
+            const emojiBlocks = [];
+            for (let g = 0; g < NUM_GRIDS; g++) {
+                const block = [];
+                gridEvaluations[g].forEach(evalRow => {
+                    const row = evalRow.map(e => {
+                        if (e === 'correct') return '🟩';
+                        if (e === 'present') return '🟨';
+                        return '⬛';
+                    }).join('');
+                    block.push(row);
+                });
+                emojiBlocks.push(block);
+            }
+
+            // Combine grids in pairs (0+1, 2+3, 4+5, 6+7)
+            const emptyRow = '⬜⬜⬜⬜⬜';
+            let body = '';
+            for (let pair = 0; pair < 4; pair++) {
+                const left = emojiBlocks[pair * 2];
+                const right = emojiBlocks[pair * 2 + 1];
+                const maxRows = Math.max(left.length, right.length);
+                for (let r = 0; r < maxRows; r++) {
+                    body += `${left[r] || emptyRow} ${right[r] || emptyRow}\n`;
+                }
+                if (pair < 3) body += '\n';
+            }
+
+            const shareText = `${header}\n${body}\nkelimearasi.com/oyunlar/sekizle.html`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Kelimearası Sekizle',
+                    text: shareText
+                }).catch(() => {
+                    fallbackCopy(shareText);
+                });
+            } else {
+                fallbackCopy(shareText);
+            }
+        };
+
+        function fallbackCopy(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Sonuç panoya kopyalandı! 📋');
+            }).catch(() => {
+                showToast('Paylaşım başarısız oldu');
+            });
+        }
+
+        // =====================================================
+        // MODE SWITCHING
+        // =====================================================
+        window.setGameMode = function(mode) {
+            if (mode === gameMode && !isGameOver) return;
+            gameMode = mode;
+            resetGame();
+        };
+
+        // =====================================================
+        // GAME RESET
+        // =====================================================
+        function resetGame() {
+            // Update mode buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                const m = btn.getAttribute('data-mode');
+                if (m === gameMode) {
+                    btn.classList.add('active');
+                    btn.classList.remove('text-gray-400');
+                } else {
+                    btn.classList.remove('active');
+                    btn.classList.add('text-gray-400');
+                }
+            });
+
+            // Reset state
+            guesses = [];
+            gridEvaluations = Array.from({length: NUM_GRIDS}, () => []);
+            gridSolved = new Array(NUM_GRIDS).fill(false);
+            gridSolvedAtGuess = new Array(NUM_GRIDS).fill(-1);
+            currentGuess = '';
+            isGameOver = false;
+            isRevealing = false;
+            keyboardStates = {};
+            gameStartTime = Date.now();
+
+            document.getElementById('guess-count').textContent = '0';
+
+            // Choose words
+            if (gameMode === 'daily') {
+                const saved = loadDailyState();
+                if (saved) {
+                    // Restore daily state
+                    targetWords = saved.targetWords;
+                    guesses = saved.guesses;
+                    gridEvaluations = saved.gridEvaluations;
+                    gridSolved = saved.gridSolved;
+                    gridSolvedAtGuess = saved.gridSolvedAtGuess;
+                    isGameOver = saved.isGameOver;
+                    keyboardStates = saved.keyboardStates || {};
+                    if (saved.gameStartTime) gameStartTime = saved.gameStartTime;
+
+                    buildGrids();
+                    buildKeyboard();
+                    restoreGridDisplay();
+                    renderKeyboard();
+                    document.getElementById('guess-count').textContent = guesses.length;
+
+                    if (isGameOver) {
+                        // Show solved/failed grids
+                        for (let g = 0; g < NUM_GRIDS; g++) {
+                            if (gridSolved[g]) {
+                                const container = document.getElementById(`grid-container-${g}`);
+                                const label = document.getElementById(`grid-label-${g}`);
+                                if (container) container.classList.add('solved');
+                                if (label) { label.classList.add('solved'); label.textContent = `✓ Tablo ${g + 1}`; }
+                            } else if (guesses.length >= MAX_GUESSES) {
+                                markGridFailed(g);
+                            }
+                        }
+                        setTimeout(() => showStatsModal(), 500);
+                    } else {
+                        // Mark solved grids
+                        for (let g = 0; g < NUM_GRIDS; g++) {
+                            if (gridSolved[g]) {
+                                const container = document.getElementById(`grid-container-${g}`);
+                                const label = document.getElementById(`grid-label-${g}`);
+                                if (container) container.classList.add('solved');
+                                if (label) { label.classList.add('solved'); label.textContent = `✓ Tablo ${g + 1}`; }
+                            }
+                        }
+                    }
+                    return;
+                }
+                targetWords = pickNWords(NUM_GRIDS, getDailySeed());
+            } else {
+                targetWords = pickNRandomWords(NUM_GRIDS);
+            }
+
+            buildGrids();
+            buildKeyboard();
+        }
+
+        function restoreGridDisplay() {
+            // Replay all guesses visually (without animation)
+            for (let guessIdx = 0; guessIdx < guesses.length; guessIdx++) {
+                const guess = guesses[guessIdx];
+
+                for (let g = 0; g < NUM_GRIDS; g++) {
+                    // Was this grid already solved before this guess?
+                    const wasSolvedBefore = gridSolvedAtGuess[g] !== -1 && gridSolvedAtGuess[g] < guessIdx;
+                    if (wasSolvedBefore) continue;
+
+                    // Find the row for this guess in this grid
+                    let row = 0;
+                    for (let prevIdx = 0; prevIdx < guessIdx; prevIdx++) {
+                        const prevSolved = gridSolvedAtGuess[g] !== -1 && gridSolvedAtGuess[g] < prevIdx;
+                        if (!prevSolved) row++;
+                    }
+
+                    const evalResult = gridEvaluations[g][row];
+                    if (!evalResult) continue;
+
+                    for (let c = 0; c < WORD_LENGTH; c++) {
+                        setTileLetter(g, row, c, guess[c]);
+                        setTileState(g, row, c, evalResult[c]);
+                    }
+                }
+            }
+        }
+
+        // =====================================================
+        // INIT
+        // =====================================================
+        async function init() {
+            await initWordLists();
+
+            if (TARGET_WORDS.length < NUM_GRIDS) {
+                showToast('Kelime listesi yüklenemedi!', 5000);
+                return;
+            }
+
+            resetGame();
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Start
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => init());
+        } else {
+            init();
+        }
+
+    })();
+    </script>
+</body>
+</html>

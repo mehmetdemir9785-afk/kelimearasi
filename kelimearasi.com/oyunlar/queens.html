@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Kelimearası Vezirler - Mantık bulmacası. 8x8 tahtada vezirleri kurallara uygun yerleştir!">
+    <title>Vezirler | Kelimearası</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+
+    <style>
+        :root {
+            --region-border: rgba(15, 23, 42, 0.25); /* Light mode region border */
+        }
+        
+        html.dark {
+            --region-border: rgba(148, 163, 184, 0.6); /* Dark mode region border */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ====== ANIMATIONS ====== */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes queenPlace {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            60% { transform: scale(1.3) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        @keyframes conflictFlash {
+            0%, 100% { background-color: transparent; }
+            25% { background-color: rgba(239, 68, 68, 0.5); }
+            50% { background-color: rgba(239, 68, 68, 0.3); }
+            75% { background-color: rgba(239, 68, 68, 0.5); }
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            0% { transform: translateY(30px) scale(0.95); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        @keyframes confettiDrop {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        @keyframes celebrate {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.05); }
+            50% { transform: scale(0.98); }
+            75% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes crownBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        /* Light mode pulse */
+        @keyframes glowPulseLight {
+            0%, 100% { box-shadow: 0 0 8px 2px rgba(168, 85, 247, 0.2); }
+            50% { box-shadow: 0 0 20px 6px rgba(168, 85, 247, 0.4); }
+        }
+        /* Dark mode pulse */
+        @keyframes glowPulseDark {
+            0%, 100% { box-shadow: 0 0 8px 2px rgba(168, 85, 247, 0.3); }
+            50% { box-shadow: 0 0 20px 6px rgba(168, 85, 247, 0.5); }
+        }
+
+        .animate-shake { animation: shake 0.5s ease-in-out; }
+        .animate-pop { animation: pop 0.2s ease-out; }
+        .animate-queen-place { animation: queenPlace 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .animate-conflict { animation: conflictFlash 0.6s ease-in-out 2; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-celebrate { animation: celebrate 0.6s ease-in-out; }
+        .animate-crown-bounce { animation: crownBounce 1.5s ease-in-out infinite; }
+
+        .animate-glow-pulse {
+            animation: glowPulseLight 2.5s ease-in-out infinite;
+        }
+        html.dark .animate-glow-pulse {
+            animation: glowPulseDark 2.5s ease-in-out infinite;
+        }
+
+        /* ====== CELL STYLES ====== */
+        .cell {
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .cell:hover {
+            filter: brightness(1.1);
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        
+        html.dark .cell:hover {
+            filter: brightness(1.3);
+        }
+
+        .cell:active {
+            transform: scale(0.95);
+        }
+
+        /* Region border styles - dynamic for light/dark */
+        .border-region-top { border-top-width: 2.5px !important; border-top-color: var(--region-border) !important; }
+        .border-region-bottom { border-bottom-width: 2.5px !important; border-bottom-color: var(--region-border) !important; }
+        .border-region-left { border-left-width: 2.5px !important; border-left-color: var(--region-border) !important; }
+        .border-region-right { border-right-width: 2.5px !important; border-right-color: var(--region-border) !important; }
+
+        /* Queen emoji styling */
+        .queen-emoji {
+            font-size: 1.4rem;
+            filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.6));
+            line-height: 1;
+        }
+        @media (min-width: 640px) { .queen-emoji { font-size: 1.8rem; } }
+        @media (min-width: 768px) { .queen-emoji { font-size: 2.2rem; } }
+        @media (min-width: 1024px) { .queen-emoji { font-size: 2.8rem; } }
+
+        /* X mark styling */
+        .x-mark {
+            font-size: 1rem;
+            font-weight: 800;
+            color: rgba(71, 85, 105, 0.6); /* Light mode X */
+            line-height: 1;
+        }
+        html.dark .x-mark {
+            color: rgba(148, 163, 184, 0.5); /* Dark mode X */
+        }
+        @media (min-width: 640px) { .x-mark { font-size: 1.3rem; } }
+        @media (min-width: 768px) { .x-mark { font-size: 1.8rem; } }
+        @media (min-width: 1024px) { .x-mark { font-size: 2.2rem; } }
+
+        /* Confetti */
+        .confetti-piece {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -20px;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        /* Scrollbar hiding */
+        ::-webkit-scrollbar { display: none; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Grid outer glow */
+        .grid-container {
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: white;
+            transition: background-color 0.3s;
+        }
+        html.dark .grid-container {
+            box-shadow: 0 0 40px rgba(168, 85, 247, 0.08), 0 0 80px rgba(168, 85, 247, 0.04);
+            background-color: #181836;
+        }
+
+        /* Win state cell glow */
+        .cell-win {
+            transition: all 0.5s ease;
+        }
+    </style>
+    <script src="../js/user-system.js"></script>
+</head>
+<body class="bg-gray-50 dark:bg-[#0c0c1d] text-gray-900 dark:text-gray-100 font-sans h-full flex flex-col transition-colors duration-300">
+
+    <!-- ====== TOP BAR ====== -->
+    <header class="px-4 py-3 flex items-center justify-between border-b border-gray-200/60 dark:border-white/5 bg-white/80 dark:bg-[#12122b]/80 backdrop-blur-xl sticky top-0 z-50 shrink-0 transition-colors duration-300">
+        <!-- Left: Home -->
+        <a href="../index.html" id="btn-home" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Ana Sayfa">🏠</a>
+
+        <!-- Center: Title -->
+        <div class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+            <h1 class="bg-gradient-to-r from-purple-500 to-pink-500 dark:from-purple-400 dark:to-pink-500 text-transparent bg-clip-text font-black text-2xl tracking-widest">
+                VEZİRLER
+            </h1>
+            <div id="mode-subtitle" class="text-[10px] text-gray-500 dark:text-slate-500 tracking-[0.3em] uppercase mt-0.5">Günlük Bulmaca</div>
+        </div>
+
+        <!-- Right: How to Play -->
+        <button id="btn-help" class="text-2xl md:text-3xl hover:scale-110 transition-transform cursor-pointer drop-shadow-md select-none" title="Nasıl Oynanır">❓</button>
+    </header>
+
+    <!-- ====== TIMER BAR ====== -->
+    <div class="flex items-center justify-center py-2 shrink-0">
+        <div class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 shadow-sm transition-colors duration-300">
+            <span class="text-gray-400 dark:text-slate-400 text-sm">⏱️</span>
+            <span id="timer-display" class="text-gray-700 dark:text-slate-300 text-sm font-semibold tracking-wider font-mono">00:00</span>
+        </div>
+    </div>
+
+    <!-- ====== QUEEN COUNTER ====== -->
+    <div class="flex items-center justify-center pb-2 shrink-0">
+        <div class="flex items-center gap-1.5">
+            <span id="queen-counter" class="text-gray-600 dark:text-slate-400 text-xs font-medium tracking-wide">👑 0 / 8</span>
+        </div>
+    </div>
+
+    <!-- ====== GAME GRID ====== -->
+    <main class="flex-1 flex flex-col items-center justify-center px-2 pb-4 overflow-hidden">
+        <div id="game-grid" class="grid-container border border-gray-200/60 dark:border-white/5"></div>
+    </main>
+
+    <!-- ====== BOTTOM BAR ====== -->
+    <footer class="flex items-center justify-center gap-3 px-4 py-3 border-t border-gray-200/60 dark:border-white/5 bg-transparent shrink-0">
+        <button id="btn-undo" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/10 transition-all duration-200 active:scale-95 text-sm text-gray-700 dark:text-slate-300 shadow-sm" title="Geri Al">
+            <span>↩️</span>
+            <span class="hidden sm:inline">Geri Al</span>
+        </button>
+        <button id="btn-clear" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/10 transition-all duration-200 active:scale-95 text-sm text-gray-700 dark:text-slate-300 shadow-sm" title="Temizle">
+            <span>🗑️</span>
+            <span class="hidden sm:inline">Temizle</span>
+        </button>
+        <button id="btn-new-game" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all duration-200 active:scale-95 text-sm text-white font-semibold shadow-lg shadow-purple-500/20 hidden" title="Yeni Oyun">
+            <span>🔄</span>
+            <span class="hidden sm:inline">Yeni Oyun</span>
+        </button>
+    </footer>
+
+    <!-- ====== HOW TO PLAY MODAL ====== -->
+    <div id="modal-help" class="fixed inset-0 flex items-center justify-center bg-gray-900/40 dark:bg-black/80 backdrop-blur-sm z-[100] hidden">
+        <div class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 rounded-2xl shadow-2xl w-[90%] max-w-md p-6 animate-slide-up transition-colors duration-300">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 dark:from-purple-400 dark:to-pink-500 text-transparent bg-clip-text">Nasıl Oynanır?</h2>
+                <button id="btn-close-help" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white">
+                    ✕
+                </button>
+            </div>
+            <!-- Rules -->
+            <div class="space-y-4 text-sm text-gray-600 dark:text-slate-300 leading-relaxed">
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center shrink-0 mt-0.5">🎯</div>
+                    <div>
+                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Amaç</div>
+                        <div>8×8 tahtaya <strong class="text-yellow-600 dark:text-yellow-400">8 adet Vezir (👑)</strong> yerleştir. Her renk bölgesine tam olarak 1 vezir konulmalıdır.</div>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">👆</div>
+                    <div>
+                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Tıklama Döngüsü</div>
+                        <div>Bir hücreye tıkladığında sırasıyla: <span class="text-gray-400 dark:text-slate-400">Boş</span> → <span class="text-yellow-600 dark:text-yellow-400">👑 (Vezir)</span> → <span class="text-gray-500 dark:text-slate-400 font-bold">✕ (İşaret)</span> → <span class="text-gray-400 dark:text-slate-400">Boş</span>. <br><span class="text-xs text-gray-400 dark:text-slate-400 italic">(Sağ tık ile direkt ✕ koyabilirsin)</span></div>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0 mt-0.5">⚠️</div>
+                    <div>
+                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Kurallar</div>
+                        <div>Aynı <strong>satır</strong>, <strong>sütun</strong>, <strong>renk bölgesi</strong> veya <strong>çapraz komşu</strong> (1 kare yakınında) hücrelerde birden fazla vezir bulunamaz.</div>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-500/20 flex items-center justify-center shrink-0 mt-0.5">✕</div>
+                    <div>
+                        <div class="font-semibold text-gray-900 dark:text-white mb-1">İşaretleme</div>
+                        <div><strong class="text-gray-500 dark:text-slate-400">✕</strong> işareti, "buraya vezir koyma" hatırlatmasıdır. Oyunu etkilemez.</div>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-yellow-100 dark:bg-yellow-500/20 flex items-center justify-center shrink-0 mt-0.5">🏆</div>
+                    <div>
+                        <div class="font-semibold text-gray-900 dark:text-white mb-1">Kazanma</div>
+                        <div>8 veziri kurallara uygun yerleştirdiğinde bulmacayı çözmüş olursun!</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Close Button -->
+            <button id="btn-close-help-bottom" class="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all duration-200 font-semibold text-sm active:scale-95 text-white shadow-md">
+                Anladım!
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== WIN MODAL ====== -->
+    <div id="modal-win" class="fixed inset-0 flex items-center justify-center bg-gray-900/40 dark:bg-black/80 backdrop-blur-sm z-[100] hidden">
+        <div class="bg-white dark:bg-[#181836] border border-gray-200/60 dark:border-white/5 rounded-2xl shadow-2xl w-[90%] max-w-sm p-6 animate-slide-up text-center transition-colors duration-300">
+            <!-- Crown Icon -->
+            <div class="text-6xl mb-3 animate-crown-bounce">👑</div>
+            <!-- Title -->
+            <h2 id="win-title" class="text-2xl font-black bg-gradient-to-r from-yellow-500 via-amber-500 to-orange-500 dark:from-yellow-400 dark:via-amber-400 dark:to-orange-400 text-transparent bg-clip-text mb-1">TEBRİKLER!</h2>
+            <p id="win-desc" class="text-gray-500 dark:text-slate-400 text-sm mb-6">Bulmacayı başarıyla çözdün!</p>
+
+            <!-- Stats Grid -->
+            <div id="win-stats" class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/5 rounded-xl p-3">
+                    <div class="text-2xl font-black text-purple-600 dark:text-purple-400" id="stat-time">00:00</div>
+                    <div class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider mt-1">Süre</div>
+                </div>
+                <div class="bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/5 rounded-xl p-3">
+                    <div class="text-2xl font-black text-pink-600 dark:text-pink-400" id="stat-moves">0</div>
+                    <div class="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider mt-1">Hamle</div>
+                </div>
+            </div>
+
+            <!-- Share & New Game -->
+            <div class="flex flex-col gap-2">
+                <button id="btn-share" class="w-full py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-200 font-semibold text-sm text-gray-700 dark:text-slate-300 active:scale-95 flex items-center justify-center gap-2">
+                    <span>📋</span> Paylaş
+                </button>
+                <button id="btn-new-game-modal" class="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all duration-200 font-semibold text-sm active:scale-95 shadow-lg shadow-purple-500/20 text-white">
+                    🔄 Yeni Oyun
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== TOAST NOTIFICATION ====== -->
+    <div id="toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-[200] flex flex-col items-center gap-2 pointer-events-none"></div>
+
+
+    <!-- ============================== -->
+    <!-- ========= JAVASCRIPT ========= -->
+    <!-- ============================== -->
+    <script>
+    (function() {
+        'use strict';
+
+        // ====== CONSTANTS ======
+        const GRID_SIZE = 8;
+        const TOTAL_QUEENS = 8;
+        const CELL_EMPTY = 0;
+        const CELL_CROSS = 1;
+        const CELL_QUEEN = 2;
+
+        // ====== PUZZLE DEFINITIONS ======
+        const PUZZLES = [
+            {
+                id: 1,
+                regions: [
+                    [0, 0, 1, 1, 1, 2, 2, 2],
+                    [0, 0, 0, 1, 1, 2, 2, 2],
+                    [3, 0, 0, 1, 4, 4, 2, 2],
+                    [3, 3, 0, 4, 4, 4, 5, 5],
+                    [3, 3, 6, 6, 4, 5, 5, 5],
+                    [3, 3, 6, 6, 4, 5, 7, 7],
+                    [6, 6, 6, 6, 7, 7, 7, 7],
+                    [6, 6, 6, 7, 7, 7, 7, 7],
+                ],
+                solution: [[0, 5], [1, 3], [2, 1], [3, 6], [4, 0], [5, 4], [6, 2], [7, 7]]
+            },
+            {
+                id: 2,
+                regions: [
+                    [0, 0, 0, 1, 1, 1, 2, 2],
+                    [0, 0, 3, 3, 1, 1, 2, 2],
+                    [0, 3, 3, 3, 1, 4, 4, 2],
+                    [5, 5, 3, 3, 4, 4, 4, 2],
+                    [5, 5, 5, 3, 4, 6, 4, 2],
+                    [5, 5, 7, 7, 6, 6, 6, 6],
+                    [7, 7, 7, 7, 6, 6, 6, 6],
+                    [7, 7, 7, 7, 7, 6, 6, 6],
+                ],
+                solution: [[0, 6], [1, 1], [2, 4], [3, 0], [4, 3], [5, 7], [6, 5], [7, 2]]
+            },
+            {
+                id: 3,
+                regions: [
+                    [0, 0, 1, 1, 2, 2, 2, 3],
+                    [0, 1, 1, 1, 2, 2, 3, 3],
+                    [0, 0, 1, 4, 4, 2, 3, 3],
+                    [0, 5, 5, 4, 4, 4, 3, 3],
+                    [5, 5, 5, 4, 4, 6, 6, 3],
+                    [5, 5, 7, 7, 6, 6, 6, 6],
+                    [5, 7, 7, 7, 7, 6, 6, 6],
+                    [7, 7, 7, 7, 7, 7, 6, 6],
+                ],
+                solution: [[0, 3], [1, 0], [2, 6], [3, 2], [4, 4], [5, 7], [6, 1], [7, 5]]
+            },
+            {
+                id: 4,
+                regions: [
+                    [0, 0, 0, 0, 1, 1, 1, 1],
+                    [0, 2, 2, 0, 0, 1, 3, 1],
+                    [2, 2, 2, 2, 0, 3, 3, 3],
+                    [2, 4, 4, 2, 0, 0, 3, 3],
+                    [4, 4, 4, 5, 5, 0, 3, 3],
+                    [4, 4, 5, 5, 5, 6, 6, 3],
+                    [7, 4, 5, 5, 6, 6, 6, 6],
+                    [7, 7, 7, 7, 7, 6, 6, 6],
+                ],
+                solution: [[0, 2], [1, 5], [2, 0], [3, 3], [4, 7], [5, 1], [6, 4], [7, 6]]
+            },
+            {
+                id: 5,
+                regions: [
+                    [0, 0, 0, 1, 1, 1, 1, 2],
+                    [0, 0, 3, 3, 1, 1, 2, 2],
+                    [0, 3, 3, 3, 4, 4, 2, 2],
+                    [0, 3, 3, 4, 4, 4, 2, 2],
+                    [5, 5, 3, 4, 4, 6, 6, 2],
+                    [5, 5, 5, 5, 6, 6, 6, 6],
+                    [5, 7, 7, 5, 5, 6, 6, 6],
+                    [7, 7, 7, 7, 7, 7, 6, 6],
+                ],
+                solution: [[0, 4], [1, 6], [2, 1], [3, 5], [4, 0], [5, 3], [6, 7], [7, 2]]
+            },
+        ];
+
+        // Region colors (used for JS logic)
+        const REGION_COLORS = [
+            'rgba(239, 68, 68, 0.18)',    // 0 - Red
+            'rgba(59, 130, 246, 0.18)',    // 1 - Blue
+            'rgba(34, 197, 94, 0.18)',     // 2 - Green
+            'rgba(250, 204, 21, 0.18)',    // 3 - Yellow
+            'rgba(168, 85, 247, 0.18)',    // 4 - Purple
+            'rgba(236, 72, 153, 0.18)',    // 5 - Pink
+            'rgba(20, 184, 166, 0.18)',    // 6 - Teal
+            'rgba(249, 115, 22, 0.18)',    // 7 - Orange
+        ];
+
+        const REGION_COLORS_BRIGHT = [
+            'rgba(239, 68, 68, 0.30)',
+            'rgba(59, 130, 246, 0.30)',
+            'rgba(34, 197, 94, 0.30)',
+            'rgba(250, 204, 21, 0.30)',
+            'rgba(168, 85, 247, 0.30)',
+            'rgba(236, 72, 153, 0.30)',
+            'rgba(20, 184, 166, 0.30)',
+            'rgba(249, 115, 22, 0.30)',
+        ];
+
+        // ====== STATE ======
+        let currentPuzzle = null;
+        let board = [];         // 8x8 array of CELL_EMPTY / CELL_CROSS / CELL_QUEEN
+        let moveHistory = [];   // for undo
+        let moveCount = 0;
+        let timerInterval = null;
+        let elapsedSeconds = 0;
+        let gameWon = false;
+        let gameLocked = false;
+        let isFirstMove = true;
+        
+        // Mode logic
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameMode = urlParams.get('mode') || 'daily';
+
+        // ====== DOM ELEMENTS ======
+        const gridEl = document.getElementById('game-grid');
+        const timerDisplay = document.getElementById('timer-display');
+        const queenCounter = document.getElementById('queen-counter');
+        const modalHelp = document.getElementById('modal-help');
+        const modalWin = document.getElementById('modal-win');
+        const btnHelp = document.getElementById('btn-help');
+        const btnCloseHelp = document.getElementById('btn-close-help');
+        const btnCloseHelpBottom = document.getElementById('btn-close-help-bottom');
+        const btnUndo = document.getElementById('btn-undo');
+        const btnClear = document.getElementById('btn-clear');
+        const btnNewGame = document.getElementById('btn-new-game');
+        const btnNewGameModal = document.getElementById('btn-new-game-modal');
+        const btnShare = document.getElementById('btn-share');
+        const statTime = document.getElementById('stat-time');
+        const statMoves = document.getElementById('stat-moves');
+        const toastContainer = document.getElementById('toast-container');
+        const modeSubtitle = document.getElementById('mode-subtitle');
+        const winTitle = document.getElementById('win-title');
+        const winDesc = document.getElementById('win-desc');
+        const winStats = document.getElementById('win-stats');
+
+        // ====== INITIALIZATION ======
+        function init() {
+            let puzzleIndex;
+            
+            // Set up Mode UI
+            if (gameMode === 'daily') {
+                modeSubtitle.textContent = 'GÜNLÜK BULMACA';
+                btnNewGame.classList.add('hidden');
+                
+                const today = new Date();
+                const dateStr = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+                
+                let hash = 0;
+                for (let i = 0; i < dateStr.length; i++) {
+                    hash = dateStr.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                puzzleIndex = Math.abs(hash) % PUZZLES.length;
+            } else {
+                modeSubtitle.textContent = 'SINIRSIZ MOD';
+                btnNewGame.classList.remove('hidden');
+                puzzleIndex = Math.floor(Math.random() * PUZZLES.length);
+            }
+            
+            currentPuzzle = PUZZLES[puzzleIndex];
+
+            // Initialize board
+            board = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(CELL_EMPTY));
+            moveHistory = [];
+            moveCount = 0;
+            gameWon = false;
+            gameLocked = false;
+            isFirstMove = true;
+
+            // Reset timer
+            clearInterval(timerInterval);
+            timerInterval = null;
+            elapsedSeconds = 0;
+            updateTimerDisplay();
+
+            // Build grid
+            buildGrid();
+            updateQueenCounter();
+            
+            // ====== DAILY MODE RESTRICTION CHECK ======
+            if (gameMode === 'daily') {
+                const todayStr = new Date().toISOString().split('T')[0];
+                const lastPlayedStr = localStorage.getItem('queens_daily_last_date');
+                
+                if (lastPlayedStr === todayStr) {
+                    gameLocked = true;
+                    
+                    if (currentPuzzle.solution) {
+                        currentPuzzle.solution.forEach(([r, c]) => {
+                            board[r][c] = CELL_QUEEN;
+                            updateCellDisplay(r, c);
+                        });
+                        updateQueenCounter();
+                    }
+                    
+                    for (let r = 0; r < GRID_SIZE; r++) {
+                        for (let c = 0; c < GRID_SIZE; c++) {
+                            if (board[r][c] === CELL_QUEEN) {
+                                const cell = document.getElementById(`cell-${r}-${c}`);
+                                if (cell) cell.classList.add('animate-glow-pulse', 'cell-win');
+                            }
+                        }
+                    }
+                    
+                    setTimeout(() => {
+                        showWinModal(true);
+                    }, 300);
+                }
+            }
+        }
+
+        // ====== BUILD GRID ======
+        function buildGrid() {
+            gridEl.innerHTML = '';
+
+            gridEl.style.display = 'grid';
+            gridEl.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
+            gridEl.style.gap = '0px';
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.id = `cell-${r}-${c}`;
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+
+                    // UI class changes inside JS string
+                    cell.className = 'cell w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 border border-gray-200/60 dark:border-white/5';
+
+                    const regionId = currentPuzzle.regions[r][c];
+                    cell.style.backgroundColor = REGION_COLORS[regionId];
+
+                    addRegionBorders(cell, r, c);
+
+                    cell.addEventListener('click', () => handleCellClick(r, c));
+                    cell.addEventListener('contextmenu', (e) => {
+                        e.preventDefault(); 
+                        handleRightClick(r, c);
+                    });
+
+                    gridEl.appendChild(cell);
+                }
+            }
+        }
+
+        // ====== REGION BORDERS ======
+        function addRegionBorders(cell, r, c) {
+            const myRegion = currentPuzzle.regions[r][c];
+
+            if (r === 0 || currentPuzzle.regions[r - 1][c] !== myRegion) {
+                cell.classList.add('border-region-top');
+            }
+            if (r === GRID_SIZE - 1 || currentPuzzle.regions[r + 1][c] !== myRegion) {
+                cell.classList.add('border-region-bottom');
+            }
+            if (c === 0 || currentPuzzle.regions[r][c - 1] !== myRegion) {
+                cell.classList.add('border-region-left');
+            }
+            if (c === GRID_SIZE - 1 || currentPuzzle.regions[r][c + 1] !== myRegion) {
+                cell.classList.add('border-region-right');
+            }
+        }
+
+        // ====== CELL CLICK HANDLERS ======
+        function handleCellClick(r, c) {
+            if (gameWon || gameLocked) return;
+
+            if (isFirstMove) {
+                startTimer();
+                isFirstMove = false;
+            }
+
+            const currentState = board[r][c];
+            let newState;
+
+            if (currentState === CELL_EMPTY) {
+                newState = CELL_QUEEN;
+            } else if (currentState === CELL_QUEEN) {
+                newState = CELL_CROSS;
+            } else {
+                newState = CELL_EMPTY;
+            }
+            
+            applyMove(r, c, currentState, newState);
+        }
+
+        function handleRightClick(r, c) {
+            if (gameWon || gameLocked) return;
+
+            if (isFirstMove) {
+                startTimer();
+                isFirstMove = false;
+            }
+
+            const currentState = board[r][c];
+            let newState;
+
+            if (currentState === CELL_CROSS) {
+                newState = CELL_EMPTY;
+            } else {
+                newState = CELL_CROSS;
+            }
+            
+            applyMove(r, c, currentState, newState);
+        }
+
+        function applyMove(r, c, currentState, newState) {
+            moveHistory.push({ r, c, prevState: currentState, newState });
+            moveCount++;
+
+            board[r][c] = newState;
+
+            if (newState === CELL_QUEEN) {
+                const conflicts = findConflicts(r, c);
+                if (conflicts.length > 0) {
+                    flashConflict([{ r, c }, ...conflicts]);
+                }
+            }
+
+            updateCellDisplay(r, c);
+            updateQueenCounter();
+            checkWin();
+        }
+
+        // ====== UPDATE CELL DISPLAY ======
+        function updateCellDisplay(r, c) {
+            const cell = document.getElementById(`cell-${r}-${c}`);
+            if (!cell) return;
+
+            const state = board[r][c];
+            const regionId = currentPuzzle.regions[r][c];
+
+            cell.innerHTML = '';
+            cell.style.backgroundColor = REGION_COLORS[regionId];
+            cell.classList.remove('animate-pop', 'animate-queen-place', 'animate-conflict');
+
+            if (state === CELL_CROSS) {
+                const span = document.createElement('span');
+                span.className = 'x-mark';
+                span.textContent = '✕';
+                cell.appendChild(span);
+                cell.classList.add('animate-pop');
+            } else if (state === CELL_QUEEN) {
+                const span = document.createElement('span');
+                span.className = 'queen-emoji';
+                span.textContent = '👑';
+                cell.appendChild(span);
+                cell.style.backgroundColor = REGION_COLORS_BRIGHT[regionId];
+                cell.classList.add('animate-queen-place');
+            }
+        }
+
+        // ====== FIND CONFLICTS ======
+        function findConflicts(r, c) {
+            const conflicts = [];
+            const myRegion = currentPuzzle.regions[r][c];
+
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    if (i === r && j === c) continue;
+                    if (board[i][j] !== CELL_QUEEN) continue;
+
+                    if (i === r) { conflicts.push({ r: i, c: j }); continue; }
+                    if (j === c) { conflicts.push({ r: i, c: j }); continue; }
+                    if (currentPuzzle.regions[i][j] === myRegion) { conflicts.push({ r: i, c: j }); continue; }
+                    if (Math.abs(i - r) <= 1 && Math.abs(j - c) <= 1) { conflicts.push({ r: i, c: j }); continue; }
+                }
+            }
+            return conflicts;
+        }
+
+        // ====== FLASH CONFLICT ======
+        function flashConflict(cells) {
+            cells.forEach(({ r, c }) => {
+                const cell = document.getElementById(`cell-${r}-${c}`);
+                if (!cell) return;
+
+                cell.classList.remove('animate-conflict');
+                void cell.offsetWidth;
+                cell.classList.add('animate-conflict');
+
+                setTimeout(() => {
+                    cell.classList.remove('animate-conflict');
+                }, 1200);
+            });
+
+            gridEl.classList.remove('animate-shake');
+            void gridEl.offsetWidth;
+            gridEl.classList.add('animate-shake');
+            setTimeout(() => gridEl.classList.remove('animate-shake'), 500);
+        }
+
+        // ====== CHECK WIN ======
+        function checkWin() {
+            let queenCount = 0;
+            const queenPositions = [];
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (board[r][c] === CELL_QUEEN) {
+                        queenCount++;
+                        queenPositions.push({ r, c });
+                    }
+                }
+            }
+
+            if (queenCount !== TOTAL_QUEENS) return;
+
+            for (const pos of queenPositions) {
+                const conflicts = findConflicts(pos.r, pos.c);
+                if (conflicts.length > 0) return;
+            }
+
+            gameWon = true;
+            clearInterval(timerInterval);
+            
+            if (gameMode === 'daily') {
+                const todayStr = new Date().toISOString().split('T')[0];
+                localStorage.setItem('queens_daily_last_date', todayStr);
+            }
+
+            if (window.KaUser) {
+                window.KaUser.addGameResult('queens', 'logic', true, elapsedSeconds);
+            }
+
+            celebrateWin();
+        }
+
+        // ====== CELEBRATE WIN ======
+        function celebrateWin() {
+            gridEl.classList.add('animate-celebrate');
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (board[r][c] === CELL_QUEEN) {
+                        const cell = document.getElementById(`cell-${r}-${c}`);
+                        if (cell) {
+                            cell.classList.add('animate-glow-pulse', 'cell-win');
+                        }
+                    }
+                }
+            }
+
+            launchConfetti();
+
+            setTimeout(() => {
+                showWinModal(false);
+            }, 1200);
+        }
+
+        // ====== CONFETTI ======
+        function launchConfetti() {
+            const colors = ['#a855f7', '#ec4899', '#f59e0b', '#22c55e', '#3b82f6', '#ef4444', '#14b8a6', '#f97316'];
+            const shapes = ['circle', 'square', 'triangle'];
+
+            for (let i = 0; i < 80; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const shape = shapes[Math.floor(Math.random() * shapes.length)];
+                const size = Math.random() * 8 + 6;
+                const left = Math.random() * 100;
+                const delay = Math.random() * 1.5;
+                const duration = Math.random() * 2 + 2;
+
+                piece.style.left = `${left}%`;
+                piece.style.width = `${size}px`;
+                piece.style.height = `${size}px`;
+                piece.style.animationDelay = `${delay}s`;
+                piece.style.animation = `confettiDrop ${duration}s ease-in forwards`;
+
+                if (shape === 'circle') {
+                    piece.style.borderRadius = '50%';
+                    piece.style.backgroundColor = color;
+                } else if (shape === 'square') {
+                    piece.style.backgroundColor = color;
+                    piece.style.borderRadius = '2px';
+                } else {
+                    piece.style.width = '0';
+                    piece.style.height = '0';
+                    piece.style.borderLeft = `${size / 2}px solid transparent`;
+                    piece.style.borderRight = `${size / 2}px solid transparent`;
+                    piece.style.borderBottom = `${size}px solid ${color}`;
+                    piece.style.backgroundColor = 'transparent';
+                }
+
+                document.body.appendChild(piece);
+
+                setTimeout(() => {
+                    piece.remove();
+                }, (delay + duration) * 1000 + 100);
+            }
+        }
+
+        // ====== SHOW WIN MODAL ======
+        function showWinModal(alreadyCompleted = false) {
+            statTime.textContent = formatTime(elapsedSeconds);
+            statMoves.textContent = moveCount;
+            
+            if (gameMode === 'daily') {
+                btnNewGameModal.innerHTML = '<span>♾️</span> Sınırsız Moda Geç';
+                btnNewGameModal.onclick = () => {
+                    window.location.href = '?mode=unlimited';
+                };
+                
+                if (alreadyCompleted) {
+                    winTitle.textContent = 'TAMAMLANDI!';
+                    winDesc.textContent = 'Bugünün bulmacasını zaten çözdün! Yeni bulmaca yarın gelecek.';
+                    winStats.classList.add('hidden');
+                    btnShare.classList.add('hidden');
+                } else {
+                    winTitle.textContent = 'TEBRİKLER!';
+                    winDesc.textContent = 'Bulmacayı başarıyla çözdün!';
+                    winStats.classList.remove('hidden');
+                    btnShare.classList.remove('hidden');
+                }
+                
+            } else {
+                winTitle.textContent = 'TEBRİKLER!';
+                winDesc.textContent = 'Bulmacayı başarıyla çözdün!';
+                winStats.classList.remove('hidden');
+                btnShare.classList.remove('hidden');
+                
+                btnNewGameModal.innerHTML = '<span>🔄</span> Yeni Oyun';
+                btnNewGameModal.onclick = () => {
+                    modalWin.classList.add('hidden');
+                    init(); 
+                };
+            }
+            
+            modalWin.classList.remove('hidden');
+            modalWin.classList.add('animate-fade-in');
+        }
+
+        // ====== TIMER ======
+        function startTimer() {
+            elapsedSeconds = 0;
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                elapsedSeconds++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            timerDisplay.textContent = formatTime(elapsedSeconds);
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        // ====== QUEEN COUNTER ======
+        function updateQueenCounter() {
+            let count = 0;
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (board[r][c] === CELL_QUEEN) count++;
+                }
+            }
+            queenCounter.textContent = `👑 ${count} / ${TOTAL_QUEENS}`;
+
+            queenCounter.classList.remove('animate-pop');
+            void queenCounter.offsetWidth;
+            queenCounter.classList.add('animate-pop');
+        }
+
+        // ====== UNDO ======
+        function undo() {
+            if (moveHistory.length === 0 || gameWon || gameLocked) return;
+
+            const last = moveHistory.pop();
+            board[last.r][last.c] = last.prevState;
+            updateCellDisplay(last.r, last.c);
+            updateQueenCounter();
+        }
+
+        // ====== CLEAR BOARD ======
+        function clearBoard() {
+            if (gameWon || gameLocked) return;
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    board[r][c] = CELL_EMPTY;
+                    updateCellDisplay(r, c);
+                }
+            }
+            moveHistory = [];
+            updateQueenCounter();
+        }
+
+        // ====== SHARE ======
+        function shareResult() {
+            const regionMap = currentPuzzle.regions;
+            let shareText = `👑 VEZİRLER - Bulmaca #${currentPuzzle.id}${gameMode === 'daily' ? ' (Günlük)' : ''}\n`;
+            shareText += `⏱️ ${formatTime(elapsedSeconds)} | 🎯 ${moveCount} hamle\n\n`;
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                let rowStr = '';
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (board[r][c] === CELL_QUEEN) {
+                        rowStr += '👑';
+                    } else {
+                        const regionSquares = ['🟥', '🟦', '🟩', '🟨', '🟪', '🩷', '🩵', '🟧'];
+                        rowStr += regionSquares[regionMap[r][c]] || '⬛';
+                    }
+                }
+                shareText += rowStr + '\n';
+            }
+
+            shareText += `\nkelimearasi.com/oyunlar/queens.html`;
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    showToast('Sonuç panoya kopyalandı! 📋');
+                }).catch(() => {
+                    showToast('Kopyalama başarısız oldu.');
+                });
+            } else {
+                showToast('Tarayıcı panoya erişimi desteklemiyor.');
+            }
+        }
+
+        // ====== TOAST ======
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'px-4 py-2 rounded-xl bg-white dark:bg-[#1E293B] border border-gray-200/60 dark:border-white/10 text-gray-800 dark:text-white shadow-xl animate-slide-up pointer-events-auto';
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // ====== MODAL CONTROLS ======
+        btnHelp.addEventListener('click', () => {
+            modalHelp.classList.remove('hidden');
+            modalHelp.classList.add('animate-fade-in');
+        });
+
+        btnCloseHelp.addEventListener('click', () => {
+            modalHelp.classList.add('hidden');
+        });
+
+        btnCloseHelpBottom.addEventListener('click', () => {
+            modalHelp.classList.add('hidden');
+        });
+
+        modalHelp.addEventListener('click', (e) => {
+            if (e.target === modalHelp) {
+                modalHelp.classList.add('hidden');
+            }
+        });
+
+        modalWin.addEventListener('click', (e) => {
+            if (e.target === modalWin && !gameLocked) {
+                modalWin.classList.add('hidden');
+            }
+        });
+
+        // ====== BUTTON EVENTS ======
+        btnUndo.addEventListener('click', undo);
+        btnClear.addEventListener('click', clearBoard);
+        btnShare.addEventListener('click', shareResult);
+        
+        btnNewGame.addEventListener('click', () => {
+            if (!gameLocked) init();
+        });
+
+        // ====== KEYBOARD SHORTCUTS ======
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'z') {
+                e.preventDefault();
+                undo();
+            }
+            if (e.key === 'Escape' && !gameLocked) {
+                modalHelp.classList.add('hidden');
+                modalWin.classList.add('hidden');
+            }
+        });
+
+        // ====== SHOW HELP ON FIRST VISIT ======
+        function checkFirstVisit() {
+            const key = 'queens_visited';
+            if (!localStorage.getItem(key)) {
+                localStorage.setItem(key, 'true');
+                setTimeout(() => {
+                    modalHelp.classList.remove('hidden');
+                    modalHelp.classList.add('animate-fade-in');
+                }, 600);
+            }
+        }
+
+        // ====== START ======
+        init();
+        checkFirstVisit();
+
+    })();
+    </script>
+
+</body>
+</html>
