@@ -313,6 +313,9 @@
 
     global.KaUser = KaUser;
 
+    // Site tek tema kullanır (kareli defter, açık). Karanlık sınıfı hemen kaldır.
+    try { document.documentElement.classList.remove('dark'); } catch (e) { /* yoksay */ }
+
     // ------------------------------------------------------------------
     // Arayüz katmanını (bildirimler, oyun sayfası kabuğu) otomatik yükle
     // ------------------------------------------------------------------

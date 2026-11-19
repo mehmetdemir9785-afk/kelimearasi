@@ -18,70 +18,77 @@
 
     // ---------------------------------------------------------------- stiller
     const css = `
-    .ka-toast-wrap{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));transform:translateX(-50%);z-index:2147483000;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:none;width:min(92vw,380px);font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif}
-    @media (min-width:900px){.ka-toast-wrap{left:auto;right:20px;transform:none;top:76px}}
-    .ka-card{pointer-events:auto;width:100%;color:#fff;background:linear-gradient(160deg,rgba(30,27,62,.96),rgba(18,18,43,.96));border:1px solid rgba(167,139,250,.25);border-radius:20px;padding:16px 18px;box-shadow:0 24px 60px -12px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.03) inset;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transform:translateY(-24px) scale(.96);opacity:0;transition:transform .55s cubic-bezier(.16,1,.3,1),opacity .4s ease;cursor:pointer}
+    :root{--ka-paper:#F5F8FD;--ka-line:#DCE6F6;--ka-ink:#1D2B64;--ka-ink-2:#4A5784;--ka-hi:#FFE14D;--ka-red:#E5383B;--ka-green:#1F9D61;--ka-font:'Archivo',system-ui,sans-serif}
+    .ka-toast-wrap{position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);z-index:2147483000;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:none;width:min(92vw,360px);font-family:var(--ka-font)}
+    @media (min-width:900px){.ka-toast-wrap{left:auto;right:20px;transform:none;top:84px}}
+    .ka-card{pointer-events:auto;width:100%;color:var(--ka-ink);background:#fff;border:2px solid var(--ka-ink);border-radius:14px;padding:14px 16px;box-shadow:4px 4px 0 var(--ka-ink);transform:translateY(-12px) rotate(-1.5deg);opacity:0;transition:transform .45s cubic-bezier(.2,1.4,.4,1),opacity .25s ease;cursor:pointer}
     .ka-card.show{transform:none;opacity:1}
-    .ka-card.hide{transform:translateY(-16px) scale(.97);opacity:0}
+    .ka-card.hide{transform:translateY(-10px);opacity:0}
     .ka-row{display:flex;align-items:center;gap:12px}
-    .ka-xp-icon{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#8b5cf6,#ec4899);box-shadow:0 8px 24px -6px rgba(168,85,247,.8)}
-    .ka-xp-icon svg{width:22px;height:22px;color:#fff}
-    .ka-xp-icon.loss{background:linear-gradient(135deg,#475569,#334155);box-shadow:none}
-    .ka-title{font-size:12px;font-weight:600;color:rgba(255,255,255,.55);letter-spacing:.02em}
-    .ka-big{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.1;background:linear-gradient(90deg,#fde68a,#f9a8d4,#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent}
-    .ka-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-    .ka-chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.8)}
-    .ka-chip b{color:#c4b5fd;margin-left:4px}
-    .ka-bar-head{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:rgba(255,255,255,.55);margin:14px 0 6px}
-    .ka-bar-head .lv{color:#c4b5fd}
-    .ka-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
-    .ka-bar>i{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#6366f1,#a855f7,#ec4899);box-shadow:0 0 12px rgba(168,85,247,.8);transition:width 1.1s cubic-bezier(.16,1,.3,1)}
-    .ka-lvup{position:fixed;inset:0;z-index:2147482999;display:grid;place-items:center;pointer-events:none;font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif}
-    .ka-lvup-inner{position:relative;text-align:center;transform:scale(.6);opacity:0;transition:transform .7s cubic-bezier(.16,1,.3,1),opacity .4s}
-    .ka-lvup.show .ka-lvup-inner{transform:none;opacity:1}
-    .ka-lvup.hide .ka-lvup-inner{transform:scale(1.15);opacity:0}
-    .ka-lvup-badge{width:132px;height:132px;margin:0 auto 14px;border-radius:36px;display:grid;place-items:center;font-size:56px;font-weight:800;color:#fff;background:linear-gradient(135deg,#7c3aed,#ec4899);box-shadow:0 0 0 8px rgba(168,85,247,.15),0 30px 80px -10px rgba(168,85,247,.9);animation:ka-pulse 1.6s ease-in-out infinite}
-    .ka-lvup-t{font-size:34px;font-weight:800;color:#fff;letter-spacing:-.03em;text-shadow:0 4px 30px rgba(0,0,0,.6)}
-    .ka-lvup-s{font-size:14px;font-weight:600;color:#ddd6fe;margin-top:4px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
-    .ka-lvup::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at center,rgba(12,12,29,.82),rgba(12,12,29,.95));opacity:0;transition:opacity .4s}
-    .ka-lvup.show::before{opacity:1}
-    @keyframes ka-pulse{50%{transform:scale(1.05)}}
+    .ka-xp-icon{flex:none;width:46px;height:46px;border-radius:10px;display:grid;place-items:center;background:var(--ka-hi);border:2px solid var(--ka-ink);font:900 13px var(--ka-font);font-stretch:112%;color:var(--ka-ink)}
+    .ka-xp-icon svg{width:22px;height:22px;color:var(--ka-ink)}
+    .ka-xp-icon.loss{background:#E8EDF7}
+    .ka-title{font-size:13px;font-weight:600;color:var(--ka-ink-2)}
+    .ka-big{font-size:28px;font-weight:900;font-stretch:118%;line-height:1.05;color:var(--ka-ink)}
+    .ka-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+    .ka-chip{font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;background:var(--ka-paper);border:1px solid var(--ka-line);color:var(--ka-ink-2)}
+    .ka-chip b{color:var(--ka-ink);margin-left:4px;font-weight:800}
+    .ka-bar-head{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--ka-ink-2);margin:12px 0 5px}
+    .ka-bar-head .lv{color:var(--ka-ink)}
+    .ka-bar{height:12px;border-radius:4px;background:#fff;border:2px solid var(--ka-ink);overflow:hidden}
+    .ka-bar>i{display:block;height:100%;width:0;background:var(--ka-hi);border-right:2px solid var(--ka-ink);transition:width 1.1s cubic-bezier(.16,1,.3,1)}
+    .ka-lvup{position:fixed;inset:0;z-index:2147482999;display:grid;place-items:center;pointer-events:none;font-family:var(--ka-font);background:var(--ka-hi);opacity:0;transition:opacity .25s}
+    .ka-lvup.show{opacity:1}
+    .ka-lvup-inner{position:relative;text-align:center;transform:scale(.7) rotate(-6deg);transition:transform .6s cubic-bezier(.2,1.5,.4,1)}
+    .ka-lvup.show .ka-lvup-inner{transform:none}
+    .ka-lvup-badge{width:150px;height:150px;margin:0 auto 18px;border-radius:22px;display:grid;place-items:center;font-size:84px;font-weight:900;font-stretch:120%;color:var(--ka-ink);background:#fff;border:3px solid var(--ka-ink);box-shadow:8px 8px 0 var(--ka-ink);transform:rotate(-4deg)}
+    .ka-lvup-t{font-size:44px;font-weight:900;font-stretch:125%;color:var(--ka-ink);letter-spacing:-.01em}
+    .ka-lvup-s{font-size:17px;font-weight:600;color:var(--ka-ink);margin-top:6px}
     .ka-ach{display:flex;align-items:center;gap:12px}
-    .ka-ach-i{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,#f59e0b,#ef4444);box-shadow:0 8px 20px -6px rgba(245,158,11,.8)}
+    .ka-ach-i{flex:none;width:42px;height:42px;border-radius:10px;display:grid;place-items:center;background:var(--ka-green);border:2px solid var(--ka-ink)}
     .ka-ach-i svg{width:20px;height:20px;color:#fff}
     .ka-confetti{position:fixed;inset:0;pointer-events:none;z-index:2147483001}
 
-    /* ---------- Oyun sayfası üst barı ---------- */
-    .ka-nav-btn{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 12px 0 8px;border-radius:12px;font-size:13px;font-weight:700;font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif;color:rgba(255,255,255,.85);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);transition:background .2s,transform .2s;text-decoration:none;filter:none!important;text-shadow:none!important}
-    .ka-nav-btn:hover{background:rgba(255,255,255,.1);transform:translateY(-1px)}
+    /* ---------- Oyun sayfası kabuğu: kareli defter ---------- */
+    body.ka-game{font-family:var(--ka-font)!important;color:var(--ka-ink);background-color:var(--ka-paper)!important;background-image:linear-gradient(var(--ka-line) 1px,transparent 1px),linear-gradient(90deg,var(--ka-line) 1px,transparent 1px)!important;background-size:26px 26px!important;background-attachment:fixed}
+    body.ka-game *:not(i):not(svg):not(svg *):not(.font-mono):not(code){font-family:var(--ka-font)}
+    body.ka-game header[data-ka]{background:var(--ka-hi)!important;border-bottom:2px solid var(--ka-ink)!important;backdrop-filter:none!important;box-shadow:none!important}
+    body.ka-game header[data-ka]>:nth-child(2){position:absolute;left:50%;transform:translateX(-50%);max-width:calc(100% - 240px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    body.ka-game header[data-ka] h1, body.ka-game header[data-ka] h1 *{background:none!important;-webkit-text-fill-color:var(--ka-ink)!important;color:var(--ka-ink)!important;text-shadow:none!important;filter:none!important;font-weight:900!important;font-stretch:125%;letter-spacing:.01em!important;text-transform:none!important;font-size:22px!important}
+    body.ka-game header[data-ka] h1 + p, body.ka-game header[data-ka] h1 ~ *{color:var(--ka-ink-2)!important}
+    .ka-nav-btn{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 12px 0 8px;border-radius:10px;font:700 14px var(--ka-font);color:var(--ka-ink)!important;background:#fff;border:2px solid var(--ka-ink);box-shadow:2px 2px 0 var(--ka-ink);transition:transform .12s,box-shadow .12s;text-decoration:none;filter:none!important;text-shadow:none!important}
+    .ka-nav-btn:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ka-ink)}
+    .ka-nav-btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ka-ink)}
+    .ka-nav-btn:focus-visible,.ka-xp-pill:focus-visible{outline:3px solid var(--ka-ink);outline-offset:2px}
     .ka-nav-btn svg{width:18px;height:18px}
     .ka-icon-btn{width:38px;padding:0;justify-content:center}
     .ka-right{display:flex;align-items:center;gap:8px}
-    .ka-xp-pill{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 12px 0 6px;border-radius:12px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25);color:#ddd6fe;font:700 12px 'Plus Jakarta Sans',Inter,system-ui,sans-serif;text-decoration:none;transition:background .2s}
-    .ka-xp-pill:hover{background:rgba(139,92,246,.2)}
-    .ka-ring{width:28px;height:28px;position:relative;display:grid;place-items:center;font-size:10px;font-weight:800;color:#fff}
-    .ka-ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
-    .ka-ring circle{fill:none;stroke-width:3}
-    .ka-ring .bg{stroke:rgba(255,255,255,.1)}
-    .ka-ring .fg{stroke:url(#ka-grad);stroke-linecap:round;transition:stroke-dashoffset 1s cubic-bezier(.16,1,.3,1)}
-    .ka-xp-pill .ka-streak{display:inline-flex;align-items:center;gap:2px;color:#fdba74}
-    .ka-xp-pill .ka-streak svg{width:12px;height:12px}
-    @media (max-width:520px){.ka-nav-btn .lbl{display:none}.ka-nav-btn{padding:0;width:38px;justify-content:center}.ka-xp-pill .ka-xp-txt{display:none}.ka-xp-pill{padding:0 8px 0 5px}}
-    body.ka-game header[data-ka]>:nth-child(2){position:absolute;left:50%;transform:translateX(-50%);max-width:calc(100% - 230px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    @media (max-width:520px){body.ka-game header[data-ka]>:nth-child(2){max-width:calc(100% - 176px)}body.ka-game header[data-ka] h1{font-size:clamp(13px,4.4vw,20px)!important;letter-spacing:.06em!important}}
-    body.ka-game .mode-btn.active{color:#fff!important}
-    body.ka-game{font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif}
-    html.dark body.ka-game{background-image:radial-gradient(60% 40% at 50% -10%,rgba(139,92,246,.14),transparent 70%),radial-gradient(40% 30% at 100% 100%,rgba(236,72,153,.06),transparent 70%);background-attachment:fixed}
-    @media (prefers-reduced-motion:reduce){.ka-card,.ka-lvup-inner,.ka-bar>i{transition:none!important}.ka-lvup-badge{animation:none}}
+    .ka-xp-pill{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 10px;border-radius:10px;background:#fff;border:2px solid var(--ka-ink);box-shadow:2px 2px 0 var(--ka-ink);color:var(--ka-ink);font:800 13px var(--ka-font);text-decoration:none}
+    .ka-lv{font-stretch:115%}
+    .ka-mini{width:56px;height:8px;border:1.5px solid var(--ka-ink);border-radius:3px;overflow:hidden;background:#fff}
+    .ka-mini>i{display:block;height:100%;background:var(--ka-hi);border-right:1.5px solid var(--ka-ink);transition:width 1s cubic-bezier(.16,1,.3,1)}
+    .ka-streak{display:inline-flex;align-items:center;gap:2px;color:var(--ka-red)}
+    .ka-streak svg{width:13px;height:13px}
+    @media (max-width:520px){
+      .ka-nav-btn .lbl{display:none}.ka-nav-btn{padding:0;width:38px;justify-content:center}
+      .ka-mini{display:none}
+      body.ka-game header[data-ka]>:nth-child(2){position:static;transform:none;flex:1;min-width:0;max-width:none;margin:0 8px 0 10px;text-align:left}
+      body.ka-game header[data-ka]>:nth-child(2), body.ka-game header[data-ka]>:nth-child(2) *{text-align:left!important;align-items:flex-start!important;justify-content:flex-start!important}
+      body.ka-game header[data-ka] h1, body.ka-game header[data-ka] h1 *{font-size:17px!important;font-stretch:110%}
+    }
+    body.ka-game button[class*="bg-gradient"],body.ka-game a[class*="bg-gradient"],body.ka-game .mode-btn.active,body.ka-game .mode-btn-active,body.ka-game .tgl.on,body.ka-game .mode-toggle-btn.active{background:var(--ka-hi)!important;color:var(--ka-ink)!important;border:2px solid var(--ka-ink)!important;box-shadow:2px 2px 0 var(--ka-ink)!important;text-shadow:none!important}
+    body.ka-game button[class*="bg-gradient"] *,body.ka-game a[class*="bg-gradient"] *{color:var(--ka-ink)!important}
+    body.ka-game button[class*="bg-gradient"]:hover,body.ka-game a[class*="bg-gradient"]:hover{background:#FFD61F!important}
+    @media (prefers-reduced-motion:reduce){.ka-card,.ka-lvup,.ka-lvup-inner,.ka-bar>i{transition:none!important}}
     `;
 
     function injectStyles() {
         if (document.getElementById('ka-ui-css')) return;
         const st = document.createElement('style'); st.id = 'ka-ui-css'; st.textContent = css;
         document.head.appendChild(st);
-        if (!document.querySelector('link[href*="Plus+Jakarta+Sans"]')) {
+        if (!document.querySelector('link[href*="family=Archivo"]')) {
             const l = document.createElement('link'); l.rel = 'stylesheet';
-            l.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap';
+            l.href = 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap';
             document.head.appendChild(l);
         }
     }
@@ -95,7 +102,7 @@
         cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
         document.body.appendChild(cv);
         const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
-        const colors = ['#a78bfa', '#f472b6', '#60a5fa', '#34d399', '#fbbf24', '#ffffff'];
+        const colors = ['#FFE14D', '#1D2B64', '#E5383B', '#1F9D61', '#3A86FF', '#ffffff'];
         const N = opts.count || 140, ps = [];
         const ox = (opts.x != null ? opts.x : 0.5) * innerWidth, oy = (opts.y != null ? opts.y : 0.35) * innerHeight;
         for (let i = 0; i < N; i++) {
@@ -146,9 +153,9 @@
         const chips = r.breakdown.map(b => `<span class="ka-chip">${b.label}<b>+${b.value}</b></span>`).join('');
         const card = showCard(`
             <div class="ka-row">
-                <div class="ka-xp-icon ${r.isWin ? '' : 'loss'}">${I.bolt}</div>
+                <div class="ka-xp-icon ${r.isWin ? '' : 'loss'}">XP</div>
                 <div style="flex:1;min-width:0">
-                    <div class="ka-title">${r.gameName} · ${r.isWin ? 'Kazandın!' : 'Bir dahakine!'}</div>
+                    <div class="ka-title">${r.isWin ? r.gameName + ' çözüldü' : r.gameName + ': bu sefer olmadı'}</div>
                     <div class="ka-big">+0 XP</div>
                 </div>
             </div>
@@ -201,10 +208,9 @@
     function updatePill() {
         if (!pill || !window.KaUser) return;
         const s = window.KaUser.getFormattedStats();
-        const p = Math.min(1, s.xpInCurrentLevel / s.xpRequiredForNext), C = 2 * Math.PI * 12;
-        pill.querySelector('.ka-ring span').textContent = s.level;
-        pill.querySelector('.fg').style.strokeDashoffset = C * (1 - p);
-        pill.querySelector('.ka-xp-txt').textContent = `${s.xpInCurrentLevel}/${s.xpRequiredForNext}`;
+        pill.querySelector('.ka-lvn').textContent = s.level;
+        pill.querySelector('.ka-mini>i').style.width = Math.min(100, s.xpInCurrentLevel / s.xpRequiredForNext * 100) + '%';
+        pill.title = `Seviye ${s.level}: ${s.xpInCurrentLevel} / ${s.xpRequiredForNext} XP`;
         const st = pill.querySelector('.ka-streak');
         st.style.display = s.currentStreak > 0 ? '' : 'none';
         st.lastChild.textContent = s.currentStreak;
@@ -222,6 +228,9 @@
             home.innerHTML = `${I.back}<span class="lbl">Oyunlar</span>`;
             home.setAttribute('aria-label', 'Ana sayfaya dön');
         }
+        const h1 = header.querySelector('h1');
+        const meta = window.KaUser && window.KaUser.GAMES[gameId()];
+        if (h1 && meta) h1.textContent = meta.name;
         const kids = [...header.children];
         const help = kids[kids.length - 1];
         if (help && help !== home && /❓|\?/.test(help.textContent.trim()) && help.textContent.trim().length <= 3) {
@@ -230,10 +239,9 @@
             help.setAttribute('aria-label', 'Nasıl oynanır');
         }
         if (window.KaUser && help) {
-            const C = 2 * Math.PI * 12;
             pill = document.createElement('a');
             pill.href = '../index.html#profil'; pill.className = 'ka-xp-pill'; pill.title = 'Profil ve seviye';
-            pill.innerHTML = `<span class="ka-ring"><svg viewBox="0 0 28 28"><defs><linearGradient id="ka-grad" x1="0" x2="1"><stop offset="0" stop-color="#818cf8"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><circle class="bg" cx="14" cy="14" r="12"/><circle class="fg" cx="14" cy="14" r="12" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg><span>1</span></span><span class="ka-xp-txt">0/1000</span><span class="ka-streak">${I.flame}<span>0</span></span>`;
+            pill.innerHTML = `<span class="ka-lv">Sv <span class="ka-lvn">1</span></span><span class="ka-mini"><i style="width:0"></i></span><span class="ka-streak">${I.flame}<span>0</span></span>`;
             const right = document.createElement('div'); right.className = 'ka-right';
             help.parentNode.insertBefore(right, help);
             right.appendChild(pill); right.appendChild(help);
@@ -267,8 +275,15 @@
         document.addEventListener('click', syncModeToUrl, true);
     }
 
+    function forceLight() {
+        const h = document.documentElement;
+        h.classList.remove('dark');
+        new MutationObserver(() => { if (h.classList.contains('dark')) h.classList.remove('dark'); }).observe(h, { attributes: true, attributeFilter: ['class'] });
+    }
+
     function init() {
         injectStyles();
+        forceLight();
         if (isGamePage) enhanceGameHeader();
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
