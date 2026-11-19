@@ -260,6 +260,7 @@
         .game-card .card-icon { transition: transform .5s cubic-bezier(.16,1,.3,1); }
         .game-card:hover .card-icon { transform: translateZ(30px) scale(1.1) rotate(-6deg); }
 
+        .game-card.won-today { border-color: rgba(52,211,153,.25) !important; }
         /* Sekmeler: hap şeklinde segment kontrol */
         .seg { position: relative; display: inline-flex; padding: 4px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); }
         .seg-pill { position: absolute; top: 4px; bottom: 4px; left: 0; border-radius: 999px; background: linear-gradient(135deg, #7c3aed, #a855f7); box-shadow: 0 6px 20px -6px rgba(168,85,247,.8); transition: transform .5s cubic-bezier(.16,1,.3,1), width .5s cubic-bezier(.16,1,.3,1); }
@@ -417,6 +418,20 @@
                 <p class="text-gray-400 md:text-lg">16 farklı bulmaca. Her gün yeni meydan okumalar. Tamamen ücretsiz.</p>
             </div>
 
+            <!-- Today progress -->
+            <div class="max-w-2xl mx-auto mb-8 reveal" style="--d:80ms">
+                <div class="flex items-center gap-4 rounded-2xl bg-white/[.03] border border-white/10 px-5 py-4">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between text-sm mb-2">
+                            <span class="font-semibold text-gray-200">Bugün <span id="today-count" class="text-white font-extrabold">0</span><span class="text-gray-500">/16</span> bulmaca çözdün</span>
+                            <span id="today-streak" class="font-bold text-amber-400 whitespace-nowrap">🔥 0 gün</span>
+                        </div>
+                        <div class="h-2 rounded-full bg-white/10 overflow-hidden"><div id="today-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400" style="width:0%;transition:width 1s cubic-bezier(.16,1,.3,1)"></div></div>
+                        <p id="today-hint" class="text-xs text-gray-500 mt-2">Her oyunda günün ilk zaferi <span class="text-violet-300 font-semibold">%50 bonus XP</span> kazandırır.</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Category Tabs -->
             <div class="flex justify-center mb-10 reveal" style="--d:100ms">
                 <nav class="seg tabs-scroll overflow-x-auto max-w-full" role="tablist" id="seg">
@@ -491,58 +506,76 @@
     <div id="modal-profile" class="fixed inset-0 z-[100] hidden">
         <div class="modal-backdrop absolute inset-0" id="modal-profile-backdrop"></div>
         <div class="relative z-10 flex items-center justify-center min-h-full p-4">
-            <div class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/5 overflow-hidden flex flex-col animate-slide-up">
+            <div class="w-full max-w-md bg-[#12122b] rounded-3xl shadow-2xl border border-white/10 overflow-hidden flex flex-col animate-slide-up max-h-[90vh]">
                 <!-- Header -->
-                <div class="relative flex flex-col items-center justify-center py-8 bg-gradient-to-br from-purple-500 to-pink-500 text-white">
-                    <button id="modal-profile-close" class="absolute top-3 right-3 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+                <div class="relative px-6 pt-7 pb-6 text-white overflow-hidden flex-shrink-0">
+                    <div class="absolute inset-0 bg-gradient-to-br from-violet-600/40 via-fuchsia-600/20 to-transparent"></div>
+                    <div class="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-pink-500/20 blur-3xl"></div>
+                    <button id="modal-profile-close" class="absolute top-3 right-3 p-2 rounded-xl bg-white/5 hover:bg-white/15 transition-colors z-10" aria-label="Kapat">
                         <i data-lucide="x" class="w-4 h-4 text-white"></i>
                     </button>
-                    <div class="w-20 h-20 rounded-full bg-white/20 border-[3px] border-white/40 flex items-center justify-center mb-3 shadow-lg">
-                        <i data-lucide="user" class="w-10 h-10 text-white"></i>
+                    <div class="relative flex items-center gap-4">
+                        <div class="relative w-20 h-20 flex-shrink-0">
+                            <svg viewBox="0 0 80 80" class="absolute inset-0 -rotate-90">
+                                <defs><linearGradient id="pr-grad" x1="0" x2="1"><stop offset="0" stop-color="#818cf8"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs>
+                                <circle cx="40" cy="40" r="36" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="5"/>
+                                <circle id="profile-level-ring" cx="40" cy="40" r="36" fill="none" stroke="url(#pr-grad)" stroke-width="5" stroke-linecap="round" stroke-dasharray="226.2" stroke-dashoffset="226.2" style="transition:stroke-dashoffset 1.2s cubic-bezier(.16,1,.3,1)"/>
+                            </svg>
+                            <div class="absolute inset-2 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex flex-col items-center justify-center shadow-lg">
+                                <span class="text-[9px] font-bold uppercase tracking-widest text-white/70 leading-none">Lvl</span>
+                                <span id="profile-level-num" class="text-2xl font-extrabold leading-none">1</span>
+                            </div>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 group cursor-pointer" id="profile-name-container" title="İsmi Değiştir">
+                                <h3 id="profile-username" class="text-xl font-extrabold truncate">Bulmaca Sever</h3>
+                                <i data-lucide="pencil" class="w-3.5 h-3.5 text-white/50 group-hover:text-white transition-colors flex-shrink-0"></i>
+                            </div>
+                            <p class="text-sm font-semibold text-violet-200"><span id="profile-title">Acemi</span></p>
+                            <p id="profile-join-date" class="text-xs text-white/50 mt-0.5">Üye: -</p>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2 group cursor-pointer" id="profile-name-container" title="İsmi Değiştir">
-                        <h3 id="profile-username" class="text-lg font-bold">Bulmaca Sever</h3>
-                        <i data-lucide="pencil" class="w-3.5 h-3.5 text-white/60 group-hover:text-white transition-colors"></i>
+                    <div class="relative mt-5">
+                        <div class="flex justify-between text-[11px] font-semibold text-white/60 mb-1.5">
+                            <span>Sonraki seviye</span><span id="profile-level-xp">0 / 1000 XP</span>
+                        </div>
+                        <div class="h-2 rounded-full bg-white/10 overflow-hidden"><div id="profile-xp-bar" class="xp-bar-fill h-full rounded-full" style="width:0%"></div></div>
                     </div>
-                    <p id="profile-join-date" class="text-xs text-white/80 mt-1">Üye: -</p>
                 </div>
 
-                <!-- Content (Stats & Extra Info) -->
-                <div class="p-6 flex flex-col gap-6 bg-white dark:bg-gray-900">
+                <div class="p-6 pt-2 flex flex-col gap-6 overflow-y-auto">
                     <!-- Stats Grid -->
                     <div class="grid grid-cols-3 gap-3">
-                        <div class="bg-gray-50 dark:bg-white/5 rounded-xl py-3 px-2 text-center border border-gray-100 dark:border-white/5">
-                            <div id="profile-games-solved" class="text-2xl font-extrabold text-violet-600 dark:text-violet-400">0</div>
-                            <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-0.5">Çözülen</div>
+                        <div class="bg-white/5 rounded-2xl py-3 px-2 text-center border border-white/5">
+                            <div id="profile-games-solved" class="text-2xl font-extrabold text-violet-400">0</div>
+                            <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mt-0.5">Çözülen</div>
                         </div>
-                        <div class="bg-gray-50 dark:bg-white/5 rounded-xl py-3 px-2 text-center border border-gray-100 dark:border-white/5">
-                            <div id="profile-win-rate" class="text-2xl font-extrabold text-emerald-500">%0</div>
-                            <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-0.5">Başarı</div>
+                        <div class="bg-white/5 rounded-2xl py-3 px-2 text-center border border-white/5">
+                            <div id="profile-win-rate" class="text-2xl font-extrabold text-emerald-400">%0</div>
+                            <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mt-0.5">Başarı</div>
                         </div>
-                        <div class="bg-gray-50 dark:bg-white/5 rounded-xl py-3 px-2 text-center border border-gray-100 dark:border-white/5">
-                            <div id="profile-current-streak" class="text-2xl font-extrabold text-amber-500">0 🔥</div>
-                            <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-0.5">Seri</div>
+                        <div class="bg-white/5 rounded-2xl py-3 px-2 text-center border border-white/5">
+                            <div id="profile-current-streak" class="text-2xl font-extrabold text-amber-400">0 🔥</div>
+                            <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mt-0.5">Seri</div>
                         </div>
                     </div>
 
-                    <!-- Extra stats -->
-                    <div class="flex flex-col gap-3">
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-500 dark:text-gray-400">En Uzun Seri</span>
-                            <span id="profile-max-streak" class="font-bold text-gray-800 dark:text-gray-100">0 gün</span>
-                        </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-500 dark:text-gray-400">Favori Oyun</span>
-                            <span id="profile-favorite-game" class="font-bold text-gray-800 dark:text-gray-100">-</span>
-                        </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-500 dark:text-gray-400">Toplam Süre</span>
-                            <span id="profile-total-time" class="font-bold text-gray-800 dark:text-gray-100">0dk</span>
-                        </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-500 dark:text-gray-400">Seviye</span>
-                            <span id="profile-level-xp" class="font-bold text-violet-600 dark:text-violet-400">Lvl 1 — 0 XP</span>
-                        </div>
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        <div><div class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">En uzun seri</div><div id="profile-max-streak" class="text-sm font-bold text-gray-100 mt-0.5">0 gün</div></div>
+                        <div><div class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Favori</div><div id="profile-favorite-game" class="text-sm font-bold text-gray-100 mt-0.5 truncate">-</div></div>
+                        <div><div class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Toplam süre</div><div id="profile-total-time" class="text-sm font-bold text-gray-100 mt-0.5">0dk</div></div>
+                    </div>
+
+                    <!-- Per-game -->
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Oyunlarım</h4>
+                        <div id="profile-games-list" class="flex flex-col gap-2"></div>
+                    </div>
+
+                    <!-- History -->
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Son oyunlar</h4>
+                        <div id="profile-history" class="flex flex-col gap-1.5"></div>
                     </div>
                 </div>
             </div>
@@ -873,7 +906,6 @@
     </script>
 
     <!-- ==================== JAVASCRIPT ==================== -->
-    <script src="js/user-system.js"></script>
     <script>
     (function () {
         'use strict';
@@ -1039,8 +1071,17 @@
             card.className = `game-card group relative flex flex-col bg-white dark:bg-[#181836] rounded-2xl border border-gray-200/60 dark:border-white/5 overflow-hidden hover:shadow-2xl hover:shadow-violet-500/20 hover:z-10 cursor-pointer reveal`;
             card.style.setProperty('--d', `${(index % 4) * 80}ms`);
             card.dataset.category = game.category;
+            const gs = window.KaUser ? window.KaUser.getGameStats(game.id) : null;
+            const wonToday = window.KaUser ? window.KaUser.isWonToday(game.id) : false;
+            const xpVal = window.KaUser && window.KaUser.GAMES[game.id] ? window.KaUser.GAMES[game.id].xp : 50;
+            const fmtT = (t) => t == null ? '' : (t >= 60 ? `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}` : `${t}sn`);
+            const statLine = gs && gs.played > 0
+                ? `<p class="mt-2 text-[11px] font-semibold text-gray-500 flex flex-wrap gap-x-3 gap-y-1"><span>🏆 ${gs.won} zafer</span>${gs.bestTime ? `<span>⏱ ${fmtT(gs.bestTime)}</span>` : ''}${gs.streak > 1 ? `<span class="text-amber-400">🔥 ${gs.streak} seri</span>` : ''}</p>`
+                : `<p class="mt-2 text-[11px] font-semibold text-violet-300/80">⚡ ${xpVal} XP · Henüz oynamadın</p>`;
+            if (wonToday) card.classList.add('won-today');
 
             card.innerHTML = `
+                ${wonToday ? '<span class="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-400/30 rounded-full px-2 py-0.5">✓ Bugün</span>' : ''}
                 <!-- Icon + Text -->
                 <div class="flex-1 px-5 pt-5 pb-3 flex items-start gap-4">
                     <div class="card-icon flex-shrink-0 w-12 h-12 rounded-xl ${game.bgClass} shadow-lg ${game.glowClass} flex items-center justify-center">
@@ -1052,6 +1093,7 @@
                             <span class="${game.badgeClass} text-[10px] font-bold text-white px-2 py-0.5 rounded-full whitespace-nowrap">${game.badgeLabel}</span>
                         </div>
                         <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">${game.desc}</p>
+                        ${statLine}
                     </div>
                 </div>
 
@@ -1154,6 +1196,7 @@
             if (newName.length > 0) {
                 window.KaUser.updateUsername(newName);
                 document.getElementById('profile-username').textContent = newName.substring(0, 20);
+                renderUserData();
                 closeModal('modal-edit-name');
             }
         });
@@ -1165,14 +1208,14 @@
             }
         });
 
-        document.getElementById('btn-profile').addEventListener('click', () => openModal('modal-profile'));
+        document.getElementById('btn-profile').addEventListener('click', () => { renderUserData(); openModal('modal-profile'); });
         document.getElementById('modal-profile-close').addEventListener('click', () => closeModal('modal-profile'));
         document.getElementById('modal-profile-backdrop').addEventListener('click', () => closeModal('modal-profile'));
 
         // ——————————————————————————————————————————
         // ACHIEVEMENTS MODAL
         // ——————————————————————————————————————————
-        document.getElementById('btn-achievements').addEventListener('click', () => openModal('modal-achievements'));
+        document.getElementById('btn-achievements').addEventListener('click', () => { renderUserData(); openModal('modal-achievements'); });
         document.getElementById('modal-achievements-close').addEventListener('click', () => closeModal('modal-achievements'));
         document.getElementById('modal-achievements-backdrop').addEventListener('click', () => closeModal('modal-achievements'));
 
@@ -1202,7 +1245,7 @@
             if (e.key === 'Escape') {
                 [
                     'modal-game', 'modal-profile', 'modal-achievements',
-                    'modal-contact', 'modal-terms', 'modal-privacy', 'modal-about'
+                    'modal-contact', 'modal-terms', 'modal-privacy', 'modal-about', 'modal-edit-name'
                 ].forEach(id => closeModal(id));
             }
         });
@@ -1237,6 +1280,8 @@
             if(elXpBarM) elXpBarM.style.width = xpPercent;
 
             // 2. Profile
+            const pUser = document.getElementById('profile-username');
+            if (pUser) pUser.textContent = stats.username || 'Bulmaca Sever';
             const pJoin = document.getElementById('profile-join-date');
             if(pJoin) pJoin.textContent = `Üye: ${stats.formattedJoinDate}`;
             
@@ -1263,7 +1308,45 @@
             if(pTime) pTime.textContent = stats.formattedTime;
 
             const pLevel = document.getElementById('profile-level-xp');
-            if(pLevel) pLevel.textContent = `Lvl ${stats.level} — ${stats.xp} XP`;
+            if(pLevel) pLevel.textContent = `${stats.xpInCurrentLevel} / ${stats.xpRequiredForNext} XP`;
+            const ratio = Math.min(1, stats.xpInCurrentLevel / stats.xpRequiredForNext);
+            const pNum = document.getElementById('profile-level-num'); if (pNum) pNum.textContent = stats.level;
+            const pTitle = document.getElementById('profile-title'); if (pTitle) pTitle.textContent = `${stats.title} · Toplam ${stats.xp.toLocaleString('tr-TR')} XP`;
+            const pBar = document.getElementById('profile-xp-bar'); if (pBar) pBar.style.width = (ratio * 100) + '%';
+            const pRing = document.getElementById('profile-level-ring'); if (pRing) pRing.style.strokeDashoffset = 226.2 * (1 - ratio);
+
+            // Oyun bazlı liste
+            const gl = document.getElementById('profile-games-list');
+            if (gl) {
+                const rows = games.map(g => ({ g, st: window.KaUser.getGameStats(g.id) })).filter(x => x.st.played > 0).sort((a, b) => b.st.played - a.st.played);
+                gl.innerHTML = rows.length ? rows.map(({ g, st }) => {
+                    const wr = Math.round(st.won / st.played * 100);
+                    return `<a href="oyunlar/${g.id}.html?mode=daily" class="flex items-center gap-3 p-2.5 rounded-xl bg-white/[.03] hover:bg-white/[.07] border border-white/5 transition-colors">
+                        <div class="w-9 h-9 rounded-lg ${g.bgClass} flex items-center justify-center flex-shrink-0"><i data-lucide="${g.icon}" class="w-4.5 h-4.5 text-white" style="width:18px;height:18px"></i></div>
+                        <div class="flex-1 min-w-0"><div class="text-sm font-bold text-gray-100 truncate">${g.name}</div><div class="text-[11px] text-gray-500">${st.played} oyun · ${st.won} zafer · en iyi seri ${st.bestStreak}</div></div>
+                        <div class="text-right"><div class="text-sm font-extrabold ${wr >= 50 ? 'text-emerald-400' : 'text-gray-300'}">%${wr}</div></div>
+                    </a>`;
+                }).join('') : '<p class="text-sm text-gray-500 text-center py-4">Henüz hiç oyun oynamadın. İlk bulmacanı çöz, istatistiklerin burada görünsün!</p>';
+            }
+            const hl = document.getElementById('profile-history');
+            if (hl) {
+                const ago = (d) => { const m = Math.round((Date.now() - d) / 60000); if (m < 1) return 'az önce'; if (m < 60) return `${m} dk önce`; const h = Math.round(m / 60); if (h < 24) return `${h} sa önce`; return `${Math.round(h / 24)} gün önce`; };
+                const hist = (stats.history || []).slice(0, 6);
+                hl.innerHTML = hist.length ? hist.map(h => {
+                    const g = games.find(x => x.id === h.g);
+                    return `<div class="flex items-center justify-between text-sm py-1.5 border-b border-white/5 last:border-0">
+                        <span class="flex items-center gap-2 min-w-0"><span class="w-2 h-2 rounded-full ${h.w ? 'bg-emerald-400' : 'bg-rose-400'}"></span><span class="font-semibold text-gray-200 truncate">${g ? g.name : h.g}</span><span class="text-xs text-gray-500">${ago(h.d)}</span></span>
+                        <span class="text-xs font-bold text-violet-300">+${h.xp} XP</span></div>`;
+                }).join('') : '<p class="text-sm text-gray-500 text-center py-2">—</p>';
+            }
+
+            // Bugün şeridi
+            const todayWon = (stats.today && stats.today.won) ? stats.today.won.length : 0;
+            const tc = document.getElementById('today-count'); if (tc) tc.textContent = todayWon;
+            const tb = document.getElementById('today-bar'); if (tb) setTimeout(() => tb.style.width = (todayWon / games.length * 100) + '%', 300);
+            const ts = document.getElementById('today-streak'); if (ts) ts.textContent = `🔥 ${stats.currentStreak} gün`;
+            const th = document.getElementById('today-hint');
+            if (th && stats.streakAtRisk && todayWon === 0) th.innerHTML = `<span class="text-amber-300 font-semibold">${stats.currentStreak} günlük serin tehlikede!</span> Bugün bir bulmaca çözerek koru.`;
 
             // 3. Achievements
             const badgesGrid = document.getElementById('badges-grid');
@@ -1376,6 +1459,9 @@
 
         // Call on load
         renderUserData();
+        window.addEventListener('ka:user', renderUserData);
+        window.addEventListener('pageshow', (e) => { if (e.persisted) { renderUserData(); renderCards(document.querySelector('.tab-btn.active').dataset.category); } });
+        if (location.hash === '#profil') setTimeout(() => openModal('modal-profile'), 400);
 
         // INIT LUCIDE ICONS
         // ——————————————————————————————————————————

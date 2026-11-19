@@ -567,7 +567,7 @@
             
             // ====== DAILY MODE RESTRICTION CHECK ======
             if (gameMode === 'daily') {
-                const todayStr = new Date().toISOString().split('T')[0];
+                const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
                 const lastPlayedStr = localStorage.getItem('queens_daily_last_date');
                 
                 if (lastPlayedStr === todayStr) {
@@ -803,7 +803,7 @@
             clearInterval(timerInterval);
             
             if (gameMode === 'daily') {
-                const todayStr = new Date().toISOString().split('T')[0];
+                const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
                 localStorage.setItem('queens_daily_last_date', todayStr);
             }
 

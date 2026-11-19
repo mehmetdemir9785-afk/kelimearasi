@@ -1,282 +1,328 @@
-// Kelimearası User System & Storage
-(function(global) {
+// Kelimearası User System & Storage (v2)
+// Eski API ile uyumlu: getData, saveData, updateUsername, addGameResult,
+// checkAchievements, getFormattedStats. Eski kayıtlar otomatik taşınır.
+(function (global) {
+    'use strict';
+    if (global.KaUser && global.KaUser.__v === 2) return; // iki kez yüklenmeye karşı
+
     const STORAGE_KEY = 'ka_user_data';
 
-    // Seviye ve XP Hesaplama Fonksiyonu
-    // Her 10 seviyede bir, gereken XP 100 artar.
-    // Lvl 1-10: 1000 XP
-    // Lvl 11-20: 1100 XP
-    // Lvl 21-30: 1200 XP vb.
+    // ------------------------------------------------------------------
+    // OYUN KATALOĞU (tek kaynak) — isim, kategori, kazanınca verilen XP
+    // ------------------------------------------------------------------
+    const GAMES = {
+        wordle:       { name: 'Sözcükle',       category: 'word',   xp: 50,  icon: 'text-cursor-input' },
+        ikile:        { name: 'İkile',          category: 'word',   xp: 70,  icon: 'columns' },
+        dortle:       { name: 'Dörtle',         category: 'word',   xp: 90,  icon: 'layout-grid' },
+        sekizle:      { name: 'Sekizle',        category: 'word',   xp: 130, icon: 'layout-dashboard' },
+        kelime500:    { name: 'Kelime 500',     category: 'word',   xp: 60,  icon: 'bar-chart-2' },
+        tic_tac_word: { name: 'Tic-Tak Kelime', category: 'word',   xp: 60,  icon: 'hash' },
+        parolla:      { name: 'Kelime Çemberi', category: 'word',   xp: 80,  icon: 'whole-word' },
+        betweenle:    { name: 'Arasında',       category: 'word',   xp: 50,  icon: 'between-horizontal-start' },
+        spelling_bee: { name: 'Petek',          category: 'word',   xp: 70,  icon: 'hexagon' },
+        fruit_grids:  { name: 'Meyve Izgarası', category: 'logic',  xp: 60,  icon: 'apple' },
+        slitherlink:  { name: 'Çit',            category: 'logic',  xp: 80,  icon: 'spline' },
+        shihaku:      { name: 'Dikdörtgenler',  category: 'logic',  xp: 60,  icon: 'box-select' },
+        queens:       { name: 'Vezirler',       category: 'logic',  xp: 70,  icon: 'crown' },
+        sudoku:       { name: 'Sudoku',         category: 'number', xp: 70,  icon: 'grid-3x3' },
+        nonogram:     { name: 'Kare Karalama',  category: 'number', xp: 80,  icon: 'table-2' },
+        pips:         { name: 'Domino',         category: 'number', xp: 60,  icon: 'dice-5' },
+    };
+    const LOSS_XP = 10;
+
+    // ------------------------------------------------------------------
+    // SEVİYE: her 10 seviyede gereken XP 100 artar (1-10: 1000, 11-20: 1100 ...)
+    // ------------------------------------------------------------------
     function calculateLevelData(totalXp) {
-        let level = 1;
-        let xpLeft = totalXp;
-        let currentLevelReq = 1000;
-
+        let level = 1, xpLeft = totalXp, req = 1000;
         while (true) {
-            currentLevelReq = 1000 + Math.floor((level - 1) / 10) * 100;
-            if (xpLeft >= currentLevelReq) {
-                xpLeft -= currentLevelReq;
-                level++;
-            } else {
-                break;
-            }
+            req = 1000 + Math.floor((level - 1) / 10) * 100;
+            if (xpLeft >= req) { xpLeft -= req; level++; } else break;
         }
+        return { level, xpInCurrentLevel: xpLeft, xpRequiredForNext: req };
+    }
 
+    const TITLES = [
+        [1, 'Acemi'], [5, 'Çaylak'], [10, 'Çırak'], [20, 'Kalfa'], [30, 'Usta'],
+        [50, 'Büyük Usta'], [75, 'Bilge'], [100, 'Efsane'], [150, 'Üstat'], [250, 'Mistik'],
+    ];
+    function titleFor(level) { let t = TITLES[0][1]; for (const [l, n] of TITLES) if (level >= l) t = n; return t; }
+
+    // ------------------------------------------------------------------
+    // BAŞARIMLAR (isim + ikon, bildirimlerde kullanılır)
+    // ------------------------------------------------------------------
+    const ACH = {
+        first_blood: ['İlk Kan', 'swords'], fast_learner: ['Isınma Turu', 'target'], unbeatable: ['Yenilmez', 'shield'],
+        champion: ['Şampiyon', 'award'], wins_500: ['Savaşçı', 'swords'], conqueror: ['Fatih', 'sword'],
+        wins_2500: ['Kahraman', 'shield-alert'], wins_5000: ['Yenilmez Ordu', 'shield-check'], wins_10000: ['Bulmaca Tanrısı', 'sparkles'],
+        streak_3: ['Isınma Serisi', 'flame'], serial_killer: ['Seri Katil', 'flame'], streak_14: ['İki Hafta', 'calendar-range'],
+        addict: ['Bağımlı', 'zap'], streak_60: ['İstikrar', 'trending-up'], dedication: ['Adanmışlık', 'heart'],
+        streak_180: ['Yarım Yıl Serisi', 'calendar-clock'], year_streak: ['Demir İrade', 'calendar-days'], streak_500: ['Durmak Yok', 'flame-kindling'],
+        played_10: ['Çaylak', 'sprout'], played_50: ['Hevesli', 'glasses'], legend: ['Efsane', 'crown'],
+        true_fan: ['Gerçek Hayran', 'star'], played_1000: ['Binler Kulübü', 'layers'], obsessed: ['Takıntılı', 'gem'], played_5000: ['Makinist', 'cpu'],
+        level_5: ['İlk Adım', 'footprints'], apprentice: ['Çırak', 'graduation-cap'], expert: ['Uzman', 'briefcase'],
+        grandmaster: ['Büyük Usta', 'sparkles'], level_75: ['Bilge', 'book-open'], god_tier: ['İlah', 'sun'],
+        level_150: ['Üstat', 'crown'], level_250: ['Mistik', 'orbit'],
+        time_1: ['1 Saatlik Mola', 'coffee'], time_5: ['5 Saatlik Mesai', 'watch'], time_bender: ['Zaman Bükücü', 'hourglass'],
+        half_day: ['Zaman Yolcusu', 'clock'], time_50: ['50 Saat', 'timer'], full_day: ['Uykusuz', 'moon'], time_250: ['250 Saat', 'watch'],
+        join_7: ['İlk Hafta', 'calendar'], veteran: ['Kıdemli', 'medal'], century_club: ['Yüzler Kulübü', 'users'],
+        half_year: ['Sadık Dost', 'handshake'], anniversary: ['Yıl Dönümü', 'party-popper'], join_730: ['İkinci Yıl', 'cake'],
+        brainstorm: ['Beyin Fırtınası', 'brain'], explorer_5: ['Gezgin', 'map'], explorer: ['Kaşif', 'compass'], completionist: ['Koleksiyoncu', 'library'],
+    };
+
+    function defaultAchievements() { const a = {}; Object.keys(ACH).forEach(k => a[k] = false); return a; }
+
+    function freshData() {
         return {
-            level: level,
-            xpInCurrentLevel: xpLeft,
-            xpRequiredForNext: currentLevelReq
+            v: 2,
+            username: 'Bulmaca Sever',
+            joinDate: new Date().toISOString(),
+            gamesPlayed: 0, gamesWon: 0,
+            currentStreak: 0, maxStreak: 0, lastPlayDate: null,
+            totalTimeSeconds: 0,
+            xp: 0, level: 1,
+            gameStats: {},       // eski uyumluluk: oyun -> oynanma sayısı
+            games: {},           // oyun -> { played, won, streak, bestStreak, bestTime, lastWinDay }
+            playedCategories: [],
+            today: { day: null, played: [], won: [] },
+            history: [],         // son 30 sonuç
+            achievements: defaultAchievements(),
         };
     }
 
-    const DEFAULT_DATA = {
-        username: "Bulmaca Sever",
-        joinDate: new Date().toISOString(),
-        gamesPlayed: 0,
-        gamesWon: 0,
-        currentStreak: 0,
-        maxStreak: 0,
-        lastPlayDate: null,
-        totalTimeSeconds: 0,
-        xp: 0,
-        level: 1,
-        gameStats: {}, 
-        playedCategories: [],
-                        achievements: {
-            // Wins
-            first_blood: false, fast_learner: false, unbeatable: false, champion: false,
-            wins_500: false, conqueror: false, wins_2500: false, wins_5000: false, wins_10000: false,
-            
-            // Streaks
-            streak_3: false, serial_killer: false, streak_14: false, addict: false,
-            streak_60: false, dedication: false, streak_180: false, year_streak: false, streak_500: false,
-            
-            // Played
-            played_10: false, played_50: false, legend: false, true_fan: false,
-            played_1000: false, obsessed: false, played_5000: false,
-            
-            // Levels
-            level_5: false, apprentice: false, expert: false, grandmaster: false,
-            level_75: false, god_tier: false, level_150: false, level_250: false,
-            
-            // Time
-            time_1: false, time_5: false, time_bender: false, half_day: false,
-            time_50: false, full_day: false, time_250: false,
-            
-            // Age
-            join_7: false, veteran: false, century_club: false, half_year: false,
-            anniversary: false, join_730: false,
-            
-            // Variety
-            brainstorm: false, explorer_5: false, explorer: false, completionist: false
-        }
-    };
+    // ------------------------------------------------------------------
+    // TARİH YARDIMCILARI (yerel gün anahtarı: YYYY-MM-DD)
+    // ------------------------------------------------------------------
+    function dayKey(d) {
+        d = d || new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    function parseDay(s) {
+        if (!s) return null;
+        if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(s)) { const [d, m, y] = s.split('.').map(Number); return new Date(y, m - 1, d); }
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+        const t = new Date(s); return isNaN(t) ? null : new Date(t.getFullYear(), t.getMonth(), t.getDate());
+    }
+    function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+
+    // ------------------------------------------------------------------
+    let lastCall = { key: '', t: 0 };
 
     const KaUser = {
+        __v: 2,
+        GAMES, ACH, LOSS_XP,
+        calculateLevelData, titleFor, dayKey,
+
         getData() {
+            let data = freshData();
             try {
-                const data = localStorage.getItem(STORAGE_KEY);
-                if (data) {
-                    const parsed = JSON.parse(data);
-                    return { ...DEFAULT_DATA, ...parsed, achievements: { ...DEFAULT_DATA.achievements, ...(parsed.achievements || {}) } };
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const p = JSON.parse(raw);
+                    data = { ...data, ...p, achievements: { ...defaultAchievements(), ...(p.achievements || {}) } };
+                    data.games = data.games || {};
+                    data.today = data.today || { day: null, played: [], won: [] };
+                    data.history = data.history || [];
+                    // v1 -> v2 taşıma: oyun bazlı oynanma sayısı
+                    if (!p.v) {
+                        for (const [g, n] of Object.entries(data.gameStats || {})) {
+                            data.games[g] = data.games[g] || { played: n, won: 0, streak: 0, bestStreak: 0, bestTime: null, lastWinDay: null };
+                        }
+                        data.v = 2;
+                    }
                 }
-            } catch (e) {
-                console.error("User data could not be loaded", e);
-            }
-            return { ...DEFAULT_DATA, achievements: { ...DEFAULT_DATA.achievements } };
+            } catch (e) { console.error('Kullanıcı verisi okunamadı', e); }
+            if (data.today.day !== dayKey()) data.today = { day: dayKey(), played: [], won: [] };
+            return data;
         },
 
         saveData(data) {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-            } catch (e) {
-                console.error("User data could not be saved", e);
-            }
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+            catch (e) { console.error('Kullanıcı verisi kaydedilemedi', e); }
         },
 
-        
         updateUsername(newName) {
-            if (!newName || newName.trim().length === 0) return;
+            if (!newName || !newName.trim()) return;
             const data = this.getData();
-            data.username = newName.trim().substring(0, 20); // max 20 chars
+            data.username = newName.trim().substring(0, 20);
             this.saveData(data);
+            this._emit('ka:user', {});
         },
+
+        getGameStats(gameId) {
+            const g = this.getData().games[gameId];
+            return g || { played: 0, won: 0, streak: 0, bestStreak: 0, bestTime: null, lastWinDay: null };
+        },
+
+        isWonToday(gameId) { return this.getData().today.won.includes(gameId); },
+        isPlayedToday(gameId) { return this.getData().today.played.includes(gameId); },
 
         addGameResult(gameId, category, isWin, timeSeconds) {
+            // Aynı sonucun kısa sürede iki kez gönderilmesini engelle
+            const key = `${gameId}|${isWin}`;
+            const now = Date.now();
+            if (lastCall.key === key && now - lastCall.t < 4000) return null;
+            lastCall = { key, t: now };
+
             const data = this.getData();
-            
-            // Temel İstatistikler
+            const meta = GAMES[gameId] || { name: gameId, category: category, xp: 50 };
+            category = category || meta.category;
+            timeSeconds = Math.max(0, Math.min(Math.round(+timeSeconds || 0), 6 * 3600)); // makul sınır
+            const before = calculateLevelData(data.xp);
+            const today = dayKey();
+
+            // Genel istatistik
             data.gamesPlayed += 1;
             if (isWin) data.gamesWon += 1;
-            data.totalTimeSeconds += (timeSeconds || 0);
-
-            // Oyun ve Kategori Takibi
+            data.totalTimeSeconds += timeSeconds;
             data.gameStats[gameId] = (data.gameStats[gameId] || 0) + 1;
-            if (category && !data.playedCategories.includes(category)) {
-                data.playedCategories.push(category);
+            if (category && !data.playedCategories.includes(category)) data.playedCategories.push(category);
+
+            // Oyun bazlı istatistik
+            const g = data.games[gameId] || { played: 0, won: 0, streak: 0, bestStreak: 0, bestTime: null, lastWinDay: null };
+            g.played += 1;
+            const firstWinToday = isWin && !data.today.won.includes(gameId);
+            if (isWin) {
+                g.won += 1;
+                g.streak += 1;
+                g.bestStreak = Math.max(g.bestStreak, g.streak);
+                if (timeSeconds > 0 && (g.bestTime == null || timeSeconds < g.bestTime)) g.bestTime = timeSeconds;
+                g.lastWinDay = today;
+            } else {
+                g.streak = 0;
             }
+            data.games[gameId] = g;
+            if (!data.today.played.includes(gameId)) data.today.played.push(gameId);
+            if (isWin && !data.today.won.includes(gameId)) data.today.won.push(gameId);
 
-            // Seri (Streak) Hesaplama
-            const todayStr = new Date().toLocaleDateString('tr-TR'); 
-            if (data.lastPlayDate) {
-                const lastDate = new Date(data.lastPlayDate.split('.').reverse().join('-')); 
-                const today = new Date(todayStr.split('.').reverse().join('-'));
-                const diffTime = Math.abs(today - lastDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            // Günlük seri
+            const last = parseDay(data.lastPlayDate);
+            const todayD = parseDay(today);
+            if (!last) data.currentStreak = 1;
+            else {
+                const diff = daysBetween(last, todayD);
+                if (diff === 1) data.currentStreak += 1;
+                else if (diff > 1 || data.currentStreak === 0) data.currentStreak = 1;
+            }
+            data.lastPlayDate = today;
+            data.maxStreak = Math.max(data.maxStreak, data.currentStreak);
 
-                if (diffDays === 1) {
-                    data.currentStreak += 1;
-                } else if (diffDays > 1) {
-                    data.currentStreak = 1;
+            // XP hesabı
+            const breakdown = [];
+            let xp;
+            if (isWin) {
+                xp = meta.xp;
+                breakdown.push({ label: 'Zafer', value: meta.xp });
+                if (firstWinToday) {
+                    const b = Math.round(meta.xp * 0.5);
+                    xp += b; breakdown.push({ label: 'Günün ilk zaferi', value: b });
+                }
+                if (data.currentStreak > 1) {
+                    const pct = Math.min(30, (data.currentStreak - 1) * 3);
+                    const b = Math.round(xp * pct / 100);
+                    if (b > 0) { xp += b; breakdown.push({ label: `${data.currentStreak} günlük seri`, value: b }); }
                 }
             } else {
-                data.currentStreak = 1;
+                xp = LOSS_XP;
+                breakdown.push({ label: 'Katılım', value: LOSS_XP });
             }
-            data.lastPlayDate = todayStr;
-            if (data.currentStreak > data.maxStreak) {
-                data.maxStreak = data.currentStreak;
-            }
+            data.xp += xp;
+            const after = calculateLevelData(data.xp);
+            data.level = after.level;
 
-            // XP ve Level Hesaplama
-            const xpGained = isWin ? 50 : 10;
-            data.xp += xpGained;
-            const levelInfo = calculateLevelData(data.xp);
-            data.level = levelInfo.level;
+            data.history.unshift({ g: gameId, w: !!isWin, xp, t: timeSeconds, d: Date.now() });
+            data.history = data.history.slice(0, 30);
 
             this.saveData(data);
-            
-            // Başarımları Kontrol Et
-            this.checkAchievements();
+            const newAch = this.checkAchievements();
+
+            const result = {
+                gameId, gameName: meta.name, isWin: !!isWin, xpGained: xp, breakdown,
+                before, after, leveledUp: after.level > before.level,
+                title: titleFor(after.level), achievements: newAch,
+                gameStats: g, streak: data.currentStreak,
+            };
+            this._emit('ka:result', result);
+            return result;
         },
 
         checkAchievements() {
             const data = this.getData();
-            let newlyUnlocked = [];
+            const newly = [];
+            const unlock = (key) => { if (!data.achievements[key]) { data.achievements[key] = true; newly.push({ id: key, name: ACH[key][0], icon: ACH[key][1] }); } };
+            const W = data.gamesWon, P = data.gamesPlayed, S = data.maxStreak, L = calculateLevelData(data.xp).level, T = data.totalTimeSeconds;
 
-            // Helper to unlock
-            const unlock = (key, name) => {
-                if (!data.achievements[key]) {
-                    data.achievements[key] = true;
-                    newlyUnlocked.push(name);
-                }
-            };
+            [[1, 'first_blood'], [10, 'fast_learner'], [50, 'unbeatable'], [250, 'champion'], [500, 'wins_500'], [1000, 'conqueror'], [2500, 'wins_2500'], [5000, 'wins_5000'], [10000, 'wins_10000']].forEach(([n, k]) => W >= n && unlock(k));
+            [[3, 'streak_3'], [5, 'serial_killer'], [14, 'streak_14'], [30, 'addict'], [60, 'streak_60'], [100, 'dedication'], [180, 'streak_180'], [365, 'year_streak'], [500, 'streak_500']].forEach(([n, k]) => S >= n && unlock(k));
+            [[10, 'played_10'], [50, 'played_50'], [100, 'legend'], [500, 'true_fan'], [1000, 'played_1000'], [2500, 'obsessed'], [5000, 'played_5000']].forEach(([n, k]) => P >= n && unlock(k));
+            [[5, 'level_5'], [10, 'apprentice'], [25, 'expert'], [50, 'grandmaster'], [75, 'level_75'], [100, 'god_tier'], [150, 'level_150'], [250, 'level_250']].forEach(([n, k]) => L >= n && unlock(k));
+            [[3600, 'time_1'], [18000, 'time_5'], [36000, 'time_bender'], [86400, 'half_day'], [180000, 'time_50'], [360000, 'full_day'], [900000, 'time_250']].forEach(([n, k]) => T >= n && unlock(k));
 
-            
-            
-            // Kazanma başarımları
-            if (data.gamesWon >= 1) unlock('first_blood', 'İlk Kan');
-            if (data.gamesWon >= 10) unlock('fast_learner', 'Isınma Turu');
-            if (data.gamesWon >= 50) unlock('unbeatable', 'Yenilmez');
-            if (data.gamesWon >= 250) unlock('champion', 'Şampiyon');
-            if (data.gamesWon >= 500) unlock('wins_500', 'Savaşçı');
-            if (data.gamesWon >= 1000) unlock('conqueror', 'Fatih');
-            if (data.gamesWon >= 2500) unlock('wins_2500', 'Kahraman');
-            if (data.gamesWon >= 5000) unlock('wins_5000', 'Yenilmez Ordu');
-            if (data.gamesWon >= 10000) unlock('wins_10000', 'Bulmaca Tanrısı');
-            
-            // Seri başarımları
-            if (data.maxStreak >= 3) unlock('streak_3', 'Isınma Serisi');
-            if (data.maxStreak >= 5) unlock('serial_killer', 'Seri Katil');
-            if (data.maxStreak >= 14) unlock('streak_14', 'İki Hafta');
-            if (data.maxStreak >= 30) unlock('addict', 'Bağımlı');
-            if (data.maxStreak >= 60) unlock('streak_60', 'İstikrar');
-            if (data.maxStreak >= 100) unlock('dedication', 'Adanmışlık');
-            if (data.maxStreak >= 180) unlock('streak_180', 'Yarım Yıl Serisi');
-            if (data.maxStreak >= 365) unlock('year_streak', 'Demir İrade');
-            if (data.maxStreak >= 500) unlock('streak_500', 'Durmak Yok');
-            
-            // Çözme başarımları
-            if (data.gamesPlayed >= 10) unlock('played_10', 'Çaylak');
-            if (data.gamesPlayed >= 50) unlock('played_50', 'Hevesli');
-            if (data.gamesPlayed >= 100) unlock('legend', 'Efsane');
-            if (data.gamesPlayed >= 500) unlock('true_fan', 'Gerçek Hayran');
-            if (data.gamesPlayed >= 1000) unlock('played_1000', 'Binler Kulübü');
-            if (data.gamesPlayed >= 2500) unlock('obsessed', 'Takıntılı');
-            if (data.gamesPlayed >= 5000) unlock('played_5000', 'Makinist');
-            
-            // Seviye başarımları
-            if (data.level >= 5) unlock('level_5', 'İlk Adım');
-            if (data.level >= 10) unlock('apprentice', 'Çırak');
-            if (data.level >= 25) unlock('expert', 'Uzman');
-            if (data.level >= 50) unlock('grandmaster', 'Büyük Usta');
-            if (data.level >= 75) unlock('level_75', 'Bilge');
-            if (data.level >= 100) unlock('god_tier', 'İlah');
-            if (data.level >= 150) unlock('level_150', 'Üstat');
-            if (data.level >= 250) unlock('level_250', 'Mistik');
-            
-            // Zaman başarımları
-            if (data.totalTimeSeconds >= 3600) unlock('time_1', '1 Saatlik Mola');
-            if (data.totalTimeSeconds >= 18000) unlock('time_5', '5 Saatlik Mesai');
-            if (data.totalTimeSeconds >= 36000) unlock('time_bender', 'Zaman Bükücü'); // 10 saat
-            if (data.totalTimeSeconds >= 86400) unlock('half_day', 'Zaman Yolcusu'); // 24 saat
-            if (data.totalTimeSeconds >= 180000) unlock('time_50', '50 Saat'); 
-            if (data.totalTimeSeconds >= 360000) unlock('full_day', 'Uykusuz'); // 100 saat
-            if (data.totalTimeSeconds >= 900000) unlock('time_250', '250 Saat');
-            
-            // Üyelik yaşı başarımları
-            const joinDate = new Date(data.joinDate);
-            const now = new Date();
-            const daysSinceJoin = Math.floor((now - joinDate) / (1000 * 60 * 60 * 24));
-            
-            if (daysSinceJoin >= 7) unlock('join_7', 'İlk Hafta');
-            if (daysSinceJoin >= 30) unlock('veteran', 'Kıdemli');
-            if (daysSinceJoin >= 100) unlock('century_club', 'Yüzler Kulübü');
-            if (daysSinceJoin >= 180) unlock('half_year', 'Sadık Dost');
-            if (daysSinceJoin >= 365) unlock('anniversary', 'Yıl Dönümü');
-            if (daysSinceJoin >= 730) unlock('join_730', 'İkinci Yıl');
-            
-            // Çeşitlilik başarımları
-            if (data.playedCategories.length >= 3) unlock('brainstorm', 'Beyin Fırtınası');
-            if (Object.keys(data.gameStats).length >= 5) unlock('explorer_5', 'Gezgin');
-            if (Object.keys(data.gameStats).length >= 10) unlock('explorer', 'Kaşif');
-            if (Object.keys(data.gameStats).length >= 16) unlock('completionist', 'Koleksiyoncu');
-if (newlyUnlocked.length > 0) {
-                this.saveData(data);
-                console.log("Yeni Başarımlar Açıldı:", newlyUnlocked);
-            }
+            const days = Math.floor((Date.now() - new Date(data.joinDate)) / 86400000);
+            [[7, 'join_7'], [30, 'veteran'], [100, 'century_club'], [180, 'half_year'], [365, 'anniversary'], [730, 'join_730']].forEach(([n, k]) => days >= n && unlock(k));
+
+            const distinct = Object.keys(data.gameStats).length;
+            if (data.playedCategories.length >= 3) unlock('brainstorm');
+            if (distinct >= 5) unlock('explorer_5');
+            if (distinct >= 10) unlock('explorer');
+            if (distinct >= 16) unlock('completionist');
+
+            if (newly.length) this.saveData(data);
+            return newly;
         },
 
         getFormattedStats() {
             const data = this.getData();
-            
-            let favoriteGame = "-";
-            let maxPlays = 0;
-            for (const [game, plays] of Object.entries(data.gameStats)) {
-                if (plays > maxPlays) {
-                    maxPlays = plays;
-                    favoriteGame = game; 
-                }
-            }
+            let favoriteGame = '-', maxPlays = 0;
+            for (const [game, plays] of Object.entries(data.gameStats)) if (plays > maxPlays) { maxPlays = plays; favoriteGame = game; }
 
-            const hours = Math.floor(data.totalTimeSeconds / 3600);
-            const minutes = Math.floor((data.totalTimeSeconds % 3600) / 60);
-            let timeStr = "";
-            if (hours > 0) timeStr += `${hours}s `;
-            timeStr += `${minutes}dk`;
-            if (hours === 0 && minutes === 0) timeStr = "1dk'dan az";
+            const h = Math.floor(data.totalTimeSeconds / 3600), m = Math.floor((data.totalTimeSeconds % 3600) / 60);
+            let timeStr = (h > 0 ? `${h}s ` : '') + `${m}dk`;
+            if (h === 0 && m === 0) timeStr = "1dk'dan az";
 
-            const joinD = new Date(data.joinDate);
-            const joinStr = joinD.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
-
+            const joinStr = new Date(data.joinDate).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
             const winRate = data.gamesPlayed > 0 ? Math.round((data.gamesWon / data.gamesPlayed) * 100) : 0;
-            const unlockedCount = Object.values(data.achievements).filter(v => v).length;
-            
-            const levelInfo = calculateLevelData(data.xp);
+            const lv = calculateLevelData(data.xp);
+
+            // Seri bugün ya da dün oynanmadıysa kırılmış sayılır
+            const last = parseDay(data.lastPlayDate);
+            const gap = last ? daysBetween(last, parseDay(dayKey())) : 99;
+            const liveStreak = gap <= 1 ? data.currentStreak : 0;
 
             return {
                 ...data,
+                level: lv.level,
+                currentStreak: liveStreak,
+                streakAtRisk: gap === 1 && liveStreak > 0,
                 formattedJoinDate: joinStr,
-                winRate: winRate,
+                winRate,
                 favoriteGameId: favoriteGame,
                 formattedTime: timeStr,
-                unlockedAchievementsCount: unlockedCount,
-                totalAchievements: Object.keys(data.achievements).length,
-                xpInCurrentLevel: levelInfo.xpInCurrentLevel,
-                xpRequiredForNext: levelInfo.xpRequiredForNext
+                unlockedAchievementsCount: Object.values(data.achievements).filter(Boolean).length,
+                totalAchievements: Object.keys(ACH).length,
+                xpInCurrentLevel: lv.xpInCurrentLevel,
+                xpRequiredForNext: lv.xpRequiredForNext,
+                title: titleFor(lv.level),
             };
-        }
+        },
+
+        _emit(name, detail) {
+            try { global.dispatchEvent(new CustomEvent(name, { detail })); } catch (e) { /* eski tarayıcı */ }
+        },
     };
 
     global.KaUser = KaUser;
 
+    // ------------------------------------------------------------------
+    // Arayüz katmanını (bildirimler, oyun sayfası kabuğu) otomatik yükle
+    // ------------------------------------------------------------------
+    try {
+        const me = document.currentScript && document.currentScript.src;
+        if (me && !document.getElementById('ka-ui-script')) {
+            const base = me.replace(/user-system\.js.*$/, '');
+            const s = document.createElement('script');
+            s.id = 'ka-ui-script'; s.src = base + 'ka-ui.js'; s.defer = true;
+            document.head.appendChild(s);
+        }
+    } catch (e) { /* yoksay */ }
 })(window);

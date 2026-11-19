@@ -711,7 +711,7 @@
     // ============================================================
 
     let gameState = {
-        mode: 'unlimited',
+        mode: (new URLSearchParams(location.search).get('mode') === 'unlimited') ? 'unlimited' : 'daily',
         difficulty: 'easy',
         currentLevel: null,
         placedDominoes: [],
@@ -728,7 +728,7 @@
     }
 
     function getDailyLevel() {
-        const dateStr = new Date().toISOString().slice(0, 10);
+        const dateStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
         const hash = Math.abs(hashCode(dateStr));
         const rng = mulberry32(hash);
         // Her güne özel sabit rastgelelikte "medium" harita
@@ -858,7 +858,7 @@
 
         let level;
         if (gameState.mode === 'daily') {
-            const dateStr = new Date().toISOString().slice(0, 10);
+            const dateStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
             if (localStorage.getItem('pips_daily_' + dateStr)) {
                 showAlreadyPlayedModal();
                 return;
@@ -1319,7 +1319,7 @@
 
             // Save daily progress
             if (gameState.mode === 'daily') {
-                const dateStr = new Date().toISOString().slice(0, 10);
+                const dateStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
                 localStorage.setItem('pips_daily_' + dateStr, 'true');
             }
 
@@ -1482,7 +1482,7 @@
         // New game button
         document.getElementById('newGameBtn').addEventListener('click', function() {
             if (gameState.mode === 'daily') {
-                const dateStr = new Date().toISOString().slice(0, 10);
+                const dateStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
                 if (localStorage.getItem('pips_daily_' + dateStr)) {
                     showAlreadyPlayedModal();
                     return;
@@ -1556,7 +1556,7 @@
     // ============================================================
 
     function init() {
-        gameState.mode = 'unlimited';
+        gameState.mode = (new URLSearchParams(location.search).get('mode') === 'unlimited') ? 'unlimited' : 'daily';
         gameState.difficulty = 'easy';
 
         updateModeUI();

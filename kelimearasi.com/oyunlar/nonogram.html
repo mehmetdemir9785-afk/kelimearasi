@@ -334,7 +334,7 @@
         }
 
         function checkDailyAccess() {
-            const today = new Date().toISOString().slice(0, 10);
+            const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
             const lastWin = localStorage.getItem('nonogram_daily_win');
             if (mode === 'daily' && lastWin === today) {
                 showModal('dailyLimitModal');
@@ -358,7 +358,7 @@
             
             let seed = null;
             if (mode === 'daily') {
-                seed = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                seed = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10).replace(/-/g, '');
             }
             
             generatePuzzle(n, seed);
@@ -698,7 +698,7 @@
             if (won && (checkingMode === 'classic' || lives > 0)) {
                 clearInterval(timerInterval);
                 if (mode === 'daily') {
-                    const today = new Date().toISOString().slice(0,10);
+                    const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,10);
                     localStorage.setItem('nonogram_daily_win', today);
                 }
                 
