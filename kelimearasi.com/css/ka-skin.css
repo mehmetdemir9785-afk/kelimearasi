@@ -188,3 +188,10 @@ body.ka-g-tic_tac_word .macro-cell:empty::after { content: '?'; font-weight: 900
 body.ka-g-tic_tac_word .macro-cell.locked[class*="emerald"] { background: var(--st-green) !important; color: #fff !important; }
 body.ka-g-tic_tac_word .macro-cell.locked[class*="red-500"] { background: #FFD9D9 !important; color: var(--ka-red) !important; }
 body.ka-g-tic_tac_word #win-line { background: var(--ka-ink) !important; box-shadow: none !important; }
+
+/* ---------- 17. Mobil tarayıcı yüksekliği ---------- */
+/* 100vh mobil Chrome'da adres çubuğu gizliyken ölçülür; görünen alan için dvh kullan */
+@supports (height: 100dvh) {
+    body.ka-game.h-screen, body.ka-game .h-screen { height: 100dvh !important; }
+    body.ka-game.min-h-screen, body.ka-game .min-h-screen { min-height: 100dvh !important; }
+}
