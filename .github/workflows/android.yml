@@ -58,13 +58,18 @@ jobs:
           name: kelimearasi-android-${{ steps.files.outputs.version }}
           path: out/*
 
-      - name: Sürümü GitHub Releases'e yükle
-        if: steps.files.outputs.signed == 'true' && github.ref == 'refs/heads/main'
+      - name: APK'yı GitHub Releases'e yükle (telefondan indirmek için)
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
           V: ${{ steps.files.outputs.version }}
+          SIGNED: ${{ steps.files.outputs.signed }}
         run: |
-          gh release create "android-v${V}" out/*.apk out/*.aab \
-            --title "Android uygulaması ${V}" \
-            --notes "Telefona kurmak için kelimearasi-${V}.apk dosyasını indir. Play Store'a yüklemek için -playstore.aab dosyasını kullan." \
-            --latest
+          if [ "$SIGNED" = "true" ]; then
+            FILES="out/kelimearasi-${V}.apk"
+            NOTES="Telefona kurmak için kelimearasi-${V}.apk dosyasını indirip aç."
+          else
+            FILES="out/kelimearasi-${V}-test.apk"
+            NOTES="Test sürümü: üstte ince bir adres çubuğu görünür. İmzalı sürüm için ANDROID_KEYSTORE_PASSWORD gizli değişkenini ekleyip derlemeyi yeniden çalıştır."
+          fi
+          gh release create "android-v${V}" $FILES --title "Kelimearası Android ${V}" --notes "$NOTES" --latest
