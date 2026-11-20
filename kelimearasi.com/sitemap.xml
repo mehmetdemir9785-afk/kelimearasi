@@ -85,4 +85,7 @@
         <priority>0.8</priority>
         <changefreq>daily</changefreq>
     </url>
+    <url>
+        <loc>https://kelimearasi.com/gizlilik.html</loc>
+    </url>
 </urlset>

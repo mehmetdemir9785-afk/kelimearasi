@@ -273,7 +273,7 @@
     // ---------------------------------------------------------------- ?mode= desteği
     // Ana sayfadaki "Sınırsız" butonu ?mode=unlimited ile gelir; parametreyi okumayan
     // oyunlarda ilgili mod butonuna otomatik basılır. Mod değişince adres güncellenir.
-    const SELF_HANDLED = ['parolla', 'queens', 'spelling_bee', 'sudoku', 'wordle', 'pips'];
+    const SELF_HANDLED = ['parolla', 'queens', 'spelling_bee', 'sudoku', 'pips'];
     const UNL_SEL = '[data-mode="unlimited"], #mode-unlimited, #modeUnlimitedBtn, #modeUnlimited, #btn-unlimited, #unlimitedBtn';
     const DAY_SEL = '[data-mode="daily"], #mode-daily, #modeDailyBtn, #modeDaily, #btn-daily, #dailyBtn';
     function gameId() { const m = location.pathname.match(/oyunlar\/([^/.]+)\.html/); return m ? m[1] : ''; }
