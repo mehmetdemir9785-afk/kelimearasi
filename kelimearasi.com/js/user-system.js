@@ -328,8 +328,9 @@
         const me = document.currentScript && document.currentScript.src;
         if (me && !document.getElementById('ka-ui-script')) {
             const base = me.replace(/user-system\.js.*$/, '');
+            const ver = (me.match(/[?&]v=([^&]+)/) || [])[1] || '';
             const s = document.createElement('script');
-            s.id = 'ka-ui-script'; s.src = base + 'ka-ui.js'; s.defer = true;
+            s.id = 'ka-ui-script'; s.src = base + 'ka-ui.js' + (ver ? '?v=' + ver : ''); s.defer = true;
             document.head.appendChild(s);
         }
     } catch (e) { /* yoksay */ }

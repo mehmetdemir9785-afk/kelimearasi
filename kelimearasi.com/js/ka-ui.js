@@ -101,7 +101,8 @@
         if (isGamePage && !document.getElementById('ka-skin')) {
             const me = document.getElementById('ka-ui-script');
             const base = me ? me.src.replace(/js\/ka-ui\.js.*$/, '') : '../';
-            const l = document.createElement('link'); l.id = 'ka-skin'; l.rel = 'stylesheet'; l.href = base + 'css/ka-skin.css';
+            const ver = me ? ((me.src.match(/[?&]v=([^&]+)/) || [])[1] || '') : '';
+            const l = document.createElement('link'); l.id = 'ka-skin'; l.rel = 'stylesheet'; l.href = base + 'css/ka-skin.css' + (ver ? '?v=' + ver : '');
             document.head.appendChild(l);
         }
         if (!document.querySelector('link[href*="family=Archivo"]')) {

@@ -37,3 +37,8 @@ returns json language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.game_stats(text, date, int, int) from public;
 grant execute on function public.game_stats(text, date, int, int) to anon;
+
+-- Yeni Supabase projelerinde tablolar anon role otomatik açılmıyor; izinleri açıkça ver.
+grant usage on schema public to anon;
+grant insert on table public.results to anon;
+grant execute on function public.game_stats(text, date, int, int) to anon;
