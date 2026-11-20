@@ -1027,7 +1027,7 @@
                     showToast('Tebrikler! 🎉', 2000);
                     const gecenSureSaniye = Math.floor((Date.now() - (gameStartTime || Date.now())) / 1000);
                     if (window.KaUser) {
-                        window.KaUser.addGameResult('dortle', 'word', true, gecenSureSaniye);
+                        window.KaUser.addGameResult('dortle', 'word', true, gecenSureSaniye, { guesses: guesses.length });
                     }
                     updateStats(true);
                     saveDailyState();

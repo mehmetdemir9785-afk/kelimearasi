@@ -934,7 +934,7 @@
                     isGameOver = true;
                     if (window.KaUser) {
                         const gecenSureSaniye = Math.floor((Date.now() - gameStartTime) / 1000);
-                        window.KaUser.addGameResult('ikile', 'word', true, gecenSureSaniye);
+                        window.KaUser.addGameResult('ikile', 'word', true, gecenSureSaniye, { guesses: guesses.length });
                     }
                     setTimeout(() => {
                         showToast('Tebrikler! 🎉', 2000);

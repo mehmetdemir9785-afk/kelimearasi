@@ -517,7 +517,7 @@
                 
                 // Merkezi XP ve Başarım entegrasyonu
                 if (window.KaUser) {
-                    window.KaUser.addGameResult('kelime500', 'word', isWin, gecenSureSaniye);
+                    window.KaUser.addGameResult('kelime500', 'word', isWin, gecenSureSaniye, { guesses: isWin ? gameState.guesses.length : null });
                 }
 
                 setTimeout(() => showGameOverModal(), 1200);

@@ -2873,7 +2873,7 @@
                     isGameOver = true;
                     if (window.KaUser && gameStartTime) {
                         const gecenSureSaniye = Math.floor((Date.now() - gameStartTime) / 1000);
-                        window.KaUser.addGameResult('wordle', 'word', true, gecenSureSaniye);
+                        window.KaUser.addGameResult('wordle', 'word', true, gecenSureSaniye, { guesses: row + 1 });
                     }
                     const messages = ['Dahice!', 'Muhteşem!', 'Harika!', 'Güzel!', 'İyi!', 'Zar zor!'];
                     showToast(messages[Math.min(row, 5)]);

@@ -47,6 +47,18 @@
     .ka-ach{display:flex;align-items:center;gap:12px}
     .ka-ach-i{flex:none;width:42px;height:42px;border-radius:10px;display:grid;place-items:center;background:var(--ka-green);border:2px solid var(--ka-ink)}
     .ka-ach-i svg{width:20px;height:20px;color:#fff}
+    .ka-comm{cursor:default;padding:14px 16px 16px}
+    .kc-h{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:800;font-size:14px;color:var(--ka-ink-2);margin-bottom:6px}
+    .kc-x{width:28px;height:28px;border:2px solid var(--ka-ink);border-radius:7px;background:#fff;font:900 16px var(--ka-font);color:var(--ka-ink);cursor:pointer;line-height:1}
+    .kc-big{font-size:20px;font-weight:900;font-stretch:112%;line-height:1.2;margin:2px 0 10px}
+    .kc-row{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:5px 0;border-bottom:1px dashed var(--ka-line)}
+    .kc-row span{color:var(--ka-ink-2);font-weight:600}.kc-row b{font-weight:800}
+    .kc-sub{font-size:13px;font-weight:700;color:var(--ka-ink-2);margin:12px 0 6px}
+    .kc-bars{display:flex;flex-direction:column;gap:4px}
+    .kc-bar{display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:8px;font-size:12.5px;font-weight:800}
+    .kc-bar i{display:block;height:16px;background:#DCE5F5;border:1.5px solid var(--ka-ink);border-radius:4px}
+    .kc-bar.me i{background:var(--ka-hi)}
+    .kc-bar em{font-style:normal;color:var(--ka-ink-2);font-weight:700;min-width:24px;text-align:right}
     .ka-confetti{position:fixed;inset:0;pointer-events:none;z-index:2147483001}
 
     /* ---------- Oyun sayfası kabuğu: kareli defter ---------- */
@@ -271,9 +283,9 @@
         if (btn) btn.click();
     }
     function syncModeToUrl(e) {
-        const b = e.target.closest && e.target.closest(UNL_SEL + ',' + DAY_SEL);
+        const b = e.target.closest && e.target.closest(UNL_SEL + ',' + DAY_SEL + ',[data-ka-mode]');
         if (!b) return;
-        const m = b.matches(UNL_SEL) ? 'unlimited' : 'daily';
+        const m = b.matches(UNL_SEL) || /Sınırsız/i.test(b.textContent || '') ? 'unlimited' : 'daily';
         const u = new URL(location.href); u.searchParams.set('mode', m);
         try { history.replaceState(history.state, '', u); } catch (_) {}
     }
@@ -295,10 +307,98 @@
         });
     }
 
+
+    // ---------------------------------------------------------------- topluluk istatistikleri (Supabase)
+    const SUPA_URL = 'https://zesthznbzvccwrldwism.supabase.co';
+    const SUPA_KEY = 'sb_publishable_b-V1sMXz7Vbcv8vgXVNTiA_u8KqScg2';
+    const supaOn = () => !!SUPA_URL && !!SUPA_KEY;
+    const H = () => ({ 'apikey': SUPA_KEY, 'Content-Type': 'application/json' });
+    const myKey = (g, d) => `ka_daily_${g}_${d}`;
+
+    async function supaInsert(row) {
+        const r = await fetch(`${SUPA_URL}/rest/v1/results`, { method: 'POST', headers: { ...H(), 'Prefer': 'return=minimal' }, body: JSON.stringify(row) });
+        if (!r.ok) throw new Error('insert ' + r.status);
+    }
+    async function supaStats(game, day, seconds, guesses) {
+        const r = await fetch(`${SUPA_URL}/rest/v1/rpc/game_stats`, { method: 'POST', headers: H(),
+            body: JSON.stringify({ p_game: game, p_day: day, p_seconds: seconds || null, p_guesses: guesses || null }) });
+        if (!r.ok) throw new Error('stats ' + r.status);
+        return r.json();
+    }
+
+    const fmtSec = (t) => t == null ? '-' : `${Math.floor(t / 60)}:${String(Math.round(t % 60)).padStart(2, '0')}`;
+    const pct = (a, b) => b > 0 ? Math.round(a / b * 100) : 0;
+
+    let commCard = null;
+    function renderCommunity(gameName, me, st) {
+        if (commCard) commCard.remove();
+        const wins = st.wins || 0, players = st.players || 0;
+        const others = Math.max(0, wins - (me.won ? 1 : 0));
+        let lines = '';
+        if (me.won && me.seconds && others > 0) lines += `<div class="kc-big">Oyuncuların %${pct(st.slower_than_you, others)}'inden hızlısın</div>`;
+        else if (me.won && others === 0) lines += `<div class="kc-big">Bugün çözen ilk kişilerdensin</div>`;
+        lines += `<div class="kc-row"><span>Bugün oynayan</span><b>${players.toLocaleString('tr-TR')}</b></div>`;
+        lines += `<div class="kc-row"><span>Çözen</span><b>${wins.toLocaleString('tr-TR')} (%${pct(wins, players)})</b></div>`;
+        if (st.median_seconds != null) lines += `<div class="kc-row"><span>Ortanca süre</span><b>${fmtSec(st.median_seconds)}${me.seconds && me.won ? `, sen ${fmtSec(me.seconds)}` : ''}</b></div>`;
+        const g = st.guesses || {};
+        const keys = Object.keys(g).map(Number).filter(n => n > 0).sort((a, b) => a - b);
+        if (keys.length) {
+            const max = Math.max(...keys.map(k => g[k]));
+            const lo = Math.min(...keys, me.guesses || 99), hi = Math.max(...keys, me.guesses || 0);
+            let bars = '';
+            for (let k = lo; k <= hi; k++) {
+                const n = g[k] || 0;
+                bars += `<div class="kc-bar${me.won && me.guesses === k ? ' me' : ''}"><span>${k}</span><i style="width:${Math.max(4, n / max * 100)}%"></i><em>${n}</em></div>`;
+            }
+            lines += `<div class="kc-sub">Kaçıncı tahminde çözüldü</div><div class="kc-bars">${bars}</div>`;
+        }
+        commCard = document.createElement('div');
+        commCard.className = 'ka-card ka-comm';
+        commCard.innerHTML = `<div class="kc-h"><span>Bugünün ${gameName} bulmacası</span><button class="kc-x" aria-label="Kapat">×</button></div>${lines}`;
+        getWrap().appendChild(commCard);
+        requestAnimationFrame(() => requestAnimationFrame(() => commCard.classList.add('show')));
+        commCard.querySelector('.kc-x').addEventListener('click', (e) => { e.stopPropagation(); commCard.classList.add('hide'); setTimeout(() => { commCard && commCard.remove(); commCard = null; }, 400); });
+    }
+
+    async function showCommunity(game, day) {
+        if (!supaOn()) return;
+        let me; try { me = JSON.parse(localStorage.getItem(myKey(game, day)) || 'null'); } catch (_) {}
+        if (!me) return;
+        try {
+            if (!me.sent) { await supaInsert({ game, day, won: me.won, guesses: me.guesses, seconds: me.seconds }); me.sent = true; localStorage.setItem(myKey(game, day), JSON.stringify(me)); }
+            const st = await supaStats(game, day, me.won ? me.seconds : null, me.won ? me.guesses : null);
+            const meta = window.KaUser && window.KaUser.GAMES[game];
+            renderCommunity(meta ? meta.name : game, me, st);
+            addCommButton();
+        } catch (e) { console.warn('Topluluk istatistiği alınamadı', e); }
+    }
+
+    function addCommButton() {
+        const right = document.querySelector('.ka-right');
+        if (!right || right.querySelector('.ka-comm-btn')) return;
+        const b = document.createElement('button');
+        b.className = 'ka-nav-btn ka-icon-btn ka-comm-btn'; b.title = 'Bugünün topluluk istatistikleri'; b.setAttribute('aria-label', 'Topluluk istatistikleri');
+        b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>';
+        b.addEventListener('click', () => showCommunity(gameId(), window.KaUser.dayKey()));
+        right.insertBefore(b, right.firstChild);
+    }
+
+    window.addEventListener('ka:result', e => {
+        const r = e.detail;
+        if (!r || !r.daily || !isGamePage) return;
+        const k = myKey(r.gameId, r.day);
+        if (localStorage.getItem(k)) return; // günlük bulmaca bir kez sayılır
+        localStorage.setItem(k, JSON.stringify({ won: r.isWin, guesses: r.isWin ? r.guesses : null, seconds: r.seconds > 0 ? r.seconds : null, sent: false }));
+        setTimeout(() => showCommunity(r.gameId, r.day), 1600);
+    });
+
     function init() {
         injectStyles();
         forceLight();
-        if (isGamePage) { enhanceGameHeader(); tagModeButtons(); setTimeout(tagModeButtons, 600); }
+        if (isGamePage) {
+            enhanceGameHeader(); tagModeButtons(); setTimeout(tagModeButtons, 600);
+            try { if (supaOn() && window.KaUser && localStorage.getItem(myKey(gameId(), window.KaUser.dayKey()))) addCommButton(); } catch (_) {}
+        }
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 

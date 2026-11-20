@@ -1082,7 +1082,7 @@
                     saveDailyState();
                     if (window.KaUser) {
                         const gecenSureSaniye = Math.floor((Date.now() - gameStartTime) / 1000);
-                        window.KaUser.addGameResult('sekizle', 'word', true, gecenSureSaniye);
+                        window.KaUser.addGameResult('sekizle', 'word', true, gecenSureSaniye, { guesses: guesses.length });
                     }
                     setTimeout(() => showStatsModal(), 1500);
                     return;

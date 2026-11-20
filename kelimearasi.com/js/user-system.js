@@ -157,7 +157,8 @@
         isWonToday(gameId) { return this.getData().today.won.includes(gameId); },
         isPlayedToday(gameId) { return this.getData().today.played.includes(gameId); },
 
-        addGameResult(gameId, category, isWin, timeSeconds) {
+        addGameResult(gameId, category, isWin, timeSeconds, extra) {
+            extra = extra || {};
             // Aynı sonucun kısa sürede iki kez gönderilmesini engelle
             const key = `${gameId}|${isWin}`;
             const now = Date.now();
@@ -241,6 +242,10 @@
                 before, after, leveledUp: after.level > before.level,
                 title: titleFor(after.level), achievements: newAch,
                 gameStats: g, streak: data.currentStreak,
+                seconds: timeSeconds,
+                guesses: Number.isFinite(+extra.guesses) && +extra.guesses > 0 ? Math.round(+extra.guesses) : null,
+                daily: new URLSearchParams(location.search).get('mode') !== 'unlimited',
+                day: today,
             };
             this._emit('ka:result', result);
             return result;

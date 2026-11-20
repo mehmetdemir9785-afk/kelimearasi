@@ -535,7 +535,7 @@
             
             if (justFinished) {
                 if (window.KaUser) {
-                    window.KaUser.addGameResult('betweenle', 'word', isWin, arasindaState.elapsedTime || 0);
+                    window.KaUser.addGameResult('betweenle', 'word', isWin, arasindaState.elapsedTime || 0, { guesses: isWin ? arasindaState.guesses.length : null });
                 }
             }
             
