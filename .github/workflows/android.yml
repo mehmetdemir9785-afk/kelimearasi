@@ -72,4 +72,5 @@ jobs:
             FILES="out/kelimearasi-${V}-test.apk"
             NOTES="Test sürümü: üstte ince bir adres çubuğu görünür. İmzalı sürüm için ANDROID_KEYSTORE_PASSWORD gizli değişkenini ekleyip derlemeyi yeniden çalıştır."
           fi
-          gh release create "android-v${V}" $FILES --title "Kelimearası Android ${V}" --notes "$NOTES" --latest
+          cp $FILES out/kelimearasi.apk
+          gh release create "android-v${V}" $FILES out/kelimearasi.apk --title "Kelimearası Android ${V}" --notes "$NOTES" --latest

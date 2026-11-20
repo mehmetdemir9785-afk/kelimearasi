@@ -98,6 +98,11 @@
         .install { display: inline-flex; align-items: center; gap: 8px; height: 56px; padding: 0 18px; border: 3px solid var(--ink); border-radius: 12px; background: #fff;
                    font: 800 16px var(--f); color: var(--ink); cursor: pointer; box-shadow: 3px 3px 0 var(--ink); }
         .install[hidden] { display: none; }
+        .apk-box { margin: 16px 0 6px; padding-top: 14px; border-top: 2px dashed var(--line); }
+        .apk-box[hidden] { display: none; }
+        .apk-btn { height: 50px; font-size: 16px; box-shadow: 3px 3px 0 var(--ink); }
+        .apk-btn svg { width: 20px; height: 20px; }
+        .apk-note { font-size: 13px; color: var(--ink-2); margin: 10px 0 0; }
         .install-steps { margin: 6px 0 4px; padding-left: 22px; } .install-steps li { margin-bottom: 10px; line-height: 1.5; }
         .install svg { width: 20px; height: 20px; }
         .today { margin-top: 30px; padding: 16px 18px; background: #fff; border: 2px solid var(--ink); border-radius: 12px; max-width: 460px; }
@@ -141,12 +146,13 @@
         .btn-hi:hover { background: #FFD61F; }
 
         /* ---------- Alt bilgi ---------- */
-        .foot { margin-top: 50px; background: var(--ink); color: #DCE3F7; }
+        .foot { margin-top: 50px; background: var(--hi); color: var(--ink); border-top: 2px solid var(--ink); }
         .foot .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px; padding-top: 26px; padding-bottom: 26px; }
-        .foot a { color: #fff; text-decoration: none; font-weight: 600; font-size: 14px; margin-left: 18px; }
+        .foot a { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 14px; margin-left: 18px; }
         .foot a:first-child { margin-left: 0; }
         .foot a:hover { text-decoration: underline; text-underline-offset: 4px; }
-        .foot p { margin: 0; font-size: 14px; }
+        .foot p { margin: 0; font-size: 14px; font-weight: 600; }
+        .foot nav { display: flex; flex-wrap: wrap; gap: 6px 0; }
 
         /* ---------- Modallar ---------- */
         .modal { position: fixed; inset: 0; z-index: 100; }
@@ -365,6 +371,11 @@
         <div class="sheet-b">
             <p>Kelimearası'nı uygulama gibi kullanmak için:</p>
             <ol id="install-steps" class="install-steps"></ol>
+            <div id="apk-box" class="apk-box" hidden>
+                <p style="margin:0 0 10px"><b>ya da</b> Android uygulamasını doğrudan indir:</p>
+                <a class="cta apk-btn" href="https://github.com/mehmetdemir9785-afk/kelimearasi/releases/latest/download/kelimearasi.apk"><i data-lucide="smartphone"></i>APK'yı indir</a>
+                <p class="apk-note">İndirdikten sonra dosyayı aç. Telefon "bilinmeyen kaynak" uyarısı verirse tarayıcına izin ver.</p>
+            </div>
             <div class="note">Eklendikten sonra ana ekranındaki sarı <b>K</b> simgesiyle tam ekran açılır, internetsiz de çalışır.</div>
         </div>
     </div></div></div>
@@ -399,6 +410,7 @@
         }
         function showSteps() {
             document.getElementById('install-steps').innerHTML = steps().map(t => `<li>${t}</li>`).join('');
+            document.getElementById('apk-box').hidden = !/Android/i.test(navigator.userAgent);
             const m = document.getElementById('modal-install'); m.classList.remove('hidden'); document.body.style.overflow = 'hidden';
         }
         function closeInstall() { const m = document.getElementById('modal-install'); if (m) { m.classList.add('hidden'); document.body.style.overflow = ''; } }
