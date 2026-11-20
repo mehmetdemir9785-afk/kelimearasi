@@ -195,3 +195,23 @@ body.ka-g-tic_tac_word #win-line { background: var(--ka-ink) !important; box-sha
     body.ka-game.h-screen, body.ka-game .h-screen { height: 100dvh !important; }
     body.ka-game.min-h-screen, body.ka-game .min-h-screen { min-height: 100dvh !important; }
 }
+
+/* ---------- 18. Açılır pencereler ekrana sığsın ---------- */
+/* Pencere paneli görünen ekran yüksekliğini aşmaz; uzun içerik panelin içinde kayar */
+body.ka-game .fixed [class*="max-w-"][class*="rounded"]:not(.absolute),
+body.ka-game .modal-content {
+    max-height: calc(100dvh - 32px) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+}
+body.ka-game .fixed.inset-0 { overscroll-behavior: contain; }
+
+/* ---------- 19. Sudoku: kısa ekranda tahta küçülsün, sayı tuşları görünsün ---------- */
+body.ka-g-sudoku .sudoku-grid { max-width: min(400px, max(290px, calc(100dvh - 330px))) !important; margin-left: auto; margin-right: auto; }
+@media (max-height: 760px) {
+    body.ka-g-sudoku .sudoku-grid { max-width: min(400px, max(290px, calc(100dvh - 356px))) !important; }
+    body.ka-g-sudoku .action-btn { padding-top: 4px !important; padding-bottom: 4px !important; min-height: 0 !important; height: 44px !important; }
+    body.ka-g-sudoku .numpad-btn { height: 44px !important; min-height: 0 !important; aspect-ratio: auto !important; font-size: 19px !important; }
+}
+html:has(body.ka-g-sudoku), body.ka-g-sudoku { overflow-y: auto !important; }
+body.ka-g-sudoku > .relative.z-50 { z-index: 40 !important; }
