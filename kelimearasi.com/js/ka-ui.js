@@ -76,7 +76,7 @@
       body.ka-game header[data-ka]>:nth-child(2), body.ka-game header[data-ka]>:nth-child(2) *{text-align:left!important;align-items:flex-start!important;justify-content:flex-start!important}
       body.ka-game header[data-ka] h1, body.ka-game header[data-ka] h1 *{font-size:17px!important;font-stretch:110%}
     }
-    body.ka-game button[class*="bg-gradient"],body.ka-game a[class*="bg-gradient"],body.ka-game .mode-btn.active,body.ka-game .mode-btn-active,body.ka-game .tgl.on,body.ka-game .mode-toggle-btn.active{background:var(--ka-hi)!important;color:var(--ka-ink)!important;border:2px solid var(--ka-ink)!important;box-shadow:2px 2px 0 var(--ka-ink)!important;text-shadow:none!important}
+    body.ka-game button[class*="bg-gradient"],body.ka-game a[class*="bg-gradient"],body.ka-game .mode-btn.active,body.ka-game .mode-btn-active,body.ka-game .mode-toggle-btn.active,body.ka-game [data-ka-mode].on,body.ka-game [data-ka-mode].active{background:var(--ka-hi)!important;color:var(--ka-ink)!important;border:2px solid var(--ka-ink)!important;box-shadow:2px 2px 0 var(--ka-ink)!important;text-shadow:none!important}
     body.ka-game button[class*="bg-gradient"] *,body.ka-game a[class*="bg-gradient"] *{color:var(--ka-ink)!important}
     body.ka-game button[class*="bg-gradient"]:hover,body.ka-game a[class*="bg-gradient"]:hover{background:#FFD61F!important}
     @media (prefers-reduced-motion:reduce){.ka-card,.ka-lvup,.ka-lvup-inner,.ka-bar>i{transition:none!important}}
@@ -86,6 +86,12 @@
         if (document.getElementById('ka-ui-css')) return;
         const st = document.createElement('style'); st.id = 'ka-ui-css'; st.textContent = css;
         document.head.appendChild(st);
+        if (isGamePage && !document.getElementById('ka-skin')) {
+            const me = document.getElementById('ka-ui-script');
+            const base = me ? me.src.replace(/js\/ka-ui\.js.*$/, '') : '../';
+            const l = document.createElement('link'); l.id = 'ka-skin'; l.rel = 'stylesheet'; l.href = base + 'css/ka-skin.css';
+            document.head.appendChild(l);
+        }
         if (!document.querySelector('link[href*="family=Archivo"]')) {
             const l = document.createElement('link'); l.rel = 'stylesheet';
             l.href = 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap';
@@ -221,6 +227,7 @@
         if (!header || header.dataset.ka) return;
         header.dataset.ka = '1';
         document.body.classList.add('ka-game');
+        if (gameId()) document.body.classList.add('ka-g-' + gameId());
 
         const home = header.querySelector('a[href*="index.html"]');
         if (home) {
@@ -281,10 +288,17 @@
         new MutationObserver(() => { if (h.classList.contains('dark')) h.classList.remove('dark'); }).observe(h, { attributes: true, attributeFilter: ['class'] });
     }
 
+    function tagModeButtons() {
+        document.querySelectorAll('button').forEach(b => {
+            const t = (b.textContent || '').trim();
+            if (/^(Günlük|Sınırsız)$/.test(t.replace(/^[^A-Za-zÇĞİÖŞÜçğıöşü]+/, ''))) b.dataset.kaMode = '1';
+        });
+    }
+
     function init() {
         injectStyles();
         forceLight();
-        if (isGamePage) enhanceGameHeader();
+        if (isGamePage) { enhanceGameHeader(); tagModeButtons(); setTimeout(tagModeButtons, 600); }
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 

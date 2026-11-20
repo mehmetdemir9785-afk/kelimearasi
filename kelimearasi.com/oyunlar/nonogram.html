@@ -22,8 +22,8 @@
                         sans: ['"Plus Jakarta Sans"', 'sans-serif'],
                     },
                     colors: {
-                        bg: '#0c0c1d',
-                        panel: '#181836',
+                        bg: '#F5F8FD',
+                        panel: '#FFFFFF',
                         primary: '#f43f5e',
                         secondary: '#ec4899',
                     }
@@ -90,8 +90,8 @@
         
         /* Custom scrollbar for game container */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #181836; border-radius: 8px; }
-        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 8px; }
+        ::-webkit-scrollbar-track { background: #E8EDF7; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: #AEBBDA; border-radius: 8px; }
     </style>
     <script src="../js/user-system.js"></script>
 
@@ -460,9 +460,9 @@
                 const colClue = document.createElement('div');
                 colClue.className = 'flex flex-col justify-end items-center pb-1 text-xs font-semibold bg-panel text-gray-300 clue-cell';
                 
-                colClue.style.borderBottom = '2px solid #4b5563';
-                if ((c + 1) % 5 === 0 && c !== n - 1) colClue.style.borderRight = '2px solid #6b7280';
-                else if (c !== n - 1) colClue.style.borderRight = '1px solid #374151';
+                colClue.style.borderBottom = '2px solid #1D2B64';
+                if ((c + 1) % 5 === 0 && c !== n - 1) colClue.style.borderRight = '2px solid #1D2B64';
+                else if (c !== n - 1) colClue.style.borderRight = '1px solid #C3CEE6';
                 
                 colClue.innerHTML = colClues[c].map(num => `<span>${num}</span>`).join('');
                 board.appendChild(colClue);
@@ -474,9 +474,9 @@
                 const rowClue = document.createElement('div');
                 rowClue.className = 'flex justify-end items-center pr-2 gap-1 text-xs font-semibold bg-panel text-gray-300 clue-cell';
                 
-                rowClue.style.borderRight = '2px solid #4b5563';
-                if ((r + 1) % 5 === 0 && r !== n - 1) rowClue.style.borderBottom = '2px solid #6b7280';
-                else if (r !== n - 1) rowClue.style.borderBottom = '1px solid #374151';
+                rowClue.style.borderRight = '2px solid #1D2B64';
+                if ((r + 1) % 5 === 0 && r !== n - 1) rowClue.style.borderBottom = '2px solid #1D2B64';
+                else if (r !== n - 1) rowClue.style.borderBottom = '1px solid #C3CEE6';
                 
                 rowClue.innerHTML = rowClues[r].map(num => `<span>${num}</span>`).join('');
                 board.appendChild(rowClue);
@@ -488,11 +488,11 @@
                     cell.dataset.r = r;
                     cell.dataset.c = c;
                     
-                    if ((c + 1) % 5 === 0 && c !== n - 1) cell.style.borderRight = '2px solid #6b7280';
-                    else if (c !== n - 1) cell.style.borderRight = '1px solid #374151';
+                    if ((c + 1) % 5 === 0 && c !== n - 1) cell.style.borderRight = '2px solid #1D2B64';
+                    else if (c !== n - 1) cell.style.borderRight = '1px solid #C3CEE6';
                     
-                    if ((r + 1) % 5 === 0 && r !== n - 1) cell.style.borderBottom = '2px solid #6b7280';
-                    else if (r !== n - 1) cell.style.borderBottom = '1px solid #374151';
+                    if ((r + 1) % 5 === 0 && r !== n - 1) cell.style.borderBottom = '2px solid #1D2B64';
+                    else if (r !== n - 1) cell.style.borderBottom = '1px solid #C3CEE6';
                     
                     // Interaction
                     cell.addEventListener('mousedown', onPointerDown);

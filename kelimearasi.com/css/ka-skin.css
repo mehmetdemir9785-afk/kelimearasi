@@ -1,0 +1,190 @@
+/* ==========================================================================
+   Kelimearası oyun kaplaması: kareli defter / tükenmez mürekkebi / fosforlu kalem
+   ka-ui.js tarafından tüm oyun sayfalarına yüklenir. body.ka-game ve
+   body.ka-g-<oyun> sınıflarıyla kapsamlanır.
+   ========================================================================== */
+body.ka-game {
+    --tile-empty: #fff;
+    --tile-line: #AEBBDA;
+    --st-green: #1F9D61;
+    --st-yellow: #FFE14D;
+    --st-gray: #C9D3E8;
+    --st-gray-line: #9AA8CC;
+}
+
+/* ---------- 1. Genel Tailwind renk eşlemesi ---------- */
+/* Mor / menekşe / pembe vurgular -> fosforlu sarı + mürekkep */
+body.ka-game :is(button, a, [role="tab"], span, div)[class*="bg-violet-5"],
+body.ka-game :is(button, a, [role="tab"], span, div)[class*="bg-violet-6"],
+body.ka-game :is(button, a, [role="tab"], span, div)[class*="bg-purple-5"],
+body.ka-game :is(button, a, [role="tab"], span, div)[class*="bg-purple-6"],
+body.ka-game :is(button, a, [role="tab"], span, div)[class*="bg-indigo-5"],
+body.ka-game :is(button, a, [role="tab"], span, div)[class*="bg-indigo-6"],
+body.ka-game :is(button, a, [role="tab"], span, div)[class*="bg-fuchsia-5"],
+body.ka-game :is(button, a, [role="tab"], span, div)[class*="bg-pink-5"] {
+    background: var(--ka-hi) !important; color: var(--ka-ink) !important;
+    border-color: var(--ka-ink) !important; box-shadow: none !important;
+}
+body.ka-game [class*="text-violet-"], body.ka-game [class*="text-purple-"],
+body.ka-game [class*="text-indigo-"], body.ka-game [class*="text-fuchsia-"] { color: var(--ka-ink) !important; }
+body.ka-game [class*="border-violet-"], body.ka-game [class*="border-purple-"],
+body.ka-game [class*="border-indigo-"] { border-color: var(--ka-ink) !important; }
+/* Soluk griler -> görünür defter tonları */
+body.ka-game [class*="border-gray-100"], body.ka-game [class*="border-gray-200"],
+body.ka-game [class*="border-slate-200"] { border-color: var(--tile-line) !important; }
+body.ka-game .text-gray-900, body.ka-game .text-gray-800, body.ka-game .text-gray-700,
+body.ka-game .text-slate-800, body.ka-game .text-slate-700 { color: var(--ka-ink) !important; }
+body.ka-game .text-gray-600, body.ka-game .text-gray-500, body.ka-game .text-slate-500 { color: var(--ka-ink-2) !important; }
+body.ka-game .text-gray-400, body.ka-game .text-gray-300 { color: #7D89AE !important; }
+/* Yumuşak gölgeli beyaz paneller -> çizgili kâğıt kart */
+body.ka-game [class*="shadow-xl"][class*="bg-white"], body.ka-game [class*="shadow-2xl"][class*="bg-white"] {
+    border: 2px solid var(--ka-ink) !important; box-shadow: 5px 5px 0 var(--ka-ink) !important;
+}
+/* Açılır pencere başlıkları */
+body.ka-game :is(h2, h3)[class*="text-orange-"], body.ka-game :is(h2, h3)[class*="text-amber-"] { color: var(--ka-ink) !important; }
+
+/* ---------- 2. Kelime karoları (Sözcükle, İkile, Dörtle, Sekizle, Tic-Tak) ---------- */
+body.ka-game :is(.tile, .mini-tile) {
+    background: var(--tile-empty) !important; border: 2px solid var(--tile-line) !important;
+    color: var(--ka-ink) !important; font-weight: 900 !important; font-stretch: 112%;
+}
+body.ka-game .tile { border-radius: 8px !important; }
+body.ka-game .mini-tile { border-width: 1.5px !important; border-radius: 3px !important; }
+body.ka-game :is(.tile, .mini-tile).filled { border-color: var(--ka-ink) !important; }
+body.ka-game :is(.tile, .mini-tile).correct { background: var(--st-green) !important; border-color: var(--ka-ink) !important; color: #fff !important; }
+body.ka-game :is(.tile, .mini-tile).present { background: var(--st-yellow) !important; border-color: var(--ka-ink) !important; color: var(--ka-ink) !important; }
+body.ka-game :is(.tile, .mini-tile).absent { background: var(--st-gray) !important; border-color: var(--st-gray-line) !important; color: var(--ka-ink-2) !important; }
+
+/* ---------- 3. Klavye ---------- */
+body.ka-game .key-btn {
+    background: #fff !important; color: var(--ka-ink) !important; border: 2px solid var(--ka-ink) !important;
+    border-radius: 8px !important; box-shadow: 0 3px 0 var(--ka-ink) !important; font-weight: 800 !important;
+    transition: transform .08s, box-shadow .08s !important;
+}
+body.ka-game .key-btn:active { transform: translateY(3px) !important; box-shadow: 0 0 0 var(--ka-ink) !important; }
+body.ka-game .key-btn.correct { background: var(--st-green) !important; color: #fff !important; }
+body.ka-game .key-btn.present { background: var(--st-yellow) !important; }
+body.ka-game :is(.key-btn.absent, .key-btn.all-absent, .key-btn.dimmed) { background: var(--st-gray) !important; color: #7D89AE !important; border-color: var(--st-gray-line) !important; box-shadow: 0 3px 0 var(--st-gray-line) !important; }
+body.ka-game .key-btn :is(span, div) { color: inherit; }
+
+/* ---------- 4. Sözcükle: harf sayısı seçici ---------- */
+body.ka-g-wordle .letter-btn { border: 1.5px solid transparent; color: var(--ka-ink-2) !important; }
+body.ka-g-wordle .letter-btn.active { background: var(--ka-hi) !important; color: var(--ka-ink) !important; border-color: var(--ka-ink); box-shadow: none !important; }
+
+/* ---------- 5. Kelime 500: sanal klavye ve ipucu kutuları ---------- */
+body.ka-g-kelime500 .vk-key {
+    background: #fff !important; color: var(--ka-ink) !important; border: 2px solid var(--ka-ink) !important;
+    border-radius: 8px !important; box-shadow: 0 3px 0 var(--ka-ink) !important; font-weight: 800 !important;
+}
+body.ka-g-kelime500 .vk-key:active { transform: translateY(3px); box-shadow: none !important; }
+body.ka-g-kelime500 .vk-key.key-green { background: var(--st-green) !important; color: #fff !important; }
+body.ka-g-kelime500 .vk-key.key-yellow { background: var(--st-yellow) !important; color: var(--ka-ink) !important; }
+body.ka-g-kelime500 .vk-key.key-red { background: var(--st-gray) !important; color: #7D89AE !important; border-color: var(--st-gray-line) !important; box-shadow: 0 3px 0 var(--st-gray-line) !important; }
+body.ka-g-kelime500 :is(.hint-green, .hint-yellow, .hint-red) { border: 2px solid var(--ka-ink); box-shadow: none !important; font-weight: 900 !important; }
+body.ka-g-kelime500 .hint-green { background: var(--st-green) !important; color: #fff !important; }
+body.ka-g-kelime500 .hint-yellow { background: var(--st-yellow) !important; color: var(--ka-ink) !important; }
+body.ka-g-kelime500 .hint-red { background: var(--st-gray) !important; color: var(--ka-ink) !important; border-color: var(--st-gray-line); }
+body.ka-g-kelime500 .cell-green { background: var(--st-green) !important; color: #fff !important; border-color: var(--ka-ink) !important; }
+body.ka-g-kelime500 .cell-yellow { background: var(--st-yellow) !important; color: var(--ka-ink) !important; border-color: var(--ka-ink) !important; }
+body.ka-g-kelime500 .cell-red { background: var(--st-gray) !important; color: var(--ka-ink-2) !important; border-color: var(--st-gray-line) !important; }
+
+/* ---------- 6. Seçiciler: mod = sarı, ikincil = mürekkep ---------- */
+body.ka-game :is(.mode-toggle-btn, .live-toggle-btn, .diff-btn, .tgl, .mode-btn, .mode-btn-inactive, .diff-btn-inactive) {
+    border: 2px solid transparent !important; color: var(--ka-ink-2) !important; box-shadow: none !important; font-weight: 800 !important;
+}
+body.ka-game :is(.live-toggle-btn.active, .diff-btn.active-diff, .diff-btn-active, .tgl.on:not([data-ka-mode])) {
+    background: var(--ka-ink) !important; color: #fff !important; border-color: var(--ka-ink) !important; box-shadow: none !important;
+}
+body.ka-game :is(.mode-toggle-btn.active, .mode-btn.active, .mode-btn-active, [data-ka-mode].on, [data-ka-mode].active) {
+    background: var(--ka-hi) !important; color: var(--ka-ink) !important; border-color: var(--ka-ink) !important; box-shadow: 2px 2px 0 var(--ka-ink) !important;
+}
+/* Çit: satır içi sınıflı seçiciler */
+body.ka-g-slitherlink button[class*="bg-gray-600"] { background: var(--ka-ink) !important; color: #fff !important; }
+body.ka-g-slitherlink .diff-btn[class*="border-cyan-500"] { background: var(--ka-ink) !important; color: #fff !important; border-color: var(--ka-ink) !important; }
+body.ka-g-slitherlink .diff-btn { background: transparent !important; }
+
+/* ---------- 7. Araç butonları ve sayı tuşları ---------- */
+body.ka-game :is(.action-btn, .ctrl-btn, .numpad-btn),
+body.ka-game button[class*="bg-gray-100"]:not(.key-btn):not(.vk-key) {
+    background: #fff !important; color: var(--ka-ink) !important; border: 2px solid var(--ka-ink) !important;
+    border-radius: 10px !important; box-shadow: 2px 2px 0 var(--ka-ink) !important; font-weight: 800 !important;
+}
+body.ka-game :is(.action-btn, .ctrl-btn, .numpad-btn, button[class*="bg-gray-100"]):active { transform: translate(2px, 2px) !important; box-shadow: none !important; }
+body.ka-game :is(.action-btn, .ctrl-btn, .numpad-btn) :is(span, svg, i) { color: inherit !important; }
+body.ka-game :is(.action-btn, .ctrl-btn).opacity-50, body.ka-game :is(.action-btn, .ctrl-btn).opacity-40, body.ka-game :is(.action-btn, .ctrl-btn):disabled { box-shadow: none !important; border-style: dashed !important; }
+body.ka-game .numpad-btn { font-size: 22px !important; font-stretch: 112%; }
+
+/* ---------- 8. Kare Karalama (nonogram): kâğıt + kurşun kalem ---------- */
+body.ka-g-nonogram .text-white:not(button):not(button *) { color: var(--ka-ink) !important; }
+body.ka-g-nonogram :is(.text-gray-300, .text-gray-400) { color: var(--ka-ink-2) !important; }
+body.ka-g-nonogram [class*="border-gray-7"], body.ka-g-nonogram [class*="border-gray-8"] { border-color: var(--ka-ink) !important; }
+body.ka-g-nonogram #gameBoard { border: 3px solid var(--ka-ink) !important; box-shadow: 4px 4px 0 var(--ka-ink) !important; background: #fff !important; }
+body.ka-g-nonogram .grid-cell { background: #fff; }
+body.ka-g-nonogram .grid-cell:hover { background: #FFF6BF; }
+body.ka-g-nonogram .grid-cell.filled { background: var(--ka-ink) !important; }
+body.ka-g-nonogram .grid-cell.crossed::after { color: #7D89AE; }
+body.ka-g-nonogram .grid-cell.error { background: var(--ka-red) !important; }
+body.ka-g-nonogram .clue-cell { color: var(--ka-ink) !important; font-weight: 800; background: #F0F4FB; }
+body.ka-g-nonogram button[class*="bg-gray-800"], body.ka-g-nonogram button[class*="bg-gray-600"] {
+    background: #fff !important; color: var(--ka-ink) !important; border: 2px solid var(--ka-ink) !important; box-shadow: 2px 2px 0 var(--ka-ink) !important;
+}
+body.ka-g-nonogram .p-1 > button[class*="bg-gray-600"] { background: var(--ka-ink) !important; color: #fff !important; box-shadow: none !important; }
+body.ka-g-nonogram [class*="text-yellow-400"] { color: var(--ka-ink) !important; }
+body.ka-g-nonogram .diff-btn[class*="border-rose-500"] { background: var(--ka-ink) !important; color: #fff !important; border-color: var(--ka-ink) !important; }
+body.ka-g-nonogram div[class*="bg-panel"][class*="rounded-xl"] { border: 2px solid var(--ka-ink); }
+body.ka-g-nonogram .flex.bg-gray-800 { background: #fff !important; border: 2px solid var(--ka-ink); }
+
+/* ---------- 9. Kelime Çemberi (parolla) ---------- */
+body.ka-g-parolla .action-btn[class*="bg-rose-"] { background: var(--ka-red) !important; color: #fff !important; }
+body.ka-g-parolla .action-btn[class*="bg-rose-"] * { color: #fff !important; }
+body.ka-g-parolla .letter-correct { background: var(--st-green) !important; color: #fff !important; border-color: var(--ka-ink) !important; }
+body.ka-g-parolla .letter-wrong { background: var(--ka-red) !important; color: #fff !important; border-color: var(--ka-ink) !important; }
+body.ka-g-parolla .letter-pass { background: var(--st-gray) !important; color: var(--ka-ink) !important; }
+body.ka-g-parolla .letter-pending { background: #fff !important; color: var(--ka-ink-2) !important; border: 1.5px solid var(--tile-line) !important; }
+body.ka-g-parolla input { border: 2px solid var(--ka-ink) !important; box-shadow: 3px 3px 0 var(--ka-ink) !important; color: var(--ka-ink) !important; }
+
+/* ---------- 10. Arasında (betweenle) + Kelime 500 klavyesi ---------- */
+body.ka-game .vk-key {
+    background: #fff !important; color: var(--ka-ink) !important; border: 2px solid var(--ka-ink) !important;
+    border-radius: 8px !important; box-shadow: 0 3px 0 var(--ka-ink) !important; font-weight: 800 !important;
+}
+body.ka-game .vk-key:active:not(.disabled) { transform: translateY(3px) !important; box-shadow: none !important; }
+body.ka-game .vk-key.disabled { background: var(--st-gray) !important; color: #7D89AE !important; border-color: var(--st-gray-line) !important; box-shadow: 0 3px 0 var(--st-gray-line) !important; }
+body.ka-game .vk-key.special { background: #E8EDF7 !important; }
+
+/* ---------- 11. Vezirler ve Domino butonları ---------- */
+body.ka-g-queens button[class*="border-gray-200"], body.ka-g-pips button[class*="rounded-xl"][class*="bg-gray-100"] {
+    background: #fff !important; border: 2px solid var(--ka-ink) !important; box-shadow: 2px 2px 0 var(--ka-ink) !important; color: var(--ka-ink) !important;
+}
+
+body.ka-g-parolla .letter-active { background: var(--ka-hi) !important; color: var(--ka-ink) !important; border: 2px solid var(--ka-ink) !important; box-shadow: 2px 2px 0 var(--ka-ink) !important; }
+body.ka-g-parolla span[class*="bg-gradient"] { background: var(--ka-hi) !important; color: var(--ka-ink) !important; border: 2px solid var(--ka-ink); }
+
+/* ---------- 12. Gradyan yazılar -> mürekkep ---------- */
+body.ka-game [class*="bg-clip-text"] { background: none !important; -webkit-text-fill-color: var(--ka-ink) !important; color: var(--ka-ink) !important; filter: none !important; text-shadow: none !important; }
+
+/* ---------- 13. Çit: kalem çizgisi ---------- */
+body.ka-g-slitherlink .sl-edge.state-line .edge-line { background: var(--ka-ink) !important; box-shadow: none !important; }
+body.ka-g-slitherlink .sl-edge:hover { background: rgba(255, 225, 77, .45) !important; }
+body.ka-g-slitherlink .sl-dot.active { background: var(--ka-ink) !important; box-shadow: none !important; }
+body.ka-g-slitherlink .tool-toggle { background: #fff !important; border: 2px solid var(--ka-ink); }
+body.ka-g-slitherlink .tool-toggle .toggle-slider { background: var(--ka-ink) !important; box-shadow: none !important; }
+body.ka-g-slitherlink [class*="text-cyan-"], body.ka-g-slitherlink [class*="text-teal-"] { color: var(--ka-ink) !important; }
+
+/* ---------- 14. Kare Karalama: seçili ikincil yazı rengi ---------- */
+body.ka-g-nonogram .p-1 > button[class*="bg-gray-600"], body.ka-g-nonogram .p-1 > button[class*="bg-gray-600"] * { color: #fff !important; }
+body.ka-g-nonogram button.p-2[class*="bg-gray-600"] { background: var(--ka-ink) !important; color: #fff !important; }
+
+/* ---------- 15. Petek: bal peteği -> defter ---------- */
+body.ka-g-spelling_bee .hex-cell.outer-hex { background: #DCE5F5 !important; color: var(--ka-ink) !important; font-weight: 900 !important; }
+body.ka-g-spelling_bee .hex-cell.outer-hex:hover { background: #FFF3A8 !important; filter: none !important; }
+body.ka-g-spelling_bee .hex-cell.center-hex { background: var(--ka-hi) !important; color: var(--ka-ink) !important; font-weight: 900 !important; box-shadow: none !important; }
+body.ka-g-spelling_bee :is(#modeDailyBtn, #modeUnlimitedBtn)[class*="bg-amber-500"] { background: var(--ka-hi) !important; color: var(--ka-ink) !important; border: 2px solid var(--ka-ink); box-shadow: 2px 2px 0 var(--ka-ink) !important; }
+
+/* ---------- 16. Tic-Tak Kelime: büyük ızgara ---------- */
+body.ka-g-tic_tac_word .macro-cell { background: #fff !important; border: 2px solid var(--ka-ink) !important; border-radius: 12px !important; box-shadow: 3px 3px 0 var(--ka-ink); }
+body.ka-g-tic_tac_word .macro-cell:hover:not(.locked) { background: #FFF6BF !important; transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ka-ink); }
+body.ka-g-tic_tac_word .macro-cell:empty::after { content: '?'; font-weight: 900; font-stretch: 120%; font-size: clamp(22px, 5vw, 34px); color: #AEBBDA; }
+body.ka-g-tic_tac_word .macro-cell.locked[class*="emerald"] { background: var(--st-green) !important; color: #fff !important; }
+body.ka-g-tic_tac_word .macro-cell.locked[class*="red-500"] { background: #FFD9D9 !important; color: var(--ka-red) !important; }
+body.ka-g-tic_tac_word #win-line { background: var(--ka-ink) !important; box-shadow: none !important; }
