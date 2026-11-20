@@ -98,6 +98,7 @@
         .install { display: inline-flex; align-items: center; gap: 8px; height: 56px; padding: 0 18px; border: 3px solid var(--ink); border-radius: 12px; background: #fff;
                    font: 800 16px var(--f); color: var(--ink); cursor: pointer; box-shadow: 3px 3px 0 var(--ink); }
         .install[hidden] { display: none; }
+        .install-steps { margin: 6px 0 4px; padding-left: 22px; } .install-steps li { margin-bottom: 10px; line-height: 1.5; }
         .install svg { width: 20px; height: 20px; }
         .today { margin-top: 30px; padding: 16px 18px; background: #fff; border: 2px solid var(--ink); border-radius: 12px; max-width: 460px; }
         .today-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-weight: 700; font-size: 15px; }
@@ -359,6 +360,15 @@
         </div>
     </div></div></div>
 
+    <div id="modal-install" class="modal hidden" style="z-index:110"><div class="modal-bg" id="modal-install-backdrop"></div><div class="modal-c"><div class="sheet" style="max-width:400px">
+        <div class="sheet-h"><h3>Ana ekrana ekle</h3><button class="x" id="modal-install-close" aria-label="Kapat"><i data-lucide="x"></i></button></div>
+        <div class="sheet-b">
+            <p>Kelimearası'nı uygulama gibi kullanmak için:</p>
+            <ol id="install-steps" class="install-steps"></ol>
+            <div class="note">Eklendikten sonra ana ekranındaki sarı <b>K</b> simgesiyle tam ekran açılır, internetsiz de çalışır.</div>
+        </div>
+    </div></div></div>
+
     <div id="modal-edit-name" class="modal hidden" style="z-index:110"><div class="modal-bg" id="modal-edit-name-backdrop"></div><div class="modal-c"><div class="sheet" style="max-width:380px">
         <div class="sheet-h"><h3>İsmini değiştir</h3></div>
         <div class="sheet-b">
@@ -372,18 +382,38 @@
     // ---------- Uygulamayı yükle (PWA) ----------
     (function () {
         const btn = document.getElementById('btn-install');
-        const inApp = matchMedia('(display-mode: standalone)').matches || document.referrer.startsWith('android-app://');
-        let deferred = null;
+        const inApp = matchMedia('(display-mode: standalone)').matches || navigator.standalone || document.referrer.startsWith('android-app://');
         if (inApp) return;
-        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; btn.hidden = false; });
+        btn.hidden = false;
+        let deferred = null;
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; });
+        window.addEventListener('appinstalled', () => { btn.hidden = true; closeInstall(); });
+
+        function steps() {
+            const ua = navigator.userAgent;
+            const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            if (ios) return ['Safari\'de alttaki <b>Paylaş</b> simgesine dokun (kutudan çıkan ok).', 'Listeyi kaydırıp <b>Ana Ekrana Ekle</b>\'yi seç.', 'Sağ üstteki <b>Ekle</b>\'ye dokun.'];
+            if (/Firefox|FxiOS/.test(ua)) return ['Sağ alttaki ya da sağ üstteki <b>⋮</b> menüsüne dokun.', '<b>Yükle</b> ya da <b>Ana ekrana ekle</b>\'yi seç.', 'Çıkan pencerede <b>Ekle</b>\'ye dokun.'];
+            if (/SamsungBrowser/.test(ua)) return ['Alttaki <b>☰</b> menüsüne dokun.', '<b>Sayfayı ekle</b> → <b>Ana ekran</b>\'ı seç.', '<b>Ekle</b>\'ye dokun.'];
+            return ['Sağ üstteki <b>⋮</b> menüsüne dokun.', '<b>Uygulamayı yükle</b> ya da <b>Ana ekrana ekle</b>\'yi seç.', 'Çıkan pencerede <b>Yükle</b>\'ye dokun.'];
+        }
+        function showSteps() {
+            document.getElementById('install-steps').innerHTML = steps().map(t => `<li>${t}</li>`).join('');
+            const m = document.getElementById('modal-install'); m.classList.remove('hidden'); document.body.style.overflow = 'hidden';
+        }
+        function closeInstall() { const m = document.getElementById('modal-install'); if (m) { m.classList.add('hidden'); document.body.style.overflow = ''; } }
+        document.getElementById('modal-install-close').addEventListener('click', closeInstall);
+        document.getElementById('modal-install-backdrop').addEventListener('click', closeInstall);
+
         btn.addEventListener('click', async () => {
-            if (!deferred) return;
-            deferred.prompt();
-            const r = await deferred.userChoice.catch(() => null);
-            if (r && r.outcome === 'accepted') btn.hidden = true;
-            deferred = null;
+            if (!deferred) { showSteps(); return; }
+            const d = deferred; deferred = null;
+            try {
+                await d.prompt();
+                const r = await d.userChoice;
+                if (r && r.outcome === 'accepted') btn.hidden = true;
+            } catch (e) { showSteps(); }
         });
-        window.addEventListener('appinstalled', () => { btn.hidden = true; });
     })();
 
     // ---------- Hero karoları ----------
