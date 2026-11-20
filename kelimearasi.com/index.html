@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Kelimearası">
     <meta name="theme-color" content="#FFE14D">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -90,6 +94,11 @@
                font: 800 18px var(--f); font-stretch: 110%; text-decoration: none; box-shadow: 5px 5px 0 var(--ink); transition: transform .12s, box-shadow .12s; }
         .cta:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 var(--ink); }
         .cta:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--ink); }
+        .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+        .install { display: inline-flex; align-items: center; gap: 8px; height: 56px; padding: 0 18px; border: 3px solid var(--ink); border-radius: 12px; background: #fff;
+                   font: 800 16px var(--f); color: var(--ink); cursor: pointer; box-shadow: 3px 3px 0 var(--ink); }
+        .install[hidden] { display: none; }
+        .install svg { width: 20px; height: 20px; }
         .today { margin-top: 30px; padding: 16px 18px; background: #fff; border: 2px solid var(--ink); border-radius: 12px; max-width: 460px; }
         .today-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-weight: 700; font-size: 15px; }
         .today-h b { font-weight: 900; font-stretch: 120%; font-size: 22px; }
@@ -233,7 +242,10 @@
                 <div class="hero-side">
                     <h1>Türkçe kelime, mantık ve sayı bulmacaları</h1>
                     <p>Sözcükle'den Sudoku'ya 16 oyun. Her gün yeni bir günlük bulmaca, istersen sınırsız tur. Hepsi ücretsiz, üyelik yok.</p>
-                    <a class="cta" href="oyunlar/wordle.html?mode=daily">Günün Sözcükle'sini çöz</a>
+                    <div class="cta-row">
+                        <a class="cta" href="oyunlar/wordle.html?mode=daily">Günün Sözcükle'sini çöz</a>
+                        <button class="install press" id="btn-install" hidden><i data-lucide="download"></i>Uygulamayı yükle</button>
+                    </div>
                     <div class="today">
                         <div class="today-h"><span>Bugün çözdüklerin</span><span><b id="today-count">0</b> / 16</span></div>
                         <div class="tboxes" id="today-boxes"></div>
@@ -356,6 +368,23 @@
     </div></div></div>
 
     <script>
+    // ---------- Uygulamayı yükle (PWA) ----------
+    (function () {
+        const btn = document.getElementById('btn-install');
+        const inApp = matchMedia('(display-mode: standalone)').matches || document.referrer.startsWith('android-app://');
+        let deferred = null;
+        if (inApp) return;
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; btn.hidden = false; });
+        btn.addEventListener('click', async () => {
+            if (!deferred) return;
+            deferred.prompt();
+            const r = await deferred.userChoice.catch(() => null);
+            if (r && r.outcome === 'accepted') btn.hidden = true;
+            deferred = null;
+        });
+        window.addEventListener('appinstalled', () => { btn.hidden = true; });
+    })();
+
     // ---------- Hero karoları ----------
     (function () {
         const words = [['K','E','L','İ','M','E'], ['A','R','A','S','I']];

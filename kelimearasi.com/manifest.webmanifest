@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "Kelimearası: Türkçe Bulmaca ve Kelime Oyunları",
+  "short_name": "Kelimearası",
+  "description": "Sözcükle, Sudoku, Kelime Çemberi ve 13 oyun daha. Her gün yeni bulmaca.",
+  "lang": "tr",
+  "dir": "ltr",
+  "start_url": "/?kaynak=uygulama",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F8FD",
+  "theme_color": "#FFE14D",
+  "categories": ["games", "education", "entertainment"],
+  "icons": [
+    { "src": "/images/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/images/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Günün Sözcükle'si", "url": "/oyunlar/wordle.html?mode=daily", "icons": [{ "src": "/images/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Sudoku", "url": "/oyunlar/sudoku.html?mode=daily", "icons": [{ "src": "/images/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Kelime Çemberi", "url": "/oyunlar/parolla.html?mode=daily", "icons": [{ "src": "/images/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

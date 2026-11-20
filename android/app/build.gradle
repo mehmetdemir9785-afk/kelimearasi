@@ -1,0 +1,48 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Her GitHub Actions derlemesinde sürüm kodu artar (Play Store bunu zorunlu tutar)
+def runNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+def ksPass = System.getenv('KS_PASS')
+
+android {
+    namespace 'com.kelimearasi.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.kelimearasi.app'
+        minSdk 21
+        targetSdk 35
+        versionCode runNumber
+        versionName "1.0.${runNumber}"
+    }
+
+    signingConfigs {
+        release {
+            if (ksPass) {
+                storeFile file('../keystore/upload.p12')
+                storeType 'pkcs12'
+                storePassword ksPass
+                keyAlias 'upload'
+                keyPassword ksPass
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (ksPass) signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}

@@ -1,0 +1,70 @@
+# Kelimearası Android uygulaması (TWA) derlemesi
+# - Her derlemede: hata ayıklama APK'sı + yayın APK'sı + Play Store için AAB
+# - ANDROID_KEYSTORE_PASSWORD gizli değişkeni tanımlıysa yayın dosyaları imzalanır
+#   ve imzalı APK "Android uygulaması" sürümüne (GitHub Releases) yüklenir.
+name: Android uygulaması
+
+on:
+  push:
+    branches: ["main", "modern-tasarim"]
+    paths: ["android/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Derle
+        working-directory: android
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: gradle --no-daemon assembleDebug assembleRelease bundleRelease
+
+      - name: Dosyaları adlandır
+        id: files
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          mkdir -p out
+          V="1.0.${GITHUB_RUN_NUMBER}"
+          cp android/app/build/outputs/apk/debug/app-debug.apk "out/kelimearasi-${V}-test.apk"
+          if [ -n "$KS_PASS" ]; then
+            cp android/app/build/outputs/apk/release/app-release.apk "out/kelimearasi-${V}.apk"
+            cp android/app/build/outputs/bundle/release/app-release.aab "out/kelimearasi-${V}-playstore.aab"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::ANDROID_KEYSTORE_PASSWORD tanımlı değil; sadece test APK'sı üretildi (adres çubuğu görünür)."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=${V}" >> "$GITHUB_OUTPUT"
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kelimearasi-android-${{ steps.files.outputs.version }}
+          path: out/*
+
+      - name: Sürümü GitHub Releases'e yükle
+        if: steps.files.outputs.signed == 'true' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ steps.files.outputs.version }}
+        run: |
+          gh release create "android-v${V}" out/*.apk out/*.aab \
+            --title "Android uygulaması ${V}" \
+            --notes "Telefona kurmak için kelimearasi-${V}.apk dosyasını indir. Play Store'a yüklemek için -playstore.aab dosyasını kullan." \
+            --latest

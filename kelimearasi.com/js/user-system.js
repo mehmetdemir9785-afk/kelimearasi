@@ -322,6 +322,15 @@
     try { document.documentElement.classList.remove('dark'); } catch (e) { /* yoksay */ }
 
     // ------------------------------------------------------------------
+    // Uygulama (PWA) desteği: service worker kaydı
+    // ------------------------------------------------------------------
+    try {
+        if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+            global.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+        }
+    } catch (e) { /* yoksay */ }
+
+    // ------------------------------------------------------------------
     // Arayüz katmanını (bildirimler, oyun sayfası kabuğu) otomatik yükle
     // ------------------------------------------------------------------
     try {

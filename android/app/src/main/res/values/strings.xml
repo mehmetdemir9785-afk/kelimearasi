@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kelimearası</string>
+    <string name="default_url">https://kelimearasi.com/?kaynak=uygulama</string>
+    <string name="file_provider_authority">com.kelimearasi.app.fileprovider</string>
+    <string name="asset_statements" translatable="false">[{\"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": {\"namespace\": \"web\", \"site\": \"https://kelimearasi.com\"}}]</string>
+</resources>

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.kelimearasi.app",
+      "sha256_cert_fingerprints": [
+        "45:29:09:03:5A:10:28:A9:19:5B:5B:D6:23:17:2B:76:A2:59:19:4C:E5:60:BE:6F:21:B8:64:F2:E6:C6:86:1B"
+      ]
+    }
+  }
+]
